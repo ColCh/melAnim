@@ -1,12 +1,14 @@
-(function mainClosure(){
+(function (){
 	"use strict";
 	
     var dummy = document.createElement('p').style;
 
     // сама ф-я анимирования
-    var animate = function animate(target, properties, duration, easing, callback){
+    var animate = function animate(target, properties, duration, easing, callback, classicMode){
        
         var i;
+
+        classicMode = classicMode || !prefix;// ДОПИЛИТЬ ДЛЯ СКРОЛЛА
 
         // для селектора - сам селектор
         var id = typeof target === "string" ? target: '#'+(target.id ? target.id:(target.id="mel_anim_"+Date.now().toString(32)));
@@ -14,67 +16,103 @@
         var fromRule = addRule(id, " ");
         var fromStyle = fromRule.style;
 
-        var toStyle = addRule(id, " ").style;
-
-        for(i in properties){
-            setStyle(fromStyle, i, properties[i].from);
-            setStyle(dummy, i, properties[i].to);
+        var toStyle, currentProperty;
+        
+        if(!classicMode){
+            toStyle = addRule(id, " ").style;
         }
 
-        // счетчик запуска "перед отрисовкой". Firefox\Opera bug.
-        i = 0;
-        
-        requestAnimFrame(function loop(){
+        var dimReg = /(?:([^\(]+)\()?(\d+)([^\)]+)\)?/;
 
-                i += 1;
+        for(i in properties){
+            currentProperty = properties[i];
 
-                if(i === 2){
-                    // применились начальные стили
-                    setStyle(fromStyle, "transition", "all "+duration+" "+(easings[easing]||"linear")+" 0s");
-                    requestAnimFrame(loop);
-                } else if(i === 3){
-                    // применился стиль перехода (Chrome bug)
-                    toStyle.cssText = dummy.cssText;
-                    dummy.cssText = "";
-                } else {
-                    requestAnimFrame(loop);
+            setStyle(fromStyle, i, currentProperty.from);
+            if(classicMode) {
+                // приводим значения свойств в machine-readable вид
+
+                dimReg.exec(currentProperty.from)
+                currentProperty.from = +RegExp.$2;
+                currentProperty.to = +currentProperty.to.match(dimReg)[2];
+                currentProperty.dimension = RegExp.$3;
+                if(i === "transform"){
+                    currentProperty.transform = RegExp.$1;
                 }
 
-        });
+            } else {
+                setStyle(dummy, i, curretProperty.to);
+            }
+        }
 
         instances[id] = {
             rule: fromRule,
             style: fromStyle,
-            complete: callback
+            easing: classicMode ? mathemate(easing):easing,
+            complete: callback,
+            endingStyle: toStyle,
+            duration: classicMode ? parseInt(duration, 10)*1e3:duration,
+            properties: properties
         };
 
+        if(classicMode){// передаем управление классической функции 
+            return animateClassic(target, id);
+        } else {
+            // счетчик запуска "перед отрисовкой". Firefox\Opera repaint bug(or feature:)
+            i = 0;
+            requestAnimFrame(function loop(){
+                    i += 1;
+                    if(i === 2){
+                        // применились начальные стили
+                        setStyle(fromStyle, "transition", "all "+duration+" "+easing+" 0s");
+                        requestAnimFrame(loop);
+                    } else if(i === 3){
+                        // применился стиль перехода 
+                        toStyle.cssText = dummy.cssText;
+                        dummy.cssText = "";
+                    } else {
+                        requestAnimFrame(loop);
+                    }
+            });
+        }
     };
 
-    var easings = animate.easings = {
-        'in': 'ease-in',
-        'out': 'ease-out',
-        'in-out': 'ease-in-out',
-        'linear': 'cubic-bezier(0.250, 0.250, 0.750, 0.750)',
-        'ease-in-quad': 'cubic-bezier(0.550, 0.085, 0.680, 0.530)',
-        'ease-in-cubic': 'cubic-bezier(0.550, 0.055, 0.675, 0.190)',
-        'ease-in-circ': 'cubic-bezier(0.600, 0.040, 0.980, 0.335)',
-        'ease-in-back': 'cubic-bezier(0.600, -0.280, 0.735, 0.045)',
-        'ease-out-cubic': 'cubic-bezier(0.215, 0.610, 0.355, 1.000)',
-        'ease-out-circ': 'cubic-bezier(0.075, 0.820, 0.165, 1.000)',
-        'ease-out-back': 'cubic-bezier(0.175, 0.885, 0.320, 1.275)',
-        'ease-out-quad': 'cubic-bezier(0.455, 0.030, 0.515, 0.955)',
-        'ease-in-out-quart': 'cubic-bezier(0.770, 0.000, 0.175, 1.000)',
-        'ease-in-out-circ': 'cubic-bezier(0.785, 0.135, 0.150, 0.860)',
-        'ease-in-out-back': 'cubic-bezier(0.680, -0.550, 0.265, 1.550)'
+    // классическая функция анимирования
+    var animateClassic = function(target, id){
+        var instance = instances[id], properties = instance.properties, currProp;
+        delete instances[id];
+        instance.started = Date.now();
+
+        requestAnimFrame(function classicAnimLoop(){
+            var progr = (Date.now() - instance.started) / instance.duration;
+            if(progr > 1){
+                progr = 1;
+            }
+
+            var i;
+            for(i in properties){
+                currProp = properties[i];
+                setStyle(instance.style, i, (currProp.transform?currProp.transform+":":"")+((currProp.to - currProp.from)*instance.easing(progr) + currProp.from) + currProp.dimension);
+            }
+
+            if(progr < 1){
+                requestAnimFrame(classicAnimLoop);
+            } else {
+               instance.complete.call(undefined, instance.style);
+            }
+        });
     };
+
+    // превратить cubic-bezier в обычную функцию
+    var mathemate = function(easing){
+       return function(a){return a*a;}; 
+    };
+
+
 
     // добавит правило в конец таблицы стилей и вернёт его
-    var addRule = function addRule(selector, text){
-        return cssRules.item[stylesheet.insertRule ? stylesheet.insertRule(text, cssRules.length):stylesheet.addRule(selector, text, cssRules.length),cssRules.length-1];
+    var addRule =  function addRule(selector, text){
+        return cssRules[stylesheet.insertRule ? stylesheet.insertRule(selector+"{"+text+"}", cssRules.length):stylesheet.addRule(selector, text, cssRules.length),cssRules.length-1];
     };
-
-    
-
 
     // информация о запущенных анимациях
     var instances = {};
@@ -99,9 +137,8 @@
         var ruleIndex = Array.prototype.indexOf.call(cssRules, instance.rule);
         stylesheet.deleteRule(ruleIndex);
 
-        instance.complete.call(event.target, event);
+        instance.complete.call(undefined, instance.endingStyle);
     };
-
 
     // проверит имя css-свойства на корректность
     var styleIsCorrect = function(name){
@@ -110,7 +147,7 @@
 
         var values = ["", "none", "0"], i; // значения всех типов
         for(i = 0; i in values; i += 1){
-            try{ dummy.setProperty(name, values[i], ""); } catch(e){}
+            try{ setProperty.call(dummy, name, values[i], ""); } catch(e){}
         }
         res = dummy.cssText.length > 0;
         dummy.cssText = oldDummy;
@@ -118,38 +155,55 @@
         return res;
     };
 
-    // запоминание свойств для setStyle
-    var setStyleMemoize = {};
+
+    // костыль для IE < 9
+    var setProperty = CSSStyleDeclaration.prototype.setProperty ||
+                                function(property, value){ 
+                                    this[ 
+                                        property.replace(/-([a-z])/g, 
+                                                function(founded, firstLetter){ 
+                                                    return firstLetter.toUpperCase();
+                                                })
+                                    ] = value;
+                                };
 
     // установить ч-либо стиль, исп-я хуки по возможности
     var setStyle = function(style, property, value){
 
-        var newProperty;
+        var newProperty, hook = setStyle.hooks[property];
 
-        if(property in setStyle.hooks){
-            if(property in setStyleMemoize){
-                property = setStyleMemoize[property];
+        if(hook){
+
+            if("cached" in hook){
+
+                property = hook["cached"];
+
             } else {
-                if(!styleIsCorrect(property)){
-                    newProperty = setStyle.hooks[property](prefix, value);
-                    // если хук поставит свойство сам, то дальше ничего не делаем
-                    // пример: transform для IE посредством матриц
-                    if(!newProperty){
-                        return;
-                    }
-                    setStyleMemoize[property] = newProperty;
-                    property = newProperty;
+
+                newProperty = hook(prefix, value, setProperty, style, styleIsCorrect);
+                // если хук поставит свойство сам, он должен вернуть falsy.
+                // пример: transform для IE посредством матриц
+                if(newProperty/* && !styleIsCorrect(newProperty)*/){
+                    property = hook["cached"] = newProperty;
                 }
             }
         }
-        style.setProperty(property, value, "");
+
+        setProperty.call(style, property, value, "");
     };
+
     animate.styleHooks = setStyle.hooks = {
         "transition": function(prefix, value){
             return (prefix && ("-"+prefix+'-'))+'transition';
         },
-        "transform": function(prefix, value){
-            return (prefix && ("-"+prefix+'-'))+'transform';
+        "transform": function(prefix, value, setStyle, style){
+            if(value.indexOf(':') === -1){
+                setStyle.call(style, (prefix && ("-"+prefix+'-'))+'transform', value);
+            } else {
+                value = value.split(':');
+                setStyle.call(style, "transform", value[0]+"("+value[1]+")");      
+            }
+            return false;
         }
     };
 
@@ -184,7 +238,6 @@
         var html = document.documentElement;
 
         matchesSelector = html.matchesSelector;
-
 
         for(i = 0; i in prefixes; i += 1){
 
@@ -247,13 +300,10 @@
  
         /* добавляем свой <style> */
         var style = document.createElement("style");
-
         document.body.appendChild(style);
-
         stylesheet = style.sheet || style.styleSheet;
-
         cssRules = stylesheet.cssRules || stylesheet.rules;
-
+        
         /* вызов оригинальной функции анимирования */
         window["animate"] = animate;
 
@@ -262,7 +312,7 @@
 })();
 
 
-animate(document.getElementsByTagName("div"), { 
+animate(document.getElementsByTagName("div")[0], { 
 		"top" : {
             from: "45%",
             to: "50%"
@@ -293,10 +343,10 @@ animate(document.getElementsByTagName("div"), {
         }
 	},
     '1s',
-    'ease-in-out-quart',
-	function animateComplete(){
-        this.style.backgroundColor = "green";
-        this.style.borderColor = "green";
-        this.innerHTML = 'Okay :)';
-    }
+    'ease-in-out',
+	function animateComplete(style){
+        style.backgroundColor = "green";
+        style.borderColor = "green";
+    },
+    1
 );
