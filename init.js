@@ -1,4 +1,4 @@
-    window["animate"] = function init(){
+    window['animate'] = function init(){
         
         /* --- инициализация --- */
         
@@ -32,6 +32,7 @@
             }
         }
 
+
         // костыль для исполнения ф-и после отрисовки
         if(!requestAnimFrame){
             requestAnimFrame = function customRequestAnimationFrame(callback){
@@ -40,49 +41,65 @@
             };
         }
 
+
         // костыль для проверки принадлежности элемента к селектору
         if(!matchesSelector){
+
             // помощь от библиотеки qsa от devote
             if("qsa" in window){ 
+
                 matchesSelector = function(selector){
                     return qsa.matchesSelector(this, selector);
                 };
+
             } else if("jQuery" in window){
+
                 matchesSelector = function(selector){
                     return $(this).is(selector);
                 };
+
             } else if("querySelector" in document){
+
                 matchesSelector = function(selector){
+
                     var temp = document.createElement('div');
+
                     temp.appendChild(this.cloneNode(false));
+
                     return temp.querySelector(selector) === this;
+                    // temp = null ?
                 };
+
             } else if("all" in document){
+
                 matchesSelector = function(selector){
                     // стоит ли проверять здесь, какой браузер сюда попал? >IE 7<
                     var res;
                     var index = stylesheet.addRule(selector, "correct:okay", cssRules.length);
 
-                    for(var i, all = document.all; i in all; i += 1){
-                        if(all[i].currentStyle.correct === "okay" && all[i] === this){
-                            res = true;
-                        }
-                    }
+                    res = this.currentStyle['correct'] === "okay";
 
                     stylesheet.removeRule(index);
                     return res;
                 };
+
             }
+
         }
+
 
         /* добавляем свой <style> */
         var style = document.createElement("style");
+
         document.body.appendChild(style);
+
         stylesheet = style.sheet || style.styleSheet;
+
         cssRules = stylesheet.cssRules || stylesheet.rules;
+
         
         /* вызов оригинальной функции анимирования */
-        window["animate"] = animate;
+        window['animate'] = animate;
 
         return arguments.length && animate.apply(this, arguments);
     };
