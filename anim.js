@@ -29,6 +29,11 @@
         'ease-out':    [0.00, 0.0, 0.58, 1.0],
         'ease-in-out': [0.42, 0.0, 0.58, 1.0]
     };
+
+    // rotate(90deg) => [rotate, 90, deg]; 90px => [undefined, 90, px] и т.д
+    var dimReg = /(?:([^\(]+)\()?(\d+)([^\)]+)\)?/;
+
+    var easingReg = /^cubic\-bezier\(\s*(\-?\d*(?:\.\d+)?)\s*,\s*(\-?\d*(?:\.\d+)?)\s*,\s*(\-?\d*(?:\.\d+)?)\s*,\s*(\-?\d*(?:\.\d+)?)\s*\)$/;
 /*-------------------- </begin.js> --------------------*/
 
 /*-------------------- <init.js> --------------------*/
@@ -83,13 +88,13 @@
             if("qsa" in window){ 
 
                 matchesSelector = function(selector){
-                    return qsa.matchesSelector(this, selector);
+                    return qsa['matchesSelector'](this, selector);
                 };
 
             } else if("jQuery" in window){
 
                 matchesSelector = function(selector){
-                    return $(this).is(selector);
+                    return $(this)['is'](selector);
                 };
 
             } else if("querySelector" in document){
@@ -147,48 +152,82 @@
 
         classicMode = classicMode || !prefix;// ДОПИЛИТЬ ДЛЯ СКРОЛЛА
 
-        // для селектора - сам селектор
-        var id = typeof target === "string" ? target: '#'+(target.id ? target.id:(target.id="mel_anim_"+Date.now().toString(32)));
+        // id анимации
+        var id;
+
+        if(typeof target === "string"){
+            id = target; // селектор
+        } else {
+            if(!target.id){ 
+                target.id = "mel_anim_"+Date.now().toString(32);
+            }
+            id = '#'+target.id;
+        }
         
+
         var fromRule = addRule(id, " ");
         var fromStyle = fromRule.style;
 
         var toStyle, currentProperty;
         
-        if(!classicMode){
+
+        if(!easings[easing]){
+
+            if(easing){
+                
+                var matched = easing.match(easingReg).slice(1);
+
+                for(i = 0; i in matched; i += 1){
+                    matched[i] = parseFloat(matched[i], 10);
+                }
+
+                easings[easing] = matched;
+
+            } else {
+                easing = "linear";
+            }
+        }
+        
+        if(classicMode){
+            easing = mathemate(easing);
+        } else {
+
+            easing = easings[easing];
+            easing = "cubic-bezier("+(easing.join(", "))+")";
+
             toStyle = addRule(id, " ").style;
         }
 
-        var dimReg = /(?:([^\(]+)\()?(\d+)([^\)]+)\)?/;
+        
 
         for(i in properties){
             currentProperty = properties[i];
 
-            setStyle(fromStyle, i, currentProperty.from);
+            setStyle(fromStyle, i, currentProperty['from']);
             if(classicMode) {
                 // приводим значения свойств в machine-readable вид
 
-                dimReg.exec(currentProperty.from)
-                currentProperty.from = +RegExp.$2;
-                currentProperty.to = +currentProperty.to.match(dimReg)[2];
-                currentProperty.dimension = RegExp.$3;
+                dimReg.exec(currentProperty['from'])
+                currentProperty['from'] = +RegExp.$2;
+                currentProperty['to'] = +currentProperty.to.match(dimReg)[2];
+                currentProperty['dimension'] = RegExp.$3;
                 if(i === "transform"){
-                    currentProperty.transform = RegExp.$1;
+                    currentProperty['transform'] = RegExp.$1;
                 }
 
             } else {
-                setStyle(dummy, i, curretProperty.to);
+                setStyle(dummy, i, currentProperty['to']);
             }
         }
 
         instances[id] = {
-            rule: fromRule,
-            style: fromStyle,
-            easing: classicMode ? mathemate(easing):easing,
-            complete: callback,
-            endingStyle: toStyle,
-            duration: classicMode ? parseInt(duration, 10)*1e3:duration,
-            properties: properties
+            'rule': fromRule,
+            'style': fromStyle,
+            'easing': easing,
+            'complete': callback,
+            'endingStyle': toStyle,
+            'duration': classicMode ? parseInt(duration, 10)*1e3:duration,
+            'properties': properties
         };
 
         if(classicMode){// передаем управление классической функции 
@@ -230,22 +269,22 @@
             return;
         }
 
-        var ruleIndex = Array.prototype.indexOf.call(cssRules, instance.rule);
+        var ruleIndex = Array.prototype.indexOf.call(cssRules, instance['rule']);
         stylesheet.deleteRule(ruleIndex);
 
-        instance.complete.call(undefined, instance.endingStyle);
+        instance.complete.call(undefined, instance['endingStyle']);
     };
 /*-------------------- </transitions.js> --------------------*/
 
 /*-------------------- <classic.js> --------------------*/
      // классическая функция анимирования
     var animateClassic = function(target, id){
-        var instance = instances[id], properties = instance.properties, currProp;
+        var instance = instances[id], properties = instance['properties'], currProp;
         delete instances[id];
         instance.started = Date.now();
 
         requestAnimFrame(function classicAnimLoop(){
-            var progr = (Date.now() - instance.started) / instance.duration;
+            var progr = (Date.now() - instance['started']) / instance['duration'];
             if(progr > 1){
                 progr = 1;
             }
@@ -253,13 +292,13 @@
             var i;
             for(i in properties){
                 currProp = properties[i];
-                setStyle(instance.style, i, (currProp.transform?currProp.transform+":":"")+((currProp.to - currProp.from)*instance.easing(progr) + currProp.from) + currProp.dimension);
+                setStyle(instance['style'], i, (currProp['transform']?currProp['transform']+":":"")+((currProp['to'] - currProp['from'])*instance['easing'](progr) + currProp['from']) + currProp['dimension']);
             }
 
             if(progr < 1){
                 requestAnimFrame(classicAnimLoop);
             } else {
-               instance.complete.call(undefined, instance.style);
+               instance.complete.call(undefined, instance['style']);
             }
         });
     };
@@ -387,12 +426,12 @@
             
         if(info.value.indexOf(':') === -1){
 
-            setProperty.call(info.style, (info.prefix && ("-"+info.prefix+'-'))+'transform', info.value);
+            setProperty.call(info['style'], (info['prefix'] && ("-"+info['prefix']+'-'))+'transform', info['value']);
 
         } else {
 
-            info.value = info.value.split(':');
-            info.hook[info.value[0]](info.style, parseFloat(info.value[1]), info.setProperty, (info.prefix && ("-"+info.prefix+'-'))+'transform');
+            info['value'] = info['value'].split(':');
+            info['hook'][info['value'][0]](info['style'], parseFloat(info['value'][1]), info['setProperty'], (info['prefix'] && ("-"+info['prefix']+'-'))+'transform');
             
         }
 

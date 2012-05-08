@@ -44,12 +44,12 @@
             
         if(info.value.indexOf(':') === -1){
 
-            setProperty.call(info.style, (info.prefix && ("-"+info.prefix+'-'))+'transform', info.value);
+            setProperty.call(info['style'], (info['prefix'] && ("-"+info['prefix']+'-'))+'transform', info['value']);
 
         } else {
 
-            info.value = info.value.split(':');
-            info.hook[info.value[0]](info.style, parseFloat(info.value[1]), info.setProperty, (info.prefix && ("-"+info.prefix+'-'))+'transform');
+            info['value'] = info['value'].split(':');
+            info['hook'][info['value'][0]](info['style'], parseFloat(info['value'][1]), info['setProperty'], (info['prefix'] && ("-"+info['prefix']+'-'))+'transform');
             
         }
 

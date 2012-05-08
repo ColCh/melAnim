@@ -5,48 +5,82 @@
 
         classicMode = classicMode || !prefix;// ДОПИЛИТЬ ДЛЯ СКРОЛЛА
 
-        // для селектора - сам селектор
-        var id = typeof target === "string" ? target: '#'+(target.id ? target.id:(target.id="mel_anim_"+Date.now().toString(32)));
+        // id анимации
+        var id;
+
+        if(typeof target === "string"){
+            id = target; // селектор
+        } else {
+            if(!target.id){ 
+                target.id = "mel_anim_"+Date.now().toString(32);
+            }
+            id = '#'+target.id;
+        }
         
+
         var fromRule = addRule(id, " ");
         var fromStyle = fromRule.style;
 
         var toStyle, currentProperty;
         
-        if(!classicMode){
+
+        if(!easings[easing]){
+
+            if(easing){
+                
+                var matched = easing.match(easingReg).slice(1);
+
+                for(i = 0; i in matched; i += 1){
+                    matched[i] = parseFloat(matched[i], 10);
+                }
+
+                easings[easing] = matched;
+
+            } else {
+                easing = "linear";
+            }
+        }
+        
+        if(classicMode){
+            easing = mathemate(easing);
+        } else {
+
+            easing = easings[easing];
+            easing = "cubic-bezier("+(easing.join(", "))+")";
+
             toStyle = addRule(id, " ").style;
         }
 
-        var dimReg = /(?:([^\(]+)\()?(\d+)([^\)]+)\)?/;
+        
 
         for(i in properties){
             currentProperty = properties[i];
 
-            setStyle(fromStyle, i, currentProperty.from);
+            setStyle(fromStyle, i, currentProperty['from']);
             if(classicMode) {
                 // приводим значения свойств в machine-readable вид
 
-                dimReg.exec(currentProperty.from)
-                currentProperty.from = +RegExp.$2;
-                currentProperty.to = +currentProperty.to.match(dimReg)[2];
-                currentProperty.dimension = RegExp.$3;
+                dimReg.exec(currentProperty['from'])
+                currentProperty['from'] = +RegExp.$2;
+                currentProperty['to'] = +currentProperty.to.match(dimReg)[2];
+                currentProperty['dimension'] = RegExp.$3;
                 if(i === "transform"){
-                    currentProperty.transform = RegExp.$1;
+                    currentProperty['transform'] = RegExp.$1;
                 }
 
             } else {
-                setStyle(dummy, i, curretProperty.to);
+                setStyle(dummy, i, currentProperty['to']);
             }
         }
 
         instances[id] = {
-            rule: fromRule,
-            style: fromStyle,
-            easing: classicMode ? mathemate(easing):easing,
-            complete: callback,
-            endingStyle: toStyle,
-            duration: classicMode ? parseInt(duration, 10)*1e3:duration,
-            properties: properties
+            'rule': fromRule,
+            'style': fromStyle,
+            'easing': easing,
+            'complete': callback,
+            'endingStyle': toStyle,
+            'duration': classicMode ? parseInt(duration, 10)*1e3:duration,
+            'properties': properties
         };
 
         if(classicMode){// передаем управление классической функции 
@@ -88,8 +122,8 @@
             return;
         }
 
-        var ruleIndex = Array.prototype.indexOf.call(cssRules, instance.rule);
+        var ruleIndex = Array.prototype.indexOf.call(cssRules, instance['rule']);
         stylesheet.deleteRule(ruleIndex);
 
-        instance.complete.call(undefined, instance.endingStyle);
+        instance.complete.call(undefined, instance['endingStyle']);
     };

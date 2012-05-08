@@ -49,13 +49,13 @@
             if("qsa" in window){ 
 
                 matchesSelector = function(selector){
-                    return qsa.matchesSelector(this, selector);
+                    return qsa['matchesSelector'](this, selector);
                 };
 
             } else if("jQuery" in window){
 
                 matchesSelector = function(selector){
-                    return $(this).is(selector);
+                    return $(this)['is'](selector);
                 };
 
             } else if("querySelector" in document){
