@@ -1,6 +1,6 @@
-/*-------------------- <begin.js> --------------------*/
+console.profile("a");
+
 (function (){
-	"use strict"; 
 
     // на чём тестируем имена CSS свойств 
     var dummy = document.createElement('p').style;
@@ -18,122 +18,131 @@
     // соответствие селектору
     var matchesSelector;
 
-    // для добавления конечных стилей после отрисовки
-    var requestAnimFrame = window.requestAnimationFrame;
+    // поддерживаются ли CSS Transitions
+    var supported;
+
+    // костыль для выполнения ф-й перед отрисовкой:w
+    var requestAnimationFrame = function(){
+        // время последней отрисовки
+        var last = 0; 
+        // функции будут набираться в массив
+        var stack = [];
+
+        requestAnimationFrame = function(callback){
+            if(Date.now() - last < 16){
+                stack.push(callback);
+            } else {
+
+                for(var i = 0; i in stack; i += 1){
+                    stack[i]();
+                }
+                // форсированная отрисовка
+                window.scrollBy(0, 0);
+                last = Date.now();
+            }
+        };
+        requestAnimationFrame.apply(this, arguments);
+    };
 
     // изинги
     var easings = {
-        'ease':        [0.25, 0.1, 0.25, 1.0], 
-        'linear':      [0.00, 0.0, 1.00, 1.0],
-        'ease-in':     [0.42, 0.0, 1.00, 1.0],
-        'ease-out':    [0.00, 0.0, 0.58, 1.0],
-        'ease-in-out': [0.42, 0.0, 0.58, 1.0]
+        'ease':        [0.25, 0.10, 0.25, 1.0], 
+        'swing':       [0.02, 0.01, 0.47, 1.0],
+        'linear':      [0.00, 0.00, 1.00, 1.0],
+        'ease-in':     [0.42, 0.00, 1.00, 1.0],
+        'ease-out':    [0.00, 0.00, 0.58, 1.0],
+        'ease-in-out': [0.42, 0.00, 0.58, 1.0]
     };
 
-    // rotate(90deg) => [rotate, 90, deg]; 90px => [undefined, 90, px] и т.д
-    var dimReg = /(?:([^\(]+)\()?(\d+)([^\)]+)\)?/;
-
+    // rotate(90deg) => [rotate, 90, deg]
+    // 90px => [undefined, 90, px]
+    // skew(10deg, 45deg) => [skew, 10, deg, 45];
+    var dimReg = /\s*(?:([^\(]+)\()?(-?\d+)(%|\w*)(?:,\s?(-?\d+)\w*)?\)?/;
     var easingReg = /^cubic\-bezier\(\s*(\-?\d*(?:\.\d+)?)\s*,\s*(\-?\d*(?:\.\d+)?)\s*,\s*(\-?\d*(?:\.\d+)?)\s*,\s*(\-?\d*(?:\.\d+)?)\s*\)$/;
-/*-------------------- </begin.js> --------------------*/
+    var transformReg = /(\w+)\(?(\d+)(\w*)(?:,?\s?(\d+)\w*)?\)?/g;
 
-/*-------------------- <init.js> --------------------*/
+    if("jQuery" in window){
+        matchesSelector = function(selector){
+            return window["jQuery"]["find"]["matchesSelector"](this, selector); 
+        }
+    } else if("all" in document){
+        matchesSelector = function(selector){
+            var res;
+            var index = cssRules.length;
+            
+            stylesheet.addRule(selector, "a:b", index);
+            res = this.currentStyle['a'] === "b";
+            stylesheet.removeRule(index);
+
+            return res;
+        };
+    }
+
+    var each = function(what, callback, type){
+        var i;
+        
+        type = type || (what[0]||what.length ? "array":"object");
+
+        if(type === "array") {
+            for(i = 0; i in what; i += 1){
+                callback(what[i], i, what);
+            }
+        } else {
+            for(i in what){
+                if(what.hasOwnProperty(i)){
+                    callback(what[i], i, what);
+                }
+            }
+        }
+    };
+    
+/*--------------------------- ИНИЦИАЛИЗАЦИЯ ---------------------------------*/
     window['animate'] = function init(){
-        
-        /* --- инициализация --- */
-        
 
-        /* проверка поддержки переходов */
-        var prefixes = "webkit Moz O ms".split(" ");
-        var i, lowPrefix;
-        var eventNames = {
+        /* проверка поддержки */
+        var prefixes = {
             "O": "oTransitionEnd",
             "ms": "MSTransitionEnd",
-            "Moz": "transitionend", // <--- ?!
+            "Moz": "transitionend",
             "webkit": "webkitTransitionEnd"
         }; 
+
         var html = document.documentElement;
 
-        matchesSelector = html.matchesSelector;
+        // есть нативная реализация, без префиксов
+        matchesSelector = html.matchesSelector || matchesSelector;
+        requestAnimationFrame = window.requestAnimationFrame || requestAnimationFrame;
 
-        for(i = 0; i in prefixes; i += 1){
+        each(prefixes, function iterate_prefixes(eventName, i){
+            lowPrefix = i.toLowerCase();
 
-            lowPrefix = prefixes[i].toLowerCase();
-
-            if(!prefix && prefixes[i]+"Transition" in dummy) {
-                prefix = prefixes[i];
-                document.body.addEventListener(eventNames[prefix], transitionEndHandler, false);
+            matchesSelector = html[lowPrefix+"MatchesSelector"] || matchesSelector;
+            requestAnimationFrame = window[lowPrefix+"RequestAnimationFrame"] || requestAnimationFrame;
+            
+            if(i+"Transition" in dummy) {
+                prefix = i;
+                document.body.addEventListener(eventName, transitionEndHandler, false);
+                supported = true;
             }
-            if(!matchesSelector){
-                matchesSelector = html[lowPrefix+"MatchesSelector"]
-            }
-            if(!requestAnimFrame){
-                requestAnimFrame = window[lowPrefix+"RequestAnimationFrame"];
+        }, "object");
+
+        // префикс для CSS3 правил - тут определяем наугад.
+        if(!prefix){
+            if("globalStorage" in window){
+                prefix = "Moz";
+            } else if("opera" in window){
+                prefix = "O";
+            } else if(/webkit/i.test(navigator.userAgent)){
+                prefix = "webkit";
+            } else if("\v" == "\v"){
+                prefix = "ms";
             }
         }
-
-
-        // костыль для исполнения ф-и после отрисовки
-        if(!requestAnimFrame){
-            requestAnimFrame = function customRequestAnimationFrame(callback){
-                window.scrollBy(0, 0);
-                callback();
-            };
-        }
-
-
-        // костыль для проверки принадлежности элемента к селектору
-        if(!matchesSelector){
-
-            // помощь от библиотеки qsa от devote
-            if("qsa" in window){ 
-
-                matchesSelector = function(selector){
-                    return qsa['matchesSelector'](this, selector);
-                };
-
-            } else if("jQuery" in window){
-
-                matchesSelector = function(selector){
-                    return $(this)['is'](selector);
-                };
-
-            } else if("querySelector" in document){
-
-                matchesSelector = function(selector){
-
-                    var temp = document.createElement('div');
-
-                    temp.appendChild(this.cloneNode(false));
-
-                    return temp.querySelector(selector) === this;
-                    // temp = null ?
-                };
-
-            } else if("all" in document){
-
-                matchesSelector = function(selector){
-                    // стоит ли проверять здесь, какой браузер сюда попал? >IE 7<
-                    var res;
-                    var index = stylesheet.addRule(selector, "correct:okay", cssRules.length);
-
-                    res = this.currentStyle['correct'] === "okay";
-
-                    stylesheet.removeRule(index);
-                    return res;
-                };
-
-            }
-
-        }
-
 
         /* добавляем свой <style> */
         var style = document.createElement("style");
-
         document.body.appendChild(style);
-
         stylesheet = style.sheet || style.styleSheet;
-
         cssRules = stylesheet.cssRules || stylesheet.rules;
 
         
@@ -142,19 +151,20 @@
 
         return arguments.length && animate.apply(this, arguments);
     };
-/*-------------------- </init.js> --------------------*/
-
-/*-------------------- <transitions.js> --------------------*/
-     // сама ф-я анимирования
+/*--------------------------- ГЛАВНАЯ ФУНКЦИЯ АНИМАЦИИ ---------------------------------*/
     var animate = function animate(target, properties, duration, easing, callback, classicMode){
        
-        var i;
-
-        classicMode = classicMode || !prefix;// ДОПИЛИТЬ ДЛЯ СКРОЛЛА
-
-        // id анимации
-        var id;
-
+        var
+            i,
+            id,
+            fromRule,
+            fromStyle, 
+            toStyle,
+            curr;
+        
+        classicMode = classicMode === undefined ? !supported:classicMode;
+        
+        // определяем ид анимации
         if(typeof target === "string"){
             id = target; // селектор
         } else {
@@ -163,93 +173,56 @@
             }
             id = '#'+target.id;
         }
-        
 
-        var fromRule = addRule(id, " ");
-        var fromStyle = fromRule.style;
-
-        var toStyle, currentProperty;
-        
+        fromRule = addRule(id, " ");
+        fromStyle = fromRule.style;
 
         if(!easings[easing]){
-
-            if(easing){
-                
-                var matched = easing.match(easingReg).slice(1);
-
-                for(i = 0; i in matched; i += 1){
-                    matched[i] = parseFloat(matched[i], 10);
-                }
-
-                easings[easing] = matched;
-
+            // передана cubic-bezier
+            if(easingReg.test(easing)){ 
+                easings[easing] = easing;
             } else {
                 easing = "linear";
             }
         }
-        
-        if(classicMode){
-            easing = mathemate(easing);
-        } else {
 
-            easing = easings[easing];
-            easing = "cubic-bezier("+(easing.join(", "))+")";
-
-            toStyle = addRule(id, " ").style;
-        }
-
-        
-
-        for(i in properties){
-            currentProperty = properties[i];
-
-            setStyle(fromStyle, i, currentProperty['from']);
-            if(classicMode) {
-                // приводим значения свойств в machine-readable вид
-
-                dimReg.exec(currentProperty['from'])
-                currentProperty['from'] = +RegExp.$2;
-                currentProperty['to'] = +currentProperty.to.match(dimReg)[2];
-                currentProperty['dimension'] = RegExp.$3;
-                if(i === "transform"){
-                    currentProperty['transform'] = RegExp.$1;
+        each(properties, function iterate_properties(current, propertyName){
+                setStyle(fromStyle, propertyName, current["from"]);
+                if(!classicMode){
+                    setStyle(dummy, propertyName, current["to"]);
                 }
+        }, "object");
 
-            } else {
-                setStyle(dummy, i, currentProperty['to']);
-            }
+        if(classicMode){
+            return animateClassic(target, id, fromStyle, properties, duration, easing, callback);
         }
+
+        easing = easings[easing];
+
+        if(typeof easing !== "string"){
+            easing = "cubic-bezier("+easing.join(", ")+")";
+        }
+
+        toStyle = addRule(id, " ").style;
 
         instances[id] = {
-            'rule': fromRule,
-            'style': fromStyle,
-            'easing': easing,
-            'complete': callback,
-            'endingStyle': toStyle,
-            'duration': classicMode ? parseInt(duration, 10)*1e3:duration,
-            'properties': properties
+            fromRule: fromRule,
+            complete: callback,
+            duration: duration
         };
 
-        if(classicMode){// передаем управление классической функции 
-            return animateClassic(target, id);
-        } else {
-            // счетчик запуска "перед отрисовкой". Firefox\Opera repaint bug(or feature:)
-            i = 0;
-            requestAnimFrame(function loop(){
-                    i += 1;
-                    if(i === 2){
-                        // применились начальные стили
-                        setStyle(fromStyle, "transition", "all "+duration+" "+easing+" 0s");
-                        requestAnimFrame(loop);
-                    } else if(i === 3){
-                        // применился стиль перехода 
-                        toStyle.cssText = dummy.cssText;
-                        dummy.cssText = "";
-                    } else {
-                        requestAnimFrame(loop);
-                    }
+        requestAnimationFrame(function(){
+
+            setStyle(toStyle, "transition", "all "+duration+" "+easing+" 0s");
+
+            requestAnimationFrame(function(){
+                // применился начальный стиль
+                // применяем опции перехода
+                toStyle.cssText += ";"+dummy.cssText;
+                dummy.cssText = "";
             });
-        }
+
+        });
     };
 
     // для делегирования всплывающих событий конца анимации
@@ -258,67 +231,130 @@
         var id, instance;
 
         for(id in instances){
-            if(matchesSelector.call(event.target, id)) {
+            if(event.elapsedTime+'s' === instances[id].duration && matchesSelector.call(event.target, id)) {
+
                 instance = instances[id];
                 delete instances[id];
+
+                var ruleIndex = Array.prototype.indexOf.call(cssRules, instance.fromRule);
+                stylesheet.deleteRule(ruleIndex);
+
+                instance.complete();
+
                 break;
             }
         }
-        
-        if(!instance){
-            return;
+    };
+/*--------------------------- КЛАССИЧЕСКАЯ АНИМАЦИЯ ---------------------------------*/
+    var animateClassic = function(target, id, fromStyle, properties, duration, easing, callback){
+
+        var instance = {};
+
+        properties = normalizeProperties(properties);
+
+        console.profileEnd("a");
+    };
+
+
+    var classicAnimLoop = function(){
+
+        var instance = this, currProp;
+
+        var progr = (Date.now() - instance['started']) / instance['duration'];
+
+        if(progr > 1){
+            progr = 1;
         }
 
-        var ruleIndex = Array.prototype.indexOf.call(cssRules, instance['rule']);
-        stylesheet.deleteRule(ruleIndex);
+        var i, currentValue;
 
-        instance.complete.call(undefined, instance['endingStyle']);
-    };
-/*-------------------- </transitions.js> --------------------*/
+        for(i in instance['properties']){
 
-/*-------------------- <classic.js> --------------------*/
-     // классическая функция анимирования
-    var animateClassic = function(target, id){
-        var instance = instances[id], properties = instance['properties'], currProp;
-        delete instances[id];
-        instance.started = Date.now();
+            currProp = instance['properties'][i];
 
-        requestAnimFrame(function classicAnimLoop(){
-            var progr = (Date.now() - instance['started']) / instance['duration'];
-            if(progr > 1){
-                progr = 1;
-            }
+            currentValue = (currProp.to - currProp.from) * instance.easing(progr) + currProp.from + currProp.dimension
 
-            var i;
-            for(i in properties){
-                currProp = properties[i];
-                setStyle(instance['style'], i, (currProp['transform']?currProp['transform']+":":"")+((currProp['to'] - currProp['from'])*instance['easing'](progr) + currProp['from']) + currProp['dimension']);
-            }
-
-            if(progr < 1){
-                requestAnimFrame(classicAnimLoop);
+            if(currProp.transform){
+                setStyle(instance.style, i, currProp.transform+"("+ currentValue +")");
             } else {
-               instance.complete.call(undefined, instance['style']);
+                setStyle(instance.style, i, currentValue);
             }
-        });
+        }
+
+
+        if(progr < 1){
+            requestAnimFrame(instance['step'], instance, []);
+        } else {
+            delete instances[ instance['id'] ];
+            instance['complete'].call(undefined, instance['style']);
+        }
+
     };
 
+    // превратит объект анимируемых свойств в machine-readable
+    var normalizeProperties = function(properties){
+    
+        var res = {};
+        
+        each(properties, function normalize_properties(info, property){
 
-    var mathemated = {};
+            var member = {}, matched;
+
+            if(property === "transform") {
+
+                each(["from", "to"], function iterate_directions(direction){
+                    each(info[direction].split(/\s(?!\d)/), function iterate_transforms(transformMember){
+                        var curr;
+                        matched = transformMember.match(dimReg);
+                        if(matched[4]) {
+                            each(["X", "Y"], function iterate_axis(axis, i){
+                                curr = member[matched[1]+axis];
+                                if(!curr){
+                                    curr = member[matched[1]+axis] = {};
+                                }
+                                curr[direction] = matched[i *2 + 2];
+                                curr.dim = matched[3];
+                            });
+                        } else {
+                            curr = member[matched[1]];
+                            if(!curr){
+                                curr = member[matched[1]] = {};
+                            }
+                            curr[direction] = matched[2];
+                            curr.dim = matched[3];
+                        }
+                        
+                    });
+                });
+            
+            } else {
+                matched = info["from"].match(dimReg);
+                member.from = matched[2];
+                member.dim = matched[3];
+                member.to = info["to"].match(dimReg)[2];
+            }
+
+            res[property] = member;
+            
+        });
+
+        return res;
+    };
 
     // превратить cubic-bezier в обычную функцию
     var mathemate = function(name){
-        if(!mathemated[name]){
-            mathemated[name] = function(progress){
+        if(!easings[name]['mathemated']){
+            easings[name]['mathemated'] = function(progress){
                 var points = easings[name];
-                return calc.apply(this, points.concat(progress));
+                return calc.apply(0, points.concat(progress));
             };
         }
 
-        return mathemated[name];
+        return easings[name]['mathemated'];
     };
 
 
+    // вычислить значение кубической кривой привремени progress ( e [0;1] )
     var calc = function(p1x, p1y, p2x, p2y, progress){
 
         var res;
@@ -335,11 +371,11 @@
         }
 
         return res; 
-    }
+    };
 
 
 
-    // вспомогательные ф-и  
+    // вспомогательные ф-и для calc  
     var getTimeX = function(progr, p1x, p2x){
                 
         var timeX = progr;
@@ -367,7 +403,7 @@
         return 3.0*A(px1, px2)*progr*progr + 2.0*B(px1, px2)*progr + C(px1);
     }
 
-    // укоротители
+    // укоротители для calcBezier
     var A = function (aA1, aA2){ 
         return 1.0 - 3.0 * aA2 + 3.0 * aA1;
     }
@@ -377,9 +413,7 @@
     var C = function (aA1){
         return 3.0 * aA1;
     }
-/*-------------------- </classic.js> --------------------*/
 
-/*-------------------- <css.js> --------------------*/
     // установить ч-либо стиль, исп-я хуки по возможности
     var setStyle = function(style, property, value){
 
@@ -387,88 +421,131 @@
 
         if(hook){
 
-            if('cached' in hook){   // результат выполнения хука закеширован
-
-                property = hook['cached'];
+            if(hook.cached){   
+                // результат выполнения хука закеширован
+                property = hook.cached;
 
             } else {
 
-                newProperty = hook({
-                            'hook': hook,
-                            'prefix': prefix,
-                            'value': value,
-                            'style': style,
-                            'setProperty': setProperty
-                        });
+                newProperty = hook(prefix, hook, value, style);
+
                 // если хук поставит свойство сам, он должен вернуть falsy.
-                // пример: transform для IE посредством матриц
-                if(newProperty/* && !styleIsCorrect(newProperty)*/){
-                    property = hook['cached'] = newProperty;
+                if(newProperty){
+                    property = hook.cached = newProperty;
+                } else {
+                    return;
                 }
 
             }
 
         }
 
-        setProperty.call(style, property, value, "");
+        setProperty(style, property, value, "");
     }; 
 
 
-
-    var hooks = animate['styleHooks'] = {};
+    // хуки для setStyle
+    var hooks = animate.styleHooks = {};
 
     // расширяем хуки
-    hooks['transition'] = function(info){
-        return (info['prefix'] && ("-"+info['prefix']+'-'))+'transition';
+    hooks.transition = function(prefix){
+        var res = "transition";
+
+        if(!styleIsCorrect(res)){
+            res = '-'+prefix+'-'+res;
+        }
+        
+        return res;
     };
 
-    hooks['transform'] = function(info){
+    hooks.transform = function(prefix, hook, value, style){
             
-        if(info.value.indexOf(':') === -1){
+        // результирующая матрица трансформации
+        var resultMatrix = [ [1, 0], [0, 1] ];// обычное состояние
+        var dx = 0, dy = 0; // смещение по координатам
 
-            setProperty.call(info['style'], (info['prefix'] && ("-"+info['prefix']+'-'))+'transform', info['value']);
+        var deg2rad = Math.PI/180;
 
-        } else {
+        for(var curr, currMatrix, transformReg = /\s*\w+\((?:,?\s?\d+\w*)+\)?/g; curr = transformReg.exec(value); ){
+            curr = dimReg.exec(curr);
+            switch(curr[1]){
+                case "rotate":
 
-            info['value'] = info['value'].split(':');
-            info['hook'][info['value'][0]](info['style'], parseFloat(info['value'][1]), info['setProperty'], (info['prefix'] && ("-"+info['prefix']+'-'))+'transform');
-            
+                    var rad = curr[2]*deg2rad;
+                    var cos = Math.cos(rad);
+                    var sin = Math.sin(rad);
+
+                    currMatrix = [ [cos, sin], [-sin, cos] ];
+                    resultMatrix = multiply(resultMatrix, currMatrix);
+
+                    // вычислить dx,dy для IE
+                break;
+                case "scale":
+                    currMatrix = [ [ curr[2], 0 ], [ curr[4], 0 ] ];
+                    resultMatrix = multiply(resultMatrix, currMatrix);
+                break;
+                case "skew":
+                    var rad, tan;
+                    // X
+                    rad = curr[2]*deg2rad;
+                    tan = Math.tan(rad);
+                    currMatrix = [ [ 1, 0 ], [tan, 1] ];
+                    resultMatrix = multiply(resultMatrix, currMatrix);
+
+                    // Y
+                    if(curr[4]){
+                        rad = curr[4]*deg2rad;
+                        tan = Math.tan(rad);
+                        currMatrix = [ [ 1, tan ], [0, 1] ];
+                        resultMatrix = multiply(resultMatrix, currMatrix);
+                    }
+                break;
+                case "translate":
+                    dx = curr[2];
+                    dy = curr[4];
+                break;
+                default: /*nothing*/;
+            }
         }
 
-        return false;
-    };
+        var val, propertyName;
 
-    hooks['transform']['rotate'] = function(style, value, setProperty, propertyName){
-        if('filters' in style){
-            // IE
+        if(styleIsCorrect("filter")){ 
+            // начнём с IE
+            propertyName = "filter";
+            val = "progid:DXImageTransform.Microsoft.Matrix(sizingMethod='auto expand',"+
+                  "M11="+resultMatrix[0][0]+", M12="+resultMatrix[0][1]+","+
+                  "M21="+resultMatrix[1][0]+", M22="+resultMatrix[1][1]+
+                  "Dx="+dx+", Dy="+dy+";";
         } else {
+            propertyName = "transform";
 
-            var rad = value*Math.PI/180;
-            var cos = Math.cos(rad).toFixed(2);
-            var sin = Math.sin(rad).toFixed(2);
+            if(!styleIsCorrect(propertyName)){
+                propertyName = "-"+prefix+"-"+propertyName;
+            }
 
-            var newValue = "matrix("+cos+", "+sin+", -"+sin+" ,"+cos+", 0, 0)";
-
-            setProperty.call(style, propertyName, newValue);
+            val = "matrix("+resultMatrix[0].join(", ")+", "+resultMatrix[1].join(", ")+", "+dx+", "+dy+")";
         }
+
+        setProperty(style, propertyName, val);
     };
 
 
 
-    // проверит имя css-свойства на корректность
-    var styleIsCorrect = function(name){
+    // проверит имя css-свойства на корректность с помощью CSS-движка
+    var styleIsCorrect = function(name, value){
 
-        var oldDummy = dummy.cssText, res;
+        var oldDummy = dummy.cssText, res, values, i;
 
         dummy.cssText = "";
 
-        var values = ["", "none", "0"], i; // значения всех типов
+        values = value === undefined ? ["", "none", "0"]:[value], i; 
 
         for(i = 0; i in values; i += 1){
             try{ setProperty.call(dummy, name, values[i], ""); } catch(e){}
         }
 
-        res = dummy.cssText.length > 0;
+        res = dummy.cssText.length > 0; // неверный стиль не попадёт сюда.
         dummy.cssText = oldDummy;
 
         return res;
@@ -482,13 +559,9 @@
         var index = cssRules.length;
 
         if(stylesheet.insertRule){
-
             stylesheet.insertRule(selector+"{"+text+"}", index);
-
         } else{
-
             stylesheet.addRule(selector, text, index);
-
         }
 
         return cssRules[index];
@@ -496,24 +569,32 @@
 
 
     var setProperty; 
+
     // костыль для IE < 9
-    if(CSSStyleDeclaration.prototype.setProperty){
-        setProperty = function(property, value){
-                    this.setProperty(property, value, "");
+    /*if(CSSStyleDeclaration.prototype.setProperty){
+        setProperty = function style_setPropetry(style, property, value){
+                    style.setProperty(property, value, "");
                 }
-    } else {
-        setProperty = function(property, value){ 
-                            this[ 
-                                property.replace(/-([a-z])/g,  // можно закешировать replace callback и регу
+    } else {*/
+        setProperty = function(style, property, value){ 
+                             style[ 
+                                property.replace(/-([a-z])/g,  // можно закешировать replace callback, и регу
                                         function(founded, firstLetter){ 
                                             return firstLetter.toUpperCase();
                                         })
                             ] = value;
                         };
-    }
-/*-------------------- </css.js> --------------------*/
+    //}
 
-/*-------------------- <end.js> --------------------*/
+
+    // быстро перемножит 2 квадратные матрицы 
+    // jsperf.com/square-matrix-multiply
+    var multiply = function(A,B){
+        var C = [ [], [] ];
+        C[0][0] = A[0][0]*B[0][0] + A[0][1]*B[1][0];
+        C[0][1] = A[0][0]*B[0][1] + A[0][1]*B[1][1];
+        C[1][0] = A[1][0]*B[0][0] + A[1][1]*B[1][0];
+        C[1][1] = A[1][0]*B[0][1] + A[1][1]*B[1][1];
+        return C;
+    };
 })();
-/*-------------------- </end.js> --------------------*/
-

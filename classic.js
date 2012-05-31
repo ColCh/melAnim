@@ -1,45 +1,113 @@
-     // классическая функция анимирования
-    var animateClassic = function(target, id){
-        var instance = instances[id], properties = instance['properties'], currProp;
-        delete instances[id];
-        instance.started = Date.now();
+/*--------------------------- КЛАССИЧЕСКАЯ АНИМАЦИЯ ---------------------------------*/
+    var animateClassic = function(target, id, fromStyle, properties, duration, easing, callback){
 
-        requestAnimFrame(function classicAnimLoop(){
-            var progr = (Date.now() - instance['started']) / instance['duration'];
-            if(progr > 1){
-                progr = 1;
-            }
+        var instance = {};
 
-            var i;
-            for(i in properties){
-                currProp = properties[i];
-                setStyle(instance['style'], i, (currProp['transform']?currProp['transform']+":":"")+((currProp['to'] - currProp['from'])*instance['easing'](progr) + currProp['from']) + currProp['dimension']);
-            }
+        properties = normalizeProperties(properties);
 
-            if(progr < 1){
-                requestAnimFrame(classicAnimLoop);
-            } else {
-               instance.complete.call(undefined, instance['style']);
-            }
-        });
+        console.profileEnd("a");
     };
 
 
-    var mathemated = {};
+    var classicAnimLoop = function(){
+
+        var instance = this, currProp;
+
+        var progr = (Date.now() - instance['started']) / instance['duration'];
+
+        if(progr > 1){
+            progr = 1;
+        }
+
+        var i, currentValue;
+
+        for(i in instance['properties']){
+
+            currProp = instance['properties'][i];
+
+            currentValue = (currProp.to - currProp.from) * instance.easing(progr) + currProp.from + currProp.dimension
+
+            if(currProp.transform){
+                setStyle(instance.style, i, currProp.transform+"("+ currentValue +")");
+            } else {
+                setStyle(instance.style, i, currentValue);
+            }
+        }
+
+
+        if(progr < 1){
+            requestAnimFrame(instance['step'], instance, []);
+        } else {
+            delete instances[ instance['id'] ];
+            instance['complete'].call(undefined, instance['style']);
+        }
+
+    };
+
+    // превратит объект анимируемых свойств в machine-readable
+    var normalizeProperties = function(properties){
+    
+        var res = {};
+        
+        each(properties, function normalize_properties(info, property){
+
+            var member = {}, matched;
+
+            if(property === "transform") {
+
+                each(["from", "to"], function iterate_directions(direction){
+                    each(info[direction].split(/\s(?!\d)/), function iterate_transforms(transformMember){
+                        var curr;
+                        matched = transformMember.match(dimReg);
+                        if(matched[4]) {
+                            each(["X", "Y"], function iterate_axis(axis, i){
+                                curr = member[matched[1]+axis];
+                                if(!curr){
+                                    curr = member[matched[1]+axis] = {};
+                                }
+                                curr[direction] = matched[i *2 + 2];
+                                curr.dim = matched[3];
+                            });
+                        } else {
+                            curr = member[matched[1]];
+                            if(!curr){
+                                curr = member[matched[1]] = {};
+                            }
+                            curr[direction] = matched[2];
+                            curr.dim = matched[3];
+                        }
+                        
+                    });
+                });
+            
+            } else {
+                matched = info["from"].match(dimReg);
+                member.from = matched[2];
+                member.dim = matched[3];
+                member.to = info["to"].match(dimReg)[2];
+            }
+
+            res[property] = member;
+            
+        });
+
+        return res;
+    };
 
     // превратить cubic-bezier в обычную функцию
     var mathemate = function(name){
-        if(!mathemated[name]){
-            mathemated[name] = function(progress){
+        if(!easings[name]['mathemated']){
+            easings[name]['mathemated'] = function(progress){
                 var points = easings[name];
-                return calc.apply(this, points.concat(progress));
+                return calc.apply(0, points.concat(progress));
             };
         }
 
-        return mathemated[name];
+        return easings[name]['mathemated'];
     };
 
 
+    // вычислить значение кубической кривой привремени progress ( e [0;1] )
     var calc = function(p1x, p1y, p2x, p2y, progress){
 
         var res;
@@ -56,11 +124,11 @@
         }
 
         return res; 
-    }
+    };
 
 
 
-    // вспомогательные ф-и  
+    // вспомогательные ф-и для calc  
     var getTimeX = function(progr, p1x, p2x){
                 
         var timeX = progr;
@@ -88,7 +156,7 @@
         return 3.0*A(px1, px2)*progr*progr + 2.0*B(px1, px2)*progr + C(px1);
     }
 
-    // укоротители
+    // укоротители для calcBezier
     var A = function (aA1, aA2){ 
         return 1.0 - 3.0 * aA2 + 3.0 * aA1;
     }
