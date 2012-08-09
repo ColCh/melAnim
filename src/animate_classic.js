@@ -1,17 +1,65 @@
 /*--------------------------- КЛАССИЧЕСКАЯ АНИМАЦИЯ ---------------------------------*/
 	var animateClassic = function (target, id, fromStyle, properties, duration, easing, callback) {
 
-		var instance = {};
-
+		var instance;
+		
 		properties = normalizeProperties(properties);
+
+		easing = mathemate(easing);
+
+		duration = parseFloat(duration, 10) * 1000;
+
+		instance = {
+			started: Date.now(),
+			duration: duration,
+			properties: properties,
+			id: id,
+			complete: callback,
+			style: fromStyle,
+			easing: easing
+		};
+
+		ticker.insert(instance);
 
 	};
 
+	// тики анимации
+	var ticker = {
+		instances: [],
+		intervalId: undefined,
+		intervalTime: 40,
+		insert: function (instance) {
+			if (this.instances.length === 0) {
+				this.awake();
+			}
+			this.instances.push(instance);
+		},
+		sleep: function () {
+			if (typeof this.intervalId === "number") {
+				window.clearInterval(this.intervalId);
+				this.intervalId = undefined;
+			}
+		},
+		awake: function () {
+			this.intervalId = window.setInterval(this.tick, this.intervalTime);
+		},
+		tick: function () {
+			each(ticker.instances, function (instance, index, instances) {
+				// анимация закончилась.
+				if (renderTick(instance)) {
+					if (instances.length === 1) {
+						ticker.sleep();
+					}
+					delete instances[index];
+				}
+			});
+		}
+	};
 
-	var classicAnimLoop = function () {
+	// управление периодически повторяющимися действиями.
+	var renderTick = function (instance) {
 
-		var instance = this,
-			currProp;
+		var currProp;
 
 		var progr = (Date.now() - instance['started']) / instance['duration'];
 
@@ -36,10 +84,10 @@
 
 
 		if (progr < 1) {
-			requestAnimFrame(instance['step'], instance, []);
+			//requestAnimFrame(instance['step'], instance, []);
 		} else {
-			delete instances[instance['id']];
-			instance['complete'].call(undefined, instance['style']);
+			instance['complete']();
+			return true;
 		}
 
 	};
@@ -82,9 +130,9 @@
 
 			} else {
 				matched = info["from"].match(dimReg);
-				member.from = matched[2];
-				member.dim = matched[3];
-				member.to = info["to"].match(dimReg)[2];
+				member.from = parseFloat(matched[2], 10);
+				member.dimension = matched[3];
+				member.to = parseFloat(info["to"].match(dimReg)[2], 10);
 			}
 
 			res[property] = member;
