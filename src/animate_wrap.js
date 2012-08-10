@@ -24,6 +24,8 @@
 		fromRule = addRule(id, " ");
 		fromStyle = fromRule.style;
 
+		var easings = classicMode ? easings_classic : easings_bezier;
+
 		if (!easings[easing]) {
 			// передана cubic-bezier
 			if (easingReg.test(easing)) {

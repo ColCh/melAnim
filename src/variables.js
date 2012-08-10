@@ -40,14 +40,34 @@
 	},
 
 	// переходы
-	easings = {
+	easings_bezier = {
 		'ease': [0.25, 0.10, 0.25, 1.0],
-		'swing': [0.02, 0.01, 0.47, 1.0],
 		'linear': [0.00, 0.00, 1.00, 1.0],
 		'ease-in': [0.42, 0.00, 1.00, 1.0],
 		'ease-out': [0.00, 0.00, 0.58, 1.0],
 		'ease-in-out': [0.42, 0.00, 0.58, 1.0]
 	},
+
+	easings_classic = {
+		'ease': function (x, t, b, c, d) {
+			var ts=(t/=d)*t;
+			var tc=ts*t;
+			return b+c*(11.1475*tc*ts + -26.3925*ts*ts + 17.895*tc + -1.8*ts + 0.15*t);
+		},
+		'linear': function (x) {
+			return x;
+		},
+		'ease-in': function (x, t, b, c, d) {
+			return c*(t/=d)*t + b;
+		},
+		'ease-out': function (x, t, b, c, d) {
+			return ( -Math.cos( x * Math.PI ) / 2 ) + 0.5;
+		},
+		'ease-in-out': function (x, t, b, c, d) {
+			return c*((t=t/d-1)*t*t + 1) + b;
+		}
+	},
+
 
 	// rotate(90deg) => [rotate, 90, deg]
 	// 90px => [undefined, 90, px]
@@ -112,5 +132,9 @@
 			}
 
 			return cssRules[index];
-	};
+	},
 
+	// превратить cubic-bezier в обычную функцию
+	mathemate = function (name) {
+		// TODO
+	};

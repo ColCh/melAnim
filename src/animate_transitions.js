@@ -3,7 +3,7 @@
 
 		var toStyle;
 
-		easing = easings[easing];
+		easing = easings_bezier[easing];
 
 		if (typeof easing !== "string") {
 			easing = "cubic-bezier(" + easing.join(", ") + ")";
