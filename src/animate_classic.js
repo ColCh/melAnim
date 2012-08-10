@@ -23,11 +23,10 @@
 
 	};
 
-	// тики анимации
+	// управление периодически повторяющимися действиями.
 	var ticker = {
 		instances: [],
-		intervalId: undefined,
-		intervalTime: 40,
+		idle: true,
 		insert: function (instance) {
 			if (this.instances.length === 0) {
 				this.awake();
@@ -35,13 +34,11 @@
 			this.instances.push(instance);
 		},
 		sleep: function () {
-			if (typeof this.intervalId === "number") {
-				window.clearInterval(this.intervalId);
-				this.intervalId = undefined;
-			}
+			this.idle = true;
 		},
 		awake: function () {
-			this.intervalId = window.setInterval(this.tick, this.intervalTime);
+			this.idle = false;
+			ticker.tick();
 		},
 		tick: function () {
 			each(ticker.instances, function (instance, index, instances) {
@@ -53,10 +50,13 @@
 					delete instances[index];
 				}
 			});
+			if (!ticker.idle) {
+				requestAnimationFrame(ticker.tick);
+			}
 		}
 	};
 
-	// управление периодически повторяющимися действиями.
+	// тики анимации
 	var renderTick = function (instance) {
 
 		var currProp;
@@ -67,17 +67,24 @@
 			progr = 1;
 		}
 
-		var i, currentValue;
+		var currentValue;
+	
+		var i, transform, properties = instance.properties, value;
 
-		for (i in instance['properties']) {
+		for (i in properties) {
 
-			currProp = instance['properties'][i];
+			currProp = properties[i];
 
-			currentValue = (currProp.to - currProp.from) * instance.easing(progr) + currProp.from + currProp.dimension
-
-			if (currProp.transform) {
-				setStyle(instance.style, i, currProp.transform + "(" + currentValue + ")");
+			if (i === "transform") {
+				value = "";
+				for (transform in properties[i]) {
+					currProp = properties[i][transform];
+					currentValue = (currProp.to - currProp.from) * instance.easing(progr) + currProp.from + currProp.dimension;
+					value += transform + "(" + currentValue + ") ";
+				}
+				setStyle(instance.style, i, value); console.log(i, value);
 			} else {
+				currentValue = (currProp.to - currProp.from) * instance.easing(progr) + currProp.from + currProp.dimension;
 				setStyle(instance.style, i, currentValue);
 			}
 		}
@@ -86,7 +93,7 @@
 		if (progr < 1) {
 			//requestAnimFrame(instance['step'], instance, []);
 		} else {
-			instance['complete']();
+			instance['complete'](); console.log(instance.style);
 			return true;
 		}
 
@@ -113,16 +120,16 @@
 								if (!curr) {
 									curr = member[matched[1] + axis] = {};
 								}
-								curr[direction] = matched[i * 2 + 2];
-								curr.dim = matched[3];
+								curr[direction] = parseFloat(matched[i * 2 + 2]);
+								curr.dimension = matched[3];
 							});
 						} else {
 							curr = member[matched[1]];
 							if (!curr) {
 								curr = member[matched[1]] = {};
 							}
-							curr[direction] = matched[2];
-							curr.dim = matched[3];
+							curr[direction] = parseFloat(matched[2], 10);
+							curr.dimension = matched[3];
 						}
 
 					});

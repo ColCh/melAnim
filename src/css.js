@@ -1,186 +1,110 @@
 /*--------------------------- УСТАНОВКА СТИЛЕЙ ---------------------------------*/
-	// установить ч-либо стиль, исп-я хуки по возможности
-	var setStyle = function (style, property, value) {
+	var hooks = {},
 
-		var newProperty, hook = hooks[property];
+	setStyle = animate["css"] = function(style, name, value) {
+		var i;
 
-		if (hook) {
+		if (typeof name === "object") {
+			for(i in name) if (name.hasOwnProperty(i)) {
+				if (!lowlevel(style, i, name[i])) {
+					return false;
+				}
+			}
+			return true;
+		} else {
+			return lowlevel(style, name, value);
+		}
+	},
 
-			if (hook.cached) {
-				// результат выполнения хука закеширован
-				property = hook.cached;
+	trimSides = /(?:^\s+)|(?:\s+$)/,
 
+	lowlevel = function (style, name, value) {
+		var origName = name,
+				action = value === undefined ? "get" : "set",
+				index,
+				csstext;
+
+		if (dummy.style[name] === undefined) {
+			name = normalized[name] || normalizeName(name);
+		}
+		if (name) {
+			// если имя св-а нормализировано
+			if (action === "set") {
+				// в IE установка неверного значения породит ошибку.
+				try { style[name] = value; } catch (e) { return false; }
+				return true;
 			} else {
-
-				newProperty = hook(prefix, hook, value, style);
-
-				// если хук поставит свойство сам, он должен вернуть falsy.
-				if (newProperty) {
-					property = hook.cached = newProperty;
+				if (style[name] !== undefined) {
+					return style[name];
 				} else {
-					return;
+					if (dummy.style.getPropertyValue) {
+						return style.getPropertyValue(origName);
+					} else {
+						// отрезаем всё, что находится между
+						// именем свойства + двоеточием
+						// и точкой с запятой.
+						csstext = style.cssText + ";";
+						// IE переводит cssText в upper case.
+						index = csstext.search(new RegExp(origName, "i"));
+						if (index !== -1) {
+							csstext = csstext.slice(csstext.indexOf(":", index + origName.length) + 1, csstext.indexOf(";", index));
+							// и убираем пробелы по краям.
+							return csstext.replace(trimSides, "");
+						} else {
+							return false;
+						}
+					}
 				}
 
 			}
-
+		} else if (hooks[origName] && hooks[origName][action]) {
+			// нормализированное имя не найдено. даем шанс хукам.
+			return hooks[origName][action](style, origName, value, hooks[origName]["cache"]);
+		} else {
+			return false;
 		}
+	},
 
-		setProperty(style, property, value, "");
-	};
+	normalized = {},
 
+	prefixes = ["webkit", "Moz", "O", "ms"],
 
-	// хуки для setStyle
-	var hooks = animate.styleHooks = {};
+	dashReg = /-([a-z])/ig,
 
-	// расширяем хуки
-	hooks.transition = function (prefix) {
-		var res = "transition";
+	ccCallback = function () {
+		return arguments[1].toUpperCase();
+	},
 
-		if (!styleIsCorrect(res)) {
-			res = '-' + prefix + '-' + res;
-		}
+	normalizeName = function (name) {
+		var i, camelcased;
 
-		return res;
-	};
-
-	hooks.transform = function (prefix, hook, value, style) {
-
-		// результирующая матрица трансформации
-		var resultMatrix = [[1, 0], [0, 1]]; // обычное состояние
-		var dx = 0,
-			dy = 0; // смещение по координатам
-
-		var deg2rad = Math.PI / 180;
-
-		for (var curr, currMatrix, transformReg = /\s*\w+\((?:,?\s?\d+\w*)+\)?/g; curr = transformReg.exec(value);) {
-			curr = dimReg.exec(curr);
-			switch (curr[1]) {
-			case "rotate":
-
-				var rad = curr[2] * deg2rad;
-				var cos = Math.cos(rad);
-				var sin = Math.sin(rad);
-
-				currMatrix = [[cos, sin], [-sin, cos]];
-				resultMatrix = multiply(resultMatrix, currMatrix);
-
-				// вычислить dx,dy для IE
-				break;
-			case "scale":
-				currMatrix = [[curr[2], 0], [curr[4], 0]];
-				resultMatrix = multiply(resultMatrix, currMatrix);
-				break;
-			case "skew":
-				var rad, tan;
-				// X
-				rad = curr[2] * deg2rad;
-				tan = Math.tan(rad);
-				currMatrix = [[1, 0], [tan, 1]];
-				resultMatrix = multiply(resultMatrix, currMatrix);
-
-				// Y
-				if (curr[4]) {
-					rad = curr[4] * deg2rad;
-					tan = Math.tan(rad);
-					currMatrix = [[1, tan], [0, 1]];
-					resultMatrix = multiply(resultMatrix, currMatrix);
+		if (!normalized[name]) {
+			// добавляем в кэш вычисленных значений.
+			camelcased = name.replace(dashReg, ccCallback);
+			if (!dummy.style[camelcased]) {
+				// похоже, мы имеем дело с CSS3 свойством. итерируем префиксы.
+				camelcased = camelcased.charAt().toUpperCase() + camelcased.slice(1);
+				for (i = 0; i in prefixes; i += 1) {
+					if (prefixes[i] + camelcased in dummy.style) {
+						normalized[name] = prefixes[i] + camelcased;
+					}
 				}
-				break;
-			case "translate":
-				dx = curr[2];
-				dy = curr[4];
-				break;
-			default:
-				/*nothing*/
-				;
 			}
 		}
 
-		var val, propertyName;
+		return normalized[name] || false;
+	};
 
-		if (styleIsCorrect("filter")) {
-			// начнём с IE
-			propertyName = "filter";
-			val = "progid:DXImageTransform.Microsoft.Matrix(sizingMethod='auto expand'," + "M11=" + resultMatrix[0][0] + ", M12=" + resultMatrix[0][1] + "," + "M21=" + resultMatrix[1][0] + ", M22=" + resultMatrix[1][1] + "Dx=" + dx + ", Dy=" + dy + ";";
+	setStyle["attachHook"] = function (propName, action, func) {
+		var hook = hooks[propName] || { "cache": {} };
+
+		if (action in hook || typeof func !== "function") {
+			return false;
 		} else {
-			propertyName = "transform";
-
-			if (!styleIsCorrect(propertyName)) {
-				propertyName = "-" + prefix + "-" + propertyName;
-			}
-
-			val = "matrix(" + resultMatrix[0].join(", ") + ", " + resultMatrix[1].join(", ") + ", " + dx + ", " + dy + ")";
+			// не изменяет. добавляет.
+			hook[action] = func;
+			hooks[propName] = hook;
+			return true;
 		}
-
-		setProperty(style, propertyName, val);
 	};
 
-
-
-	// проверит имя css-свойства на корректность с помощью CSS-движка
-	var styleIsCorrect = function (name, value) {
-
-		var oldDummy = dummy.cssText,
-			res, values, i;
-
-		dummy.cssText = "";
-
-		values = value === undefined ? ["", "none", "0"] : [value], i;
-
-		for (i = 0; i in values; i += 1) {
-			try {
-				setProperty.call(dummy, name, values[i], "");
-			} catch (e) {}
-		}
-
-		res = dummy.cssText.length > 0; // неверный стиль не попадёт сюда.
-		dummy.cssText = oldDummy;
-
-		return res;
-	};
-
-
-
-	// добавит правило в конец таблицы стилей и вернёт его
-	var addRule = function addRule(selector, text) {
-
-		var index = cssRules.length;
-
-		if (stylesheet.insertRule) {
-			stylesheet.insertRule(selector + "{" + text + "}", index);
-		} else {
-			stylesheet.addRule(selector, text, index);
-		}
-
-		return cssRules[index];
-	};
-
-
-	var setProperty;
-
-	// костыль для IE < 9
-	/*if(CSSStyleDeclaration.prototype.setProperty){
-					setProperty = function style_setPropetry(style, property, value){
-											style.setProperty(property, value, "");
-									}
-			} else {*/
-	setProperty = function (style, property, value) {
-		style[
-		property.replace(/-([a-z])/g, // можно закешировать replace callback, и регу
-		function (founded, firstLetter) {
-			return firstLetter.toUpperCase();
-		})] = value;
-	};
-	//}
-
-
-	// быстро перемножит 2 квадратные матрицы
-	// jsperf.com/square-matrix-multiply
-	var multiply = function (A, B) {
-		var C = [[], []];
-		C[0][0] = A[0][0] * B[0][0] + A[0][1] * B[1][0];
-		C[0][1] = A[0][0] * B[0][1] + A[0][1] * B[1][1];
-		C[1][0] = A[1][0] * B[0][0] + A[1][1] * B[1][0];
-		C[1][1] = A[1][0] * B[0][1] + A[1][1] * B[1][1];
-		return C;
-	};

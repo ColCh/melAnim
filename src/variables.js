@@ -97,4 +97,19 @@
 				break;
 			}
 		}
+	},
+
+	// добавит правило в конец таблицы стилей и вернёт его
+	addRule = function addRule(selector, text) {
+
+			var index = cssRules.length;
+
+			if (stylesheet.insertRule) {
+					stylesheet.insertRule(selector + "{" + text + "}", index);
+			} else {
+					stylesheet.addRule(selector, text, index);
+			}
+
+			return cssRules[index];
 	};
+
