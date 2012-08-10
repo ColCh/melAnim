@@ -26,15 +26,16 @@
 
 	// костыль для выполнения ф-й перед отрисовкой
 	requestAnimationFrame = function request_anim_frame(callback) {
-		if (Date.now() - last < 16) {
+		var now = Date.now();
+		if (now - last < 16) {
 			stack.push(callback);
 		} else {
 			for (var i = 0; i in stack; i += 1) {
-				stack[i].call(window);
+				stack[i].call(window, now);
 			}
 			// форсированная отрисовка
 			window.scrollBy(0, 0);
-			last = Date.now();
+			last = now;
 		}
 	},
 

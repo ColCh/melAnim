@@ -1,24 +1,9 @@
 /*--------------------------- УСТАНОВКА СТИЛЕЙ ---------------------------------*/
 	var hooks = {},
 
-	setStyle = animate["css"] = function(style, name, value) {
-		var i;
-
-		if (typeof name === "object") {
-			for(i in name) if (name.hasOwnProperty(i)) {
-				if (!lowlevel(style, i, name[i])) {
-					return false;
-				}
-			}
-			return true;
-		} else {
-			return lowlevel(style, name, value);
-		}
-	},
-
 	trimSides = /(?:^\s+)|(?:\s+$)/,
 
-	lowlevel = function (style, name, value) {
+	setStyle = animate["css"] = function (style, name, value) {
 		var origName = name,
 				action = value === undefined ? "get" : "set",
 				index,

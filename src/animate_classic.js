@@ -82,7 +82,7 @@
 					currentValue = (currProp.to - currProp.from) * instance.easing(progr) + currProp.from + currProp.dimension;
 					value += transform + "(" + currentValue + ") ";
 				}
-				setStyle(instance.style, i, value); console.log(i, value);
+				setStyle(instance.style, i, value); 
 			} else {
 				currentValue = (currProp.to - currProp.from) * instance.easing(progr) + currProp.from + currProp.dimension;
 				setStyle(instance.style, i, currentValue);
@@ -90,10 +90,8 @@
 		}
 
 
-		if (progr < 1) {
-			//requestAnimFrame(instance['step'], instance, []);
-		} else {
-			instance['complete'](); console.log(instance.style);
+		if (progr >= 1) {
+			instance['complete'].call(); 
 			return true;
 		}
 
