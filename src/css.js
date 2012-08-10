@@ -52,8 +52,6 @@
 
 	normalized = {},
 
-	prefixes = ["webkit", "Moz", "O", "ms"],
-
 	dashReg = /-([a-z])/ig,
 
 	ccCallback = function () {

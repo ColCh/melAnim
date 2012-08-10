@@ -8,6 +8,8 @@
 	// префикс для браузера
 	prefix,
 
+	prefixes = ["webkit", "Moz", "O", "ms"],
+
 	// собственная таблица стилей
 	stylesheet,
 	// её правила
@@ -19,36 +21,15 @@
 	// поддерживаются ли CSS Transitions
 	supported,
 
-	// время последней отрисовки
-	last = 0,
-	// набравшиеся функции для исполнения перед отрисовки
-	stack = [],
-
 	// костыль для выполнения ф-й перед отрисовкой
-	requestAnimationFrame = function request_anim_frame(callback) {
-		var now = Date.now();
-		if (now - last < 16) {
-			stack.push(callback);
-		} else {
-			for (var i = 0; i in stack; i += 1) {
-				stack[i].call(window, now);
-			}
-			// форсированная отрисовка
-			window.scrollBy(0, 0);
-			last = now;
-		}
+	requestAnimationFrame = function (callback) {
+		window.setTimeout(function () {
+				window.scrollBy(0, 0);
+				callback(Date.now());
+		}, 16);
 	},
 
-	// переходы
-	easings_bezier = {
-		'ease': [0.25, 0.10, 0.25, 1.0],
-		'linear': [0.00, 0.00, 1.00, 1.0],
-		'ease-in': [0.42, 0.00, 1.00, 1.0],
-		'ease-out': [0.00, 0.00, 0.58, 1.0],
-		'ease-in-out': [0.42, 0.00, 0.58, 1.0]
-	},
-
-	easings_classic = {
+	easings = {
 		'ease': function (x, t, b, c, d) {
 			var ts=(t/=d)*t;
 			var tc=ts*t;

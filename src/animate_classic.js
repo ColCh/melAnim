@@ -5,7 +5,7 @@
 		
 		properties = normalizeProperties(properties);
 
-		easing = easings_classic[easing];
+		easing = easings[easing];
 
 		duration = parseFloat(duration, 10) * 1000;
 

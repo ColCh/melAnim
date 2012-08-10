@@ -19,13 +19,8 @@
 
 	window['animate'] = function init() {
 
-		/* проверка поддержки */
-		var prefixes = {
-			"O": "oTransitionEnd",
-			"ms": "MSTransitionEnd",
-			"Moz": "transitionend",
-			"webkit": "webkitTransitionEnd"
-		};
+		/* события. префиксы определены в главном замыкании */
+		var eventNames = ["webkitTransitionEnd", "transitionend", "oTransitionEnd", "MSTransitionEnd" ];
 
 		var i, lowPrefix;
 
@@ -33,15 +28,15 @@
 		matchesSelector = dummy.matchesSelector || matchesSelector;
 		requestAnimationFrame = window.requestAnimationFrame || requestAnimationFrame;
 
-		for (i in prefixes) {
-			lowPrefix = i.toLowerCase();
+		for (i = 0; !supported && (prefix = prefixes[i]); i += 1) {
+		
+			lowPrefix = prefix.toLowerCase();
 
 			matchesSelector = dummy[lowPrefix + "MatchesSelector"] || matchesSelector;
 			requestAnimationFrame = window[lowPrefix + "RequestAnimationFrame"] || requestAnimationFrame;
 
-			if (i + "Transition" in dummy.style) {
-				prefix = i;
-				document.body.addEventListener(prefixes[i], transitionEndHandler, false);
+			if (prefix + "Transition" in dummy.style) {
+				document.body.addEventListener(eventNames[i], transitionEndHandler, false);
 				supported = true;
 			}
 		}

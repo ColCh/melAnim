@@ -3,12 +3,6 @@
 
 		var toStyle;
 
-		easing = easings_bezier[easing];
-
-		if (typeof easing !== "string") {
-			easing = "cubic-bezier(" + easing.join(", ") + ")";
-		}
-
 		toStyle = addRule(id, " ").style;
 
 		instance = {
@@ -26,7 +20,7 @@
 
 		requestAnimationFrame(function () {
 
-			setStyle(toStyle, "transition", "all " + duration + " " + easing + " 0s");
+			setStyle(fromRule.style, "transition", "all " + duration + " " + easing + " 0s");
 
 			requestAnimationFrame(function () {
 				// применился начальный стиль
