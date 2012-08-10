@@ -84,6 +84,13 @@
 					value += transform + "(" + currentValue + ") ";
 				}
 				setStyle(instance.style, i, value); 
+			} else if (/color/i.test(i)) {
+				currentValue = [];
+				currentValue[0] = Math.round((currProp.to[0] - currProp.from[0]) * instance.easing(progr, time, 0, 1, instance.duration) + currProp.from[0]);
+				currentValue[1] = Math.round((currProp.to[1] - currProp.from[1]) * instance.easing(progr, time, 0, 1, instance.duration) + currProp.from[1]);
+				currentValue[2] = Math.round((currProp.to[2] - currProp.from[2]) * instance.easing(progr, time, 0, 1, instance.duration) + currProp.from[2]);
+				currentValue = "rgb(" + currentValue.join(", ") + ")";
+				setStyle(instance.style, i, currentValue);
 			} else {
 				currentValue = (currProp.to - currProp.from) * instance.easing(progr, time, 0, 1, instance.duration) + currProp.from + currProp.dimension;
 				setStyle(instance.style, i, currentValue);
@@ -101,51 +108,58 @@
 	// превратит объект анимируемых свойств в machine-readable
 	var normalizeProperties = function (properties) {
 
-		var res = {};
+		var propertyInfo,
+			property,
+			i,
+			transform,
+			matched;
 
-		each(properties, function normalize_properties(info, property) {
+		for (property in properties) {
 
-			var member = {}, matched;
+			propertyInfo = properties[property];
 
 			if (property === "transform") {
 
-				each(["from", "to"], function iterate_directions(direction) {
-					each(info[direction].split(/\s(?!\d)/), function iterate_transforms(transformMember) {
-						var curr;
-						matched = transformMember.match(dimReg);
-						if (matched[4]) {
-							each(["X", "Y"], function iterate_axis(axis, i) {
-								curr = member[matched[1] + axis];
-								if (!curr) {
-									curr = member[matched[1] + axis] = {};
-								}
-								curr[direction] = parseFloat(matched[i * 2 + 2]);
-								curr.dimension = matched[3];
-							});
-						} else {
-							curr = member[matched[1]];
-							if (!curr) {
-								curr = member[matched[1]] = {};
-							}
-							curr[direction] = parseFloat(matched[2], 10);
-							curr.dimension = matched[3];
-						}
+				for (transform in propertyInfo) {
 
-					});
-				});
+					property = propertyInfo[transform];
+					matched = property.from.match(dimReg);
 
+					if (matched[4]) {
+						delete propertyInfo[transform];
+
+						propertyInfo[transform + "X"] = {};
+						propertyInfo[transform + "Y"] = {};
+
+						propertyInfo[transform + "X"].from = parseFloat(matched[2], 10);
+						propertyInfo[transform + "Y"].from = parseFloat(matched[4], 10);
+
+						propertyInfo[transform + "X"].dimension = matched[3]; 
+						propertyInfo[transform + "Y"].dimension = matched[3];
+
+						matched =  property.to.match(dimReg);
+						propertyInfo[transform + "X"].to = parseFloat(matched[2], 10);
+						propertyInfo[transform + "Y"].to = parseFloat(matched[4], 10);
+
+					} else {
+						property.from = parseFloat(matched[2], 10);
+						property.to = parseFloat(property.to.match(dimReg)[2], 10);
+						property.dimension = matched[3];
+					}
+				}
+
+			} else if (/color/i.test(property)) {
+				propertyInfo.from = hexToRgb(propertyInfo.from);
+				propertyInfo.to = hexToRgb(propertyInfo.to);
 			} else {
-				matched = info["from"].match(dimReg);
-				member.from = parseFloat(matched[2], 10);
-				member.dimension = matched[3];
-				member.to = parseFloat(info["to"].match(dimReg)[2], 10);
+				matched = propertyInfo["from"].match(dimReg);
+				propertyInfo.from = parseFloat(matched[2], 10);
+				propertyInfo.dimension = matched[3];
+				propertyInfo.to = parseFloat(propertyInfo["to"].match(dimReg)[2], 10);
 			}
+		}
 
-			res[property] = member;
-
-		});
-
-		return res;
+		return properties;
 	};
 
 

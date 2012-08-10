@@ -27,22 +27,24 @@
 			"webkit": "webkitTransitionEnd"
 		};
 
+		var i, lowPrefix;
+
 		// есть нативная реализация, без префиксов
 		matchesSelector = dummy.matchesSelector || matchesSelector;
 		requestAnimationFrame = window.requestAnimationFrame || requestAnimationFrame;
 
-		each(prefixes, function iterate_prefixes(eventName, i) {
+		for (i in prefixes) {
 			lowPrefix = i.toLowerCase();
 
 			matchesSelector = dummy[lowPrefix + "MatchesSelector"] || matchesSelector;
 			requestAnimationFrame = window[lowPrefix + "RequestAnimationFrame"] || requestAnimationFrame;
 
-			if (i + "Transition" in dummy) {
+			if (i + "Transition" in dummy.style) {
 				prefix = i;
-				document.body.addEventListener(eventName, transitionEndHandler, false);
+				document.body.addEventListener(prefixes[i], transitionEndHandler, false);
 				supported = true;
 			}
-		}, "object");
+		}
 
 		// префикс для CSS3 правил - тут уже определяем наугад.
 		if (!prefix) {

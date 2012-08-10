@@ -52,7 +52,7 @@
 		'ease': function (x, t, b, c, d) {
 			var ts=(t/=d)*t;
 			var tc=ts*t;
-			return b+c*(11.1475*tc*ts + -26.3925*ts*ts + 17.895*tc + -1.8*ts + 0.15*t);
+			return b+c*(6*tc*ts + -15*ts*ts + 10*tc);
 		},
 		'linear': function (x) {
 			return x;
@@ -99,27 +99,6 @@
 		}
 	},
 
-	// для делегирования всплывающих событий конца анимации
-	transitionEndHandler = function handler(event) {
-
-		var id, instance;
-
-		for (id in instances) {
-			if (event.elapsedTime + 's' === instances[id].duration && matchesSelector.call(event.target, id)) {
-
-				instance = instances[id];
-				delete instances[id];
-
-				var ruleIndex = Array.prototype.indexOf.call(cssRules, instance.fromRule);
-				stylesheet.deleteRule(ruleIndex);
-
-				instance.complete();
-
-				break;
-			}
-		}
-	},
-
 	// добавит правило в конец таблицы стилей и вернёт его
 	addRule = function addRule(selector, text) {
 
@@ -132,6 +111,16 @@
 			}
 
 			return cssRules[index];
+	},
+
+	hexToRgb = function (hex) {
+		hex = hex.slice(1);
+		hex = parseInt(hex, 16);
+		var r = hex >> 16 & 0xFF;
+		var g = hex >> 8 & 0xFF;
+		var b = hex & 0xFF;
+
+		return [r, g, b];
 	},
 
 	// превратить cubic-bezier в обычную функцию

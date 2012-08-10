@@ -64,9 +64,8 @@
 		var i, camelcased;
 
 		if (!normalized[name]) {
-			// добавляем в кэш вычисленных значений.
 			camelcased = name.replace(dashReg, ccCallback);
-			if (!dummy.style[camelcased]) {
+			if (dummy.style[camelcased] === undefined) {
 				// похоже, мы имеем дело с CSS3 свойством. итерируем префиксы.
 				camelcased = camelcased.charAt().toUpperCase() + camelcased.slice(1);
 				for (i = 0; i in prefixes; i += 1) {
@@ -74,6 +73,8 @@
 						normalized[name] = prefixes[i] + camelcased;
 					}
 				}
+			} else {
+				normalized[name] = camelcased;
 			}
 		}
 
