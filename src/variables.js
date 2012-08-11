@@ -104,21 +104,6 @@
 		return [r, g, b];
 	},
 
-	rgbToHex = function (rgb) {
-		return getHex(rgb[0]) + getHex(rgb[1]) + getHex(rgb[2]);
-	},
-
-	getHex = function (rgb) {
-
-		if (rgb == 0) {
-			return '00';
-		}
-
-		var num_one = Math.abs(Math.floor(rgb / 16));
-
-		return "0123456789ABCDEF".charAt(num_one) + "0123456789ABCDEF".charAt(rgb - (16 * num_one));
-	},
-
 	// превратить cubic-bezier в обычную функцию
 	mathemate = function (name) {
 		// TODO
