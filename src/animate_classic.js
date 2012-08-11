@@ -10,7 +10,7 @@
 		duration = parseFloat(duration, 10) * 1000;
 
 		instance = {
-			started: Date.now(),
+			started: +new Date,
 			duration: duration,
 			properties: properties,
 			id: id,

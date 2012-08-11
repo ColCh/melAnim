@@ -17,7 +17,7 @@
 			id = target; // селектор
 		} else {
 			if (!target.id) {
-				target.id = "anim_" + Date.now().toString(32);
+				target.id = "anim_" + (+new Date).toString(32);
 			}
 			id = '#' + target.id;
 		}

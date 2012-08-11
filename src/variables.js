@@ -25,7 +25,7 @@
 	requestAnimationFrame = function (callback) {
 		window.setTimeout(function () {
 				window.scrollBy(0, 0);
-				callback(Date.now());
+				callback(+new Date);
 		}, 16);
 	},
 
