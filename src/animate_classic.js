@@ -112,54 +112,57 @@
 			property,
 			i,
 			transform,
-			matched;
+			matched,
+			newProperties;
+
+		newProperties = {};
 
 		for (property in properties) {
 
 			propertyInfo = properties[property];
+			newProperties[property] = {};
 
 			if (property === "transform") {
 
 				for (transform in propertyInfo) {
 
-					property = propertyInfo[transform];
-					matched = property.from.match(dimReg);
+					matched = propertyInfo[transform].from.match(dimReg);
 
 					if (matched[4]) {
-						delete propertyInfo[transform];
 
-						propertyInfo[transform + "X"] = {};
-						propertyInfo[transform + "Y"] = {};
+						newProperties[property][transform + "X"] = {};
+						newProperties[property][transform + "Y"] = {};
 
-						propertyInfo[transform + "X"].from = parseFloat(matched[2], 10);
-						propertyInfo[transform + "Y"].from = parseFloat(matched[4], 10);
+						newProperties[property][transform + "X"].from = parseFloat(matched[2], 10);
+						newProperties[property][transform + "Y"].from = parseFloat(matched[4], 10);
 
-						propertyInfo[transform + "X"].dimension = matched[3]; 
-						propertyInfo[transform + "Y"].dimension = matched[3];
+						newProperties[property][transform + "X"].dimension = matched[3]; 
+						newProperties[property][transform + "Y"].dimension = matched[3];
 
-						matched =  property.to.match(dimReg);
-						propertyInfo[transform + "X"].to = parseFloat(matched[2], 10);
-						propertyInfo[transform + "Y"].to = parseFloat(matched[4], 10);
+						matched =  propertyInfo[transform].to.match(dimReg);
+						newProperties[property][transform + "X"].to = parseFloat(matched[2], 10);
+						newProperties[property][transform + "Y"].to = parseFloat(matched[4], 10);
 
 					} else {
-						property.from = parseFloat(matched[2], 10);
-						property.to = parseFloat(property.to.match(dimReg)[2], 10);
-						property.dimension = matched[3];
+						newProperties[property][transform] = {};
+						newProperties[property][transform].from = parseFloat(matched[2], 10);
+						newProperties[property][transform].to = parseFloat(propertyInfo[transform].to.match(dimReg)[2], 10);
+						newProperties[property][transform].dimension = matched[3];
 					}
 				}
 
 			} else if (/color/i.test(property)) {
-				propertyInfo.from = hexToRgb(propertyInfo.from);
-				propertyInfo.to = hexToRgb(propertyInfo.to);
+				newProperties[property].from = hexToRgb(propertyInfo.from);
+				newProperties[property].to = hexToRgb(propertyInfo.to);
 			} else {
 				matched = propertyInfo["from"].match(dimReg);
-				propertyInfo.from = parseFloat(matched[2], 10);
-				propertyInfo.dimension = matched[3];
-				propertyInfo.to = parseFloat(propertyInfo["to"].match(dimReg)[2], 10);
+				newProperties[property].from = parseFloat(matched[2], 10);
+				newProperties[property].dimension = matched[3];
+				newProperties[property].to = parseFloat(propertyInfo["to"].match(dimReg)[2], 10);
 			}
 		}
 
-		return properties;
+		return newProperties;
 	};
 
 
