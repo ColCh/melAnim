@@ -89,8 +89,10 @@
 				currentValue[0] = Math.round((currProp.to[0] - currProp.from[0]) * instance.easing(progr, time, 0, 1, instance.duration) + currProp.from[0]);
 				currentValue[1] = Math.round((currProp.to[1] - currProp.from[1]) * instance.easing(progr, time, 0, 1, instance.duration) + currProp.from[1]);
 				currentValue[2] = Math.round((currProp.to[2] - currProp.from[2]) * instance.easing(progr, time, 0, 1, instance.duration) + currProp.from[2]);
+				//currentValue = "#" + rgbToHex(currentValue);
 				currentValue = "rgb(" + currentValue.join(", ") + ")";
 				setStyle(instance.style, i, currentValue);
+
 			} else {
 				currentValue = (currProp.to - currProp.from) * instance.easing(progr, time, 0, 1, instance.duration) + currProp.from + currProp.dimension;
 				setStyle(instance.style, i, currentValue);

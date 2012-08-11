@@ -9,7 +9,7 @@
 				index,
 				csstext;
 
-		if (dummy.style[name] === undefined) {
+		if (dummy.style[name] === undefined || name.indexOf("-") !== -1) {
 			name = normalized[name] || normalizeName(name);
 		}
 		if (name) {
