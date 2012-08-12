@@ -64,9 +64,7 @@
 		var time = now - instance['started'];
 		var progr = time / instance['duration'];
 
-		if (progr > 1) {
-			progr = 1;
-		}
+		progr = progr > 1 ? 1:+progr.toFixed(1);
 
 		var currentValue;
 	
@@ -80,7 +78,7 @@
 				value = "";
 				for (transform in properties[i]) {
 					currProp = properties[i][transform];
-					currentValue = (currProp.to - currProp.from) * instance.easing(progr, time, 0, 1, instance.duration) + currProp.from + currProp.dimension;
+					currentValue = (currProp.to - currProp.from) * instance.easing(progr, time, 0, 1, instance.duration) + currProp.from + (currProp.dimension || "px");
 					value += transform + "(" + currentValue + ") ";
 				}
 				setStyle(instance.style, i, value); 
@@ -92,7 +90,7 @@
 				currentValue = "rgb(" + currentValue.join(", ") + ")";
 				setStyle(instance.style, i, currentValue);
 			} else {
-				currentValue = (currProp.to - currProp.from) * instance.easing(progr, time, 0, 1, instance.duration) + currProp.from + currProp.dimension;
+				currentValue = (currProp.to - currProp.from) * instance.easing(progr, time, 0, 1, instance.duration) + currProp.from + (currProp.dimension || "px");
 				setStyle(instance.style, i, currentValue);
 			}
 		}
@@ -107,58 +105,35 @@
 
 	// превратит объект анимируемых свойств в machine-readable
 	var normalizeProperties = function (properties) {
-
-		var propertyInfo,
+		var newProperties = {},
 			property,
-			i,
-			transform,
+			prop,
+			propInfo,
 			matched,
-			newProperties;
+			directions = ["from", "to"],
+			i,
+			direction;
 
-		newProperties = {};
-
-		for (property in properties) {
-
-			propertyInfo = properties[property];
-			newProperties[property] = {};
+		for (property in properties) if (properties.hasOwnProperty(property)) {
+			propInfo = properties[property];
 
 			if (property === "transform") {
-
-				for (transform in propertyInfo) {
-
-					matched = propertyInfo[transform].from.match(dimReg);
-
-					if (matched[4]) {
-
-						newProperties[property][transform + "X"] = {};
-						newProperties[property][transform + "Y"] = {};
-
-						newProperties[property][transform + "X"].from = parseFloat(matched[2], 10);
-						newProperties[property][transform + "Y"].from = parseFloat(matched[4], 10);
-
-						newProperties[property][transform + "X"].dimension = matched[3]; 
-						newProperties[property][transform + "Y"].dimension = matched[3];
-
-						matched =  propertyInfo[transform].to.match(dimReg);
-						newProperties[property][transform + "X"].to = parseFloat(matched[2], 10);
-						newProperties[property][transform + "Y"].to = parseFloat(matched[4], 10);
-
-					} else {
-						newProperties[property][transform] = {};
-						newProperties[property][transform].from = parseFloat(matched[2], 10);
-						newProperties[property][transform].to = parseFloat(propertyInfo[transform].to.match(dimReg)[2], 10);
-						newProperties[property][transform].dimension = matched[3];
-					}
-				}
-
-			} else if (/color/i.test(property)) {
-				newProperties[property].from = hexToRgb(propertyInfo.from);
-				newProperties[property].to = hexToRgb(propertyInfo.to);
+				newProperties[property] = normalizeProperties(propInfo);
 			} else {
-				matched = propertyInfo["from"].match(dimReg);
-				newProperties[property].from = parseFloat(matched[2], 10);
-				newProperties[property].dimension = matched[3];
-				newProperties[property].to = parseFloat(propertyInfo["to"].match(dimReg)[2], 10);
+				prop = newProperties[property] = {};
+
+				for (i = 0; direction = directions[i]; i += 1) 
+					if (/color/i.test(property)) {
+						prop[direction] = hexToRgb(propInfo[direction]);
+					} else {
+						matched = propInfo[direction].match(dimReg);
+						// анимирование только числовых свойств :(
+						prop[direction] = parseFloat(matched[2], 10);
+						// "PX" - размерность по-умолчанию
+						if (matched[3] && matched[3] !== "px") {
+							prop.dimension = matched[3];
+						}
+					}
 			}
 		}
 

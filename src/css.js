@@ -3,7 +3,7 @@
 
 	trimSides = /(?:^\s+)|(?:\s+$)/,
 
-	setStyle = animate["css"] = function (style, name, value) {
+	setStyle = function (style, name, value) {
 		var origName = name,
 				action = value === undefined ? "get" : "set",
 				index,
