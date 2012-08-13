@@ -29,17 +29,19 @@
 				easing = "linear";
 		}
 
+		buffer = "";
 		for (propertyName in properties) {
 			if (propertyName === "transform") {
-				buffer = "";
+				buffer += propertyName + ":";
 				for (transform in properties[propertyName]) {
-					buffer += " " + transform + "(" + properties[propertyName][transform].from + ")";
+					buffer += transform + "(" + properties[propertyName][transform].from + ")" + "";
 				}
-				setStyle(fromStyle, propertyName, buffer);
 			} else {
-				setStyle(fromStyle, propertyName, properties[propertyName].from);
+				buffer += propertyName + ":" + properties[propertyName].from;
 			}
+			buffer += ";";
 		}
+		fromStyle.cssText = buffer;
 
 		if (classicMode) {
 			return animateClassic(target, id, fromStyle, properties, duration, easing, callback);
