@@ -25,82 +25,109 @@
 
 	// управление периодически повторяющимися действиями.
 	var ticker = {
-		instances: [],
 		idle: true,
 		insert: function (instance) {
-			if (this.instances.length === 0) {
+			// instances  определена в главном замыкании.
+			instances[instance.started] = instance;
+			// первый запуск, или нет активных анимаций.
+			if (!instances._length) {
+				instances._length = 0;
 				this.awake();
 			}
-			this.instances.push(instance);
+			// счётчик запущенных анимаций.
+			instances._length += 1;
 		},
 		sleep: function () {
 			this.idle = true;
 		},
 		awake: function () {
 			this.idle = false;
-			ticker.tick();
+			ticker.tick(+new Date);
 		},
 		tick: function (now) {
-			each(ticker.instances, function (instance, index, instances) {
-				// анимация закончилась.
+			var instanceId,
+				instance;
+
+			if (ticker.idle) {
+				return;
+			}
+
+			requestAnimationFrame(ticker.tick);
+
+			for (instanceId in instances) if (instanceId !== "_length") {
+				instance = instances[instanceId];
+
+				// renderTick возвратит true, если экземпляр можно удалить из списка запущенных.
 				if (renderTick(instance, now)) {
-					if (instances.length === 1) {
+					instance.complete();
+					// закончилась последняя запущенная анимация.
+					if (instances._length === 1) {
 						ticker.sleep();
 					}
-					delete instances[index];
+					instances._length -= 1;
+					delete instances[instance.id];
 				}
-			});
-			if (!ticker.idle) {
-				requestAnimationFrame(ticker.tick);
 			}
 		}
+	};
+
+	// вычислит текущее значение свойства.
+	var count = function (from, to, easing, dimension) {
+		if (dimension === false) {
+			dimension = "px";
+		} else if (dimension === undefined) {
+			dimension = 0;
+		}
+		return ((to - from) * easing + from) + dimension;
 	};
 
 	// тики анимации
 	var renderTick = function (instance, now) {
 
-		var currProp;
+		var currProp,
+			currTransform,
+			time = now - instance.started,
+			progr = time / instance.duration,
+			currentValue,
+			i,
+			transform,
+			properties = instance.properties,
+			easing,
+			propertyName;
 
-		var time = now - instance['started'];
-		var progr = time / instance['duration'];
+		if (progr > 1) {
+			progr = 1;
+		}
 
-		progr = progr > 1 ? 1:+progr.toFixed(1);
+		easing = instance.easing(progr, time, 0, 1, instance.duration);
+		
+		for (propertyName in properties) {
+			currProp = properties[propertyName];
 
-		var currentValue;
-	
-		var i, transform, properties = instance.properties, value;
+			if (propertyName === "transform") {
+				currentValue = "";
+				for (transform in currProp) {
+					currTransform = currProp[transform];
 
-		for (i in properties) {
-
-			currProp = properties[i];
-
-			if (i === "transform") {
-				value = "";
-				for (transform in properties[i]) {
-					currProp = properties[i][transform];
-					currentValue = (currProp.to - currProp.from) * instance.easing(progr, time, 0, 1, instance.duration) + currProp.from + (currProp.dimension || "px");
-					value += transform + "(" + currentValue + ") ";
+					currentValue += transform + "(";
+					currentValue += count(currTransform.from, currTransform.to, easing, currTransform.dimension);
+					currentValue += ")" + " ";
 				}
-				setStyle(instance.style, i, value); 
-			} else if (/color/i.test(i)) {
+			} else if (/color/i.test(propertyName)) {
 				currentValue = [];
-				currentValue[0] = Math.round((currProp.to[0] - currProp.from[0]) * instance.easing(progr, time, 0, 1, instance.duration) + currProp.from[0]);
-				currentValue[1] = Math.round((currProp.to[1] - currProp.from[1]) * instance.easing(progr, time, 0, 1, instance.duration) + currProp.from[1]);
-				currentValue[2] = Math.round((currProp.to[2] - currProp.from[2]) * instance.easing(progr, time, 0, 1, instance.duration) + currProp.from[2]);
+				
+				for (i = 0; i < 3; i += 1) {
+					currentValue[i] = Math.ceil(count(currProp.from[i], currProp.to[i], easing));
+				}
 				currentValue = "rgb(" + currentValue.join(", ") + ")";
-				setStyle(instance.style, i, currentValue);
 			} else {
-				currentValue = (currProp.to - currProp.from) * instance.easing(progr, time, 0, 1, instance.duration) + currProp.from + (currProp.dimension || "px");
-				setStyle(instance.style, i, currentValue);
+				currentValue = count(currProp.from, currProp.to, easing, currProp.dimension);
 			}
+			setStyle(instance.style, propertyName, currentValue);
 		}
 
 
-		if (progr >= 1) {
-			instance['complete'].call(); 
-			return true;
-		}
-
+		return progr === 1;
 	};
 
 	// превратит объект анимируемых свойств в machine-readable
@@ -132,6 +159,8 @@
 						// "PX" - размерность по-умолчанию
 						if (matched[3] && matched[3] !== "px") {
 							prop.dimension = matched[3];
+						} else {
+							prop.dimension = false;
 						}
 					}
 			}

@@ -24,9 +24,8 @@
 	// костыль для выполнения ф-й перед отрисовкой
 	requestAnimationFrame = function (callback) {
 		window.setTimeout(function () {
-				window.scrollBy(0, 0);
 				callback(+new Date);
-		}, 16);
+		}, 11);
 	},
 
 	easings = {

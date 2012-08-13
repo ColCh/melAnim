@@ -4,55 +4,23 @@
 	trimSides = /(?:^\s+)|(?:\s+$)/,
 
 	setStyle = function (style, name, value) {
-		var origName = name,
-				action = value === undefined ? "get" : "set",
-				index,
-				csstext;
+		var origName = name;
 
 		if (dummy.style[name] === undefined || name.indexOf("-") !== -1) {
 			name = normalized[name] || normalizeName(name);
 		}
 		if (name) {
-			// если имя св-а нормализировано
-			if (action === "set") {
-				// в IE установка неверного значения породит ошибку.
-				try { style[name] = value; } catch (e) { return false; }
-				return true;
-			} else {
-				if (style[name] !== undefined) {
-					return style[name];
-				} else {
-					if (dummy.style.getPropertyValue) {
-						return style.getPropertyValue(origName);
-					} else {
-						// отрезаем всё, что находится между
-						// именем свойства + двоеточием
-						// и точкой с запятой.
-						csstext = style.cssText + ";";
-						// IE переводит cssText в upper case.
-						index = csstext.search(new RegExp(origName, "i"));
-						if (index !== -1) {
-							csstext = csstext.slice(csstext.indexOf(":", index + origName.length) + 1, csstext.indexOf(";", index));
-							// и убираем пробелы по краям.
-							return csstext.replace(trimSides, "");
-						} else {
-							return false;
-						}
-					}
-				}
-
-			}
-		} else if (hooks[origName] && hooks[origName][action]) {
+			// в IE установка неверного значения породит ошибку.
+			try { style[name] = value; } catch (e) { return false; }
+		} else if (hooks[origName]) {
 			// нормализированное имя не найдено. даем шанс хукам.
-			return hooks[origName][action](style, origName, value, hooks[origName]["cache"]);
-		} else {
-			return false;
+			return hooks[origName].interceptor(style, origName, value, hooks[origName].cache);
 		}
 	},
 
 	normalized = {},
 
-	dashReg = /-([a-z])/ig,
+	dashReg = /-(.)/g,
 
 	ccCallback = function () {
 		return arguments[1].toUpperCase();
@@ -79,16 +47,10 @@
 		return normalized[name] || false;
 	};
 
-	setStyle["attachHook"] = function (propName, action, func) {
-		var hook = hooks[propName] || { "cache": {} };
-
-		if (action in hook || typeof func !== "function") {
-			return false;
-		} else {
-			// не изменяет. добавляет.
-			hook[action] = func;
-			hooks[propName] = hook;
-			return true;
-		}
+	setStyle.attachHook = function (propName, func) {
+		hooks[propName] = { 
+			"cache": {},
+			"interceptor": func
+		};
 	};
 
