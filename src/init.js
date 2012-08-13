@@ -24,16 +24,17 @@
 
 		var i, 
 			lowPrefix, 
-			animationStartTime;
+			animationStartTime,
+			currentPrefix;
 
 		// есть нативная реализация, без префиксов
 		matchesSelector = dummy.matchesSelector || matchesSelector;
 		requestAnimationFrame = window.requestAnimationFrame || requestAnimationFrame;
 		animationStartTime = "animationStartTime" in window ? "animationStartTime":undefined;
 
-		for (i = 0; !supported && (prefix = prefixes[i]); i += 1) {
+		for (i = 0; !supported && (currentPrefix = prefixes[i]); i += 1) {
 		
-			lowPrefix = prefix.toLowerCase();
+			lowPrefix = currentPrefix.toLowerCase();
 
 			matchesSelector = dummy[lowPrefix + "MatchesSelector"] || matchesSelector;
 			requestAnimationFrame = window[lowPrefix + "RequestAnimationFrame"] || requestAnimationFrame;
@@ -43,9 +44,14 @@
 			}
 			
 
-			if (prefix + "Transition" in dummy.style) {
+			if (currentPrefix + "Transition" in dummy.style) {
+				prefix = lowPrefix;
 				document.body.addEventListener(eventNames[i], transitionEndHandler, false);
 				supported = true;
+			} 
+
+			if (!prefix && currentPrefix + "TransformProperty" in dummy.style) {
+				prefix = lowPrefix;
 			}
 		}
 

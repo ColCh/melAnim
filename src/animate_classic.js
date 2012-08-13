@@ -105,7 +105,7 @@
 		for (propertyName in properties) {
 			currProp = properties[propertyName];
 
-			if (propertyName === "transform") {
+			if (/transform/i.test(propertyName)) {
 				currentValue = "";
 				for (transform in currProp) {
 					currTransform = currProp[transform];
@@ -147,6 +147,7 @@
 			propInfo = properties[property];
 
 			if (property === "transform") {
+				property = "-" + prefix + "-transform";
 				newProperties[property] = normalizeProperties(propInfo);
 			} else {
 				prop = newProperties[property] = {};
