@@ -10,6 +10,11 @@
 
 	prefixes = ["webkit", "Moz", "O", "ms"],
 
+	// получение отметки времени. 
+	getNow = function () {
+		return Date.now ? Date.now() : +new Date;
+	},
+
 	// собственная таблица стилей
 	stylesheet,
 	// её правила
@@ -24,7 +29,7 @@
 	// костыль для выполнения ф-й перед отрисовкой
 	requestAnimationFrame = function (callback) {
 		window.setTimeout(function () {
-				callback(+new Date);
+				callback( getNow() );
 		}, 11);
 	},
 
@@ -106,5 +111,13 @@
 	// превратить cubic-bezier в обычную функцию
 	mathemate = function (name) {
 		// TODO
+	},
+
+	// создаст функцию-геттер. для animationStartTime
+	makeGetter = function (property, obj) {
+		obj = obj || window;
+		return function () {
+			return obj[property];
+		};
 	};
 

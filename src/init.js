@@ -22,11 +22,14 @@
 		/* события. префиксы определены в главном замыкании */
 		var eventNames = ["webkitTransitionEnd", "transitionend", "oTransitionEnd", "MSTransitionEnd" ];
 
-		var i, lowPrefix;
+		var i, 
+			lowPrefix, 
+			animationStartTime;
 
 		// есть нативная реализация, без префиксов
 		matchesSelector = dummy.matchesSelector || matchesSelector;
 		requestAnimationFrame = window.requestAnimationFrame || requestAnimationFrame;
+		animationStartTime = "animationStartTime" in window ? "animationStartTime":undefined;
 
 		for (i = 0; !supported && (prefix = prefixes[i]); i += 1) {
 		
@@ -35,23 +38,19 @@
 			matchesSelector = dummy[lowPrefix + "MatchesSelector"] || matchesSelector;
 			requestAnimationFrame = window[lowPrefix + "RequestAnimationFrame"] || requestAnimationFrame;
 
+			if (!animationStartTime && lowPrefix + "AnimationStartTime" in window) {
+				animationStartTime = lowPrefix + "AnimationStartTime";
+			}
+			
+
 			if (prefix + "Transition" in dummy.style) {
 				document.body.addEventListener(eventNames[i], transitionEndHandler, false);
 				supported = true;
 			}
 		}
 
-		// префикс для CSS3 правил - тут уже определяем наугад.
-		if (!prefix) {
-			if ("globalStorage" in window) {
-				prefix = "Moz";
-			} else if ("opera" in window) {
-				prefix = "O";
-			} else if (/webkit/i.test(navigator.userAgent)) {
-				prefix = "webkit";
-			} else if ("\v" == "\v") {
-				prefix = "ms";
-			}
+		if (animationStartTime) {
+			getNow = makeGetter(animationStartTime);
 		}
 
 		/* добавляем свой <style> */

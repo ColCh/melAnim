@@ -10,7 +10,7 @@
 		duration = parseFloat(duration, 10) * 1000;
 
 		instance = {
-			started: +new Date,
+			started: getNow(),
 			duration: duration,
 			properties: properties,
 			id: id,
@@ -42,7 +42,7 @@
 		},
 		awake: function () {
 			this.idle = false;
-			ticker.tick(+new Date);
+			requestAnimationFrame(ticker.tick);
 		},
 		tick: function (now) {
 			var instanceId,
@@ -93,14 +93,15 @@
 			transform,
 			properties = instance.properties,
 			easing,
-			propertyName;
+			propertyName,
+			buffer = "";
 
 		if (progr > 1) {
 			progr = 1;
 		}
 
 		easing = instance.easing(progr, time, 0, 1, instance.duration);
-		
+
 		for (propertyName in properties) {
 			currProp = properties[propertyName];
 
@@ -123,9 +124,10 @@
 			} else {
 				currentValue = count(currProp.from, currProp.to, easing, currProp.dimension);
 			}
-			setStyle(instance.style, propertyName, currentValue);
+			buffer += propertyName + ":" + currentValue + ";";
 		}
 
+		instance.style.cssText = buffer;
 
 		return progr === 1;
 	};
