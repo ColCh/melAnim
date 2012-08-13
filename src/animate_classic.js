@@ -159,7 +159,7 @@
 						// "PX" - размерность по-умолчанию
 						if (matched[3] && matched[3] !== "px") {
 							prop.dimension = matched[3];
-						} else {
+						} else if (property !== "opacity") {
 							prop.dimension = false;
 						}
 					}
