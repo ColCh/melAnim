@@ -1,52 +1,144 @@
 /*--------------------------- ГЛАВНАЯ ФУНКЦИЯ АНИМАЦИИ ---------------------------------*/
-	var animate = function animate_wrap(target, properties, duration, easing, callback, classicMode) {
+	var animate = function (target, properties, duration, easing, callback, classicMode) {
 
-		var
-			id,
-			fromRule,
-			fromStyle,
-			propertyName,
-			transform,
-			buffer;
+		// уникальный ID анимации
+		var id = Math.random();
 
-		// определение режима
-		classicMode = classicMode === undefined ? !supported : classicMode;
+		// объект с информацией о текущей анимации
+		var instance = instances[id] = {};
 
-		// определяем ид анимации
+		// определение цели анимирования (селектор\элемент)
+		var selectorMode;
+
 		if (typeof target === "string") {
-			id = target; // селектор
-		} else {
-			if (!target.id) {
-				target.id = "anim_" + (Math.random()*1e6|0).toString(32);
-			}
-			id = '#' + target.id;
+			// строку считаем селектором
+			selectorMode = true;
+		} else if ("nodeType" in target) {
+			// передан элемент
+			selectorMode = false;
+			target = [target];
+		} else if ("0" in target) {
+			// что-то, похожее на массив.
+			selectorMode = false;
 		}
 
-		fromRule = addRule(id, " ");
-		fromStyle = fromRule.style;
-
-		if (!easings[easing]) {
-				easing = "linear";
-		}
-
-		buffer = "";
-		for (propertyName in properties) {
-			if (propertyName === "transform") {
-				buffer += propertyName + ":";
-				for (transform in properties[propertyName]) {
-					buffer += transform + "(" + properties[propertyName][transform].from + ")" + "";
-				}
+		// определение режима анимации (классический\переходы)
+		// оставляем возможность ручной смены режима
+		if (classicMode === undefined) {
+			if (transition_supported) {
+				classicMode = true;
 			} else {
-				buffer += propertyName + ":" + properties[propertyName].from;
+				classicMode = false;
 			}
-			buffer += ";";
 		}
-		fromStyle.cssText = buffer;
 
+		// подготовка к анимированию - расстановка в порядок стилей, и подобное.
 		if (classicMode) {
-			return animateClassic(target, id, fromStyle, properties, duration, easing, callback);
+
+			// приводим в порядок анимируемые свойства.
+			properties = normalize_properties(properties);
+			duration = parseFloat(duration, 10) * 1000;
+			easing = easings[easing] || easings.linear; 
+
+			if (selectorMode) {
+				var rule = addRule(target);
+				// в цели должен быть массив
+				target = [rule.style];
+			} else {
+				// запоминаем текущие инлайновые стили.
+				instance.beginCssText = [];
+				for (var i = 0; i in target; i += 1 ) {
+					instance.beginCssText[i] = target[i].style.cssText;
+				}
+			} 
 		} else {
-			return animateTransition(id, fromRule, properties, duration, easing, callback);
+			if (!instances_by_duration[duration]) {
+				instances_by_duration[duration] = [];
+			}
+			instances_by_duration[duration].push(id);
+
+			if (selectorMode) {
+				instance.selector = target;
+				var rules = {};
+				rules.from = addRule(target);
+				rules.to = addRule(target);
+				target = rules;
+			} else {
+				instance.beginCssText = [];
+				for (var i = 0; i in target; i += 1) {
+					instance.beginCssText[i] = target[i].style.cssText;
+					target[i].addEventListener(transitionEnd, transitionEnd_element, false);
+				}
+			}
 		}
 
+		instance.target = target;
+		instance.selectorMode = selectorMode;
+		instance.properties = properties;
+		instance.duration = duration;
+		instance.easing = easing;
+		instance.complete = callback;
+		instance.id = id;
+
+		// анимирование
+		if (classicMode) {
+			animateClassic(instance);
+		} else {
+			animateTransition(instance);
+		}
+		
+		// возвращает ID для манипулирования анимацией после её запуска.
+		return id;
+	};
+
+	var normalize_properties = function (properties) {
+		var property, from, to, delta, dimension;
+		
+		// нельзя изменять текущие анимируемые свойства.
+		var normalized_properties = {};
+
+		// словит число и размерность значения CSS свойства.
+		var dimension_reg = /(\d*\.?\d+)(.*)/;
+
+		// размерности по-умолчанию для исключений.
+		var dimensions = { _default: "px", opacity: "", rotate: "deg" };
+
+		for (property in properties) {
+			if (property === "transform") {
+				normalized_properties[property] = normalize_properties(properties[property]);
+			} else {	
+				normalized_properties[property] = {};
+
+				if (/color/i.test(property)) {
+					normalized_properties[property].from = color_to_rgb(properties[property].from);
+					normalized_properties[property].to = color_to_rgb(properties[property].to);
+				} else {
+
+					from = properties[property].from;
+					to = properties[property].to;
+
+					from = dimension_reg.exec(from);
+					to = dimension_reg.exec(to);
+
+					dimension = (from[2] === to[2]) ? from[2] : (property in dimensions ? dimensions[property]:dimensions._default);
+
+					from = parseFloat(from[1], 10);
+					to = parseFloat(to[1], 10);
+
+					delta = to - from;
+
+					normalized_properties[property].from = from;
+					normalized_properties[property].delta = delta;
+					normalized_properties[property].dimension = dimension;
+				}
+			}
+		}
+		return normalized_properties;
+	};
+
+	// конвертирует строку с цветом в rgb.
+	var color_to_rgb = function (color) {
+		// пока только hex
+		color = parseInt( color.slice(1), 16);
+		return [ color >> 16 & 0xFF, color >> 8 & 0xFF, color & 0xFF ];
 	};

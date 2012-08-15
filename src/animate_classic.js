@@ -1,175 +1,90 @@
 /*--------------------------- КЛАССИЧЕСКАЯ АНИМАЦИЯ ---------------------------------*/
-	var animateClassic = function (target, id, fromStyle, properties, duration, easing, callback) {
+	var ids = [];
 
-		var instance;
-		
-		properties = normalizeProperties(properties);
+	var animateClassic = function (instance) {
 
-		easing = easings[easing];
+		instance.started = getNow();
 
-		duration = parseFloat(duration, 10) * 1000;
+		ids.push(instance.id);
 
-		instance = {
-			started: getNow(),
-			duration: duration,
-			properties: properties,
-			id: id,
-			complete: callback,
-			style: fromStyle,
-			easing: easing
-		};
-
-		ticker.insert(instance);
-
-	};
-
-	// управление периодически повторяющимися действиями.
-	var ticker = {
-		idle: true,
-		insert: function (instance) {
-			// instances  определена в главном замыкании.
-			instances[instance.started] = instance;
-			// первый запуск, или нет активных анимаций.
-			if (!instances._length) {
-				instances._length = 0;
-				this.awake();
-			}
-			// счётчик запущенных анимаций.
-			instances._length += 1;
-		},
-		sleep: function () {
-			this.idle = true;
-		},
-		awake: function () {
-			this.idle = false;
-			requestAnimationFrame(ticker.tick);
-		},
-		tick: function (now) {
-			var instanceId,
-				instance;
-
-			if (ticker.idle) {
-				return;
-			}
-
-			requestAnimationFrame(ticker.tick);
-
-			for (instanceId in instances) if (instanceId !== "_length") {
-				instance = instances[instanceId];
-
-				// renderTick возвратит true, если экземпляр можно удалить из списка запущенных.
-				if (renderTick(instance, now)) {
-					instance.complete();
-					// закончилась последняя запущенная анимация.
-					if (instances._length === 1) {
-						ticker.sleep();
-					}
-					instances._length -= 1;
-					delete instances[instance.id];
-				}
-			}
+		if (ids.length === 1) {
+			requestAnimationFrame(renderTicks);
 		}
 	};
 
-	// вычислит текущее значение свойства.
-	var count = function (from, to, easing, dimension) {
-		if (dimension === false) {
-			dimension = "px";
-		} else if (dimension === undefined) {
-			dimension = 0;
-		}
-		return ((to - from) * easing + from) + dimension;
-	};
+	var renderTicks = function (now) {
+		var i, instance, property, time, progr, easing, step, properties;
+		var propVal, propName;
+		var buffer;
+		var k, target;
 
-	// тики анимации
-	var renderTick = function (instance, now) {
-
-		var currProp,
-			currTransform,
-			time = now - instance.started,
-			progr = time / instance.duration,
-			currentValue,
-			i,
-			transform,
-			properties = instance.properties,
-			easing,
-			propertyName,
+		for (i = ids.length; i--;) {
+			instance = instances[ids[i]];
+			properties = instance.properties;
 			buffer = "";
 
-		if (progr > 1) {
-			progr = 1;
-		}
+			time = now - instance.started;
+			progr = time / instance.duration;
+			if (progr > 1) {
+				progr = 1;
+			}
+			easing = instance.easing(progr, time, 0, 1, instance.duration);
 
-		easing = instance.easing(progr, time, 0, 1, instance.duration);
-
-		for (propertyName in properties) {
-			currProp = properties[propertyName];
-
-			if (/transform/i.test(propertyName)) {
-				currentValue = "";
-				for (transform in currProp) {
-					currTransform = currProp[transform];
-
-					currentValue += transform + "(";
-					currentValue += count(currTransform.from, currTransform.to, easing, currTransform.dimension);
-					currentValue += ")" + " ";
+			for (property in properties) {
+				if (property in steps) {
+					step = steps[property];
+				} else if (/color/i.test(property)) {
+					step = steps.color;
+				} else {
+					step = steps._default;
 				}
-			} else if (/color/i.test(propertyName)) {
-				currentValue = [];
 				
-				for (i = 0; i < 3; i += 1) {
-					currentValue[i] = Math.ceil(count(currProp.from[i], currProp.to[i], easing));
+				propVal = step(properties[property], easing);
+				if (property in hooks) {
+					hooks[property](); // TODO
+				} else {
+					propName = getVendorPropName(property, dummy_style, true);
+					buffer += propName + ":" + propVal + ";";
 				}
-				currentValue = "rgb(" + currentValue.join(", ") + ")";
-			} else {
-				currentValue = count(currProp.from, currProp.to, easing, currProp.dimension);
 			}
-			buffer += propertyName + ":" + currentValue + ";";
-		}
-
-		instance.style.cssText = buffer;
-
-		return progr === 1;
-	};
-
-	// превратит объект анимируемых свойств в machine-readable
-	var normalizeProperties = function (properties) {
-		var newProperties = {},
-			property,
-			prop,
-			propInfo,
-			matched,
-			directions = ["from", "to"],
-			i,
-			direction;
-
-		for (property in properties) if (properties.hasOwnProperty(property)) {
-			propInfo = properties[property];
-
-			if (property === "transform") {
-				property = "-" + prefix + "-transform";
-				newProperties[property] = normalizeProperties(propInfo);
-			} else {
-				prop = newProperties[property] = {};
-
-				for (i = 0; direction = directions[i]; i += 1) 
-					if (/color/i.test(property)) {
-						prop[direction] = hexToRgb(propInfo[direction]);
-					} else {
-						matched = propInfo[direction].match(dimReg);
-						// анимирование только числовых свойств :(
-						prop[direction] = parseFloat(matched[2], 10);
-						// "PX" - размерность по-умолчанию
-						if (matched[3] && matched[3] !== "px") {
-							prop.dimension = matched[3];
-						} else if (property !== "opacity") {
-							prop.dimension = false;
-						}
-					}
+			for (k = instance.target.length; k--; ) {
+				target = instance.target[k];
+				if ("nodeType" in target) {
+					target.style.cssText = instance.beginCssText[k] + ";" + buffer;
+				} else {
+					target.cssText = buffer;
+				}
+			}
+		
+			if (progr === 1) {
+				delete instances[ ids.splice(i, 1)[0] ];
+				instance.complete();
 			}
 		}
 
-		return newProperties;
+		if (ids.length) {
+			requestAnimationFrame(renderTicks);
+		}
 	};
 
+	var steps = {
+		_default: function (property, easing) {
+			return (property.delta * easing + property.from).toFixed(3) + property.dimension;
+		},
+		color: function (prop, easing) {
+			var i = 3, val = [];
+			while (i--) {
+				val[i] = Math.ceil((prop.to[i] - prop.from[i]) * easing + prop.from[i]);
+			}
+			return "rgb(" + val.join(", ") + ")";
+		},
+		transform: function (prop, easing) {
+			var transform, res = "";
+			for (transform in prop) {
+				res += transform + "(" + steps._default(prop[transform], easing) + ")" + " ";
+			}
+			return res;
+		}
+	};
 
+	var hooks = {};

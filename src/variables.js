@@ -1,123 +1,122 @@
 /*--------------------------- ОБЬЯВЛЕНИЯ ---------------------------------*/
-	// на чём тестируем имена CSS свойств
-	var dummy = document.documentElement,
+	var 
+		// поддерживаются ли переходы текущим браузером
+		transition_supported,
 
-	// информация о запущенных анимациях
-	instances = {},
+		// имя события конца анимации
+		transitionEnd,
 
-	// префикс для браузера
-	prefix,
+		// вендорный префикс для текущего браузера
+		prefix,
+		lowPrefix,
 
-	prefixes = ["webkit", "Moz", "O", "ms"],
+		// элемент, где можно проверить поддержку фич
+		dummy = document.documentElement,
+		dummy_style = dummy.style,
 
-	// получение отметки времени. 
-	getNow = function () {
-		return Date.now ? Date.now() : +new Date;
-	},
+		// запущенные экземпляры анимаций.
+		instances = {},
 
-	// собственная таблица стилей
-	stylesheet,
-	// её правила
-	cssRules,
-
-	// соответствие селектору
-	matchesSelector,
-
-	// поддерживаются ли CSS Transitions
-	supported,
-
-	// костыль для выполнения ф-й перед отрисовкой
-	requestAnimationFrame = function (callback) {
-		window.setTimeout(function () {
+		// вернёт отметку времени.
+		// тут будет геттер animationStartTime, если оно поддерживается
+		getNow = function () {
+			return +new Date;
+		},
+		
+		// выполнит callback перед отрисовкой, и передаст в него отметку времени
+		requestAnimationFrame = function (callback) {
+			setTimeout(function () {
 				callback( getNow() );
-		}, 11);
-	},
-
-	easings = {
-		'ease': function (x, t, b, c, d) {
-			var ts=(t/=d)*t;
-			var tc=ts*t;
-			return b+c*(6*tc*ts + -15*ts*ts + 10*tc);
+			}, 16);
 		},
-		'linear': function (x) {
-			return x;
+
+		// проверит принадлежность элемента селектору.
+		//  - требуется сторонняя библиотека.
+		matchesSelector = function (selector) {
+			return window["jQuery"]["find"]["matchesSelector"](this, selector);
 		},
-		'ease-in': function (x, t, b, c, d) {
-			return c*(t/=d)*t + b;
-		},
-		'ease-out': function (x, t, b, c, d) {
-			return ( -Math.cos( x * Math.PI ) / 2 ) + 0.5;
-		},
-		'ease-in-out': function (x, t, b, c, d) {
-			return c*((t=t/d-1)*t*t + 1) + b;
-		}
-	},
 
-
-	// rotate(90deg) => [rotate, 90, deg]
-	// 90px => [undefined, 90, px]
-	// skew(10deg, 45deg) => [skew, 10, deg, 45];
-	dimReg = /\s*(?:([^\(]+)\()?(-?\d*\.?\d+)(%|\w*)\)?/,
-
-	// для добавления своих
-	easingReg = /^cubic\-bezier\(\s*(\-?\d*(?:\.\d+)?)\s*,\s*(\-?\d*(?:\.\d+)?)\s*,\s*(\-?\d*(?:\.\d+)?)\s*,\s*(\-?\d*(?:\.\d+)?)\s*\)$/,
-
-	// ловля трансформаций (для IE)
-	transformReg = /(\w+)\(?(\d+)(\w*)(?:,?\s?(\d+)\w*)?\)?/g,
-
-	// итерирование хешей и обьектов, похожих на массивы.
-	each = function (what, callback, type) {
-		var i;
-
-		type = type || (what[0] || what.length ? "array" : "object");
-
-		if (type === "array") {
-			for (i = 0; i in what; i += 1) {
-				callback(what[i], i, what);
+		// функции, изменяющие прогресс.
+		// должны быть похожи на timing-function'ы из CSS Transition's
+		easings = {
+			"ease": function (progr) {
+				return (-Math.cos(pos*Math.PI)/2) + 0.5;
+			},
+			"ease-out": function (progr) {
+				return Math.sin(progr * Math.PI / 2);
+			},
+			"ease-in": function (progr) {
+				return progr * progr;
+			},
+			"ease-in-out": function (progr) {
+				return progr;
+			},
+			"linear": function (progr) {
+				return progr;
 			}
-		} else {
-			for (i in what) {
-				if (what.hasOwnProperty(i)) {
-					callback(what[i], i, what);
+		},
+
+		// вернёт имя свойства, добавит к нему префикс при возможности
+		// для css-свойств может возвращать я двух типах - для dom css, и для правил css. 
+		getVendorPropName = function (propName, obj, css) {
+			if (css && propName in gVPN_cache) {
+				return gVPN_cache[propName];
+			}
+			if (propName in obj || 
+					(css && (propName.replace(/-(.)/g, function(a, letter){return letter.toUpperCase()}) in obj))) {
+
+				return propName;
+			} else {
+				var origProp = propName;
+				propName = propName.charAt(0).toUpperCase() + propName.slice(1);
+				if (prefix + propName in obj) {
+					if (css) {
+						return (gVPN_cache[origProp] = "-" + prefix + "-" + origProp);
+					} else {
+						return prefix + propName;
+					}
+				} else if (lowPrefix + propName in obj) {
+					return lowPrefix + propName;
 				}
 			}
-		}
-	},
+		},
 
-	// добавит правило в конец таблицы стилей и вернёт его
-	addRule = function addRule(selector, text) {
-
-			var index = cssRules.length;
-
-			if (stylesheet.insertRule) {
-					stylesheet.insertRule(selector + "{" + text + "}", index);
-			} else {
-					stylesheet.addRule(selector, text, index);
+		// то же самое, но вместо имени свойства вернёт его значение.
+		// - для всяких matchesSelector.
+		getVendorPropVal = function (propName, obj, css) {
+			propName = getVendorPropName(propName, obj, css);
+			if (propName) {
+				return obj[propName];
 			}
+		},
 
-			return cssRules[index];
-	},
+		// кеш для getVendorPropName
+		gVPN_cache = {},
 
-	hexToRgb = function (hex) {
-		hex = hex.slice(1);
-		hex = parseInt(hex, 16);
-		var r = hex >> 16 & 0xFF;
-		var g = hex >> 8 & 0xFF;
-		var b = hex & 0xFF;
+		// вернёт функцию, которая при вызове будет читать указанное имя свойства из
+		// указанного объекта
+		// сделано для animationStartTime
+		makeGetter = function (prop, obj) {
+			return function () {
+				return obj[prop];
+			};
+		},
 
-		return [r, g, b];
-	},
+		// своя таблица стилей.
+		stylesheet,
+		// её правила
+		cssRules,
 
-	// превратить cubic-bezier в обычную функцию
-	mathemate = function (name) {
-		// TODO
-	},
+		// добавит правило в конец таблицы стилей и вернёт его
+		addRule = function addRule(selector, text) {
+				var index = cssRules.length;
+				text = text || " ";
 
-	// создаст функцию-геттер. для animationStartTime
-	makeGetter = function (property, obj) {
-		obj = obj || window;
-		return function () {
-			return obj[property];
+				if (stylesheet.insertRule) {
+						stylesheet.insertRule(selector + "{" + text + "}", index);
+				} else {
+						stylesheet.addRule(selector, text, index);
+				}
+
+				return cssRules[index];
 		};
-	};
-

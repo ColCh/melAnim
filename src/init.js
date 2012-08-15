@@ -1,74 +1,40 @@
 /*--------------------------- ИНИЦИАЛИЗАЦИЯ ---------------------------------*/
-	if ("jQuery" in window) {
-		matchesSelector = function (selector) {
-			return window["jQuery"]["find"]["matchesSelector"](this, selector);
+	window['animate'] = function () {
+
+		// определение префикса для текущего браузера.
+		var prefixReg = /^(Moz|webkit|O|ms)(?=[A-Z])/, property;
+
+		for (property in dummy_style) {
+			if (prefixReg.test(property)) {
+				prefix = property.match(prefixReg)[1];
+				lowPrefix = prefix.toLowerCase();
+				break;
+			}
 		}
-	} else if ("all" in document) {
-		matchesSelector = function (selector) {
-			var res;
-			var index = cssRules.length;
 
-			stylesheet.addRule(selector, "a:b", index);
-			res = this.currentStyle['a'] === "b";
-			stylesheet.removeRule(index);
+		// определение фич
+		var transitionEndEventNames = { "": "transitionend", "webkit": "webkitTransitionEnd", "O": "oTransitionEnd", "ms": "MSTransitionEnd" };
+		if (getVendorPropName("transition", dummy_style, true)) {
+			transition_supported = true;
+			transitionEnd = transitionEndEventNames[prefix] || transitionEndEventNames[""];
+			document.body.addEventListener(transitionEnd, transitionEnd_delegator, false);
+		}
+		var animStartTime = getVendorPropName("animationStartTime", window);
+		requestAnimationFrame = getVendorPropVal("requestAnimationFrame", window) || requestAnimationFrame;
+		matchesSelector = getVendorPropVal("matchesSelector", dummy) || matchesSelector;
 
-			return res;
-		};
-	}
-
-
-	window['animate'] = function init() {
-
-		/* события. префиксы определены в главном замыкании */
-		var eventNames = ["webkitTransitionEnd", "transitionend", "oTransitionEnd", "MSTransitionEnd" ];
-
-		var i, 
-			lowPrefix, 
-			animationStartTime,
-			currentPrefix;
-
-		// есть нативная реализация, без префиксов
-		matchesSelector = dummy.matchesSelector || matchesSelector;
-		requestAnimationFrame = window.requestAnimationFrame || requestAnimationFrame;
-		animationStartTime = "animationStartTime" in window ? "animationStartTime":undefined;
-
-		for (i = 0; !supported && (currentPrefix = prefixes[i]); i += 1) {
+		if (animStartTime) {
+			getNow = makeGetter(animStartTime, window);
+		}
 		
-			lowPrefix = currentPrefix.toLowerCase();
-
-			matchesSelector = dummy[lowPrefix + "MatchesSelector"] || matchesSelector;
-			requestAnimationFrame = window[lowPrefix + "RequestAnimationFrame"] || requestAnimationFrame;
-
-			if (!animationStartTime && lowPrefix + "AnimationStartTime" in window) {
-				animationStartTime = lowPrefix + "AnimationStartTime";
-			}
-			
-
-			if (currentPrefix + "Transition" in dummy.style) {
-				prefix = lowPrefix;
-				document.body.addEventListener(eventNames[i], transitionEndHandler, false);
-				supported = true;
-			} 
-
-			if (!prefix && currentPrefix + "TransformProperty" in dummy.style) {
-				prefix = lowPrefix;
-			}
-		}
-
-		if (animationStartTime) {
-			getNow = makeGetter(animationStartTime);
-		}
-
-		/* добавляем свой <style> */
-		var style = document.createElement("style");
-		document.body.appendChild(style);
-		stylesheet = style.sheet || style.styleSheet;
+		// добавление своей таблицы стилей.
+		stylesheet = document.createElement("style");
+		document.body.appendChild(stylesheet);
+		stylesheet = stylesheet.sheet || stylesheet.styleSheet;
 		cssRules = stylesheet.cssRules || stylesheet.rules;
-
 
 		/* вызов оригинальной функции анимирования */
 		window['animate'] = animate;
-
 		if (arguments.length) {
 			return animate.apply(this, arguments);
 		}

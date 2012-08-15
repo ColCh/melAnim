@@ -1,64 +1,72 @@
 /*--------------------------- АНИМИРОВАНИЕ С ПОМОЩЬЮ ПЕРЕХОДОВ ---------------------------------*/
-	var animateTransition = function animate_transitions(id, fromRule, properties, duration, easing, callback) {
+	var instances_by_duration = {};
 
-		var toStyle;
+	var animateTransition = function (instance) {
+		// генерируем строки стилей для перехода.
+		var from_buffer = ";", to_buffer = ";", property, properties = instance.properties, transform, prop;
+		var target, i;
 
-		toStyle = addRule(id, " ").style;
-
-		instance = {
-			fromRule: fromRule,
-			complete: callback,
-			id: id
-		};
-
-		var instance_id = duration.slice(0, -1);
-
-		if (!instances[instance_id]) {
-			instances[instance_id] = [];
-		}
-		instances[instance_id].push(instance);
-
-		requestAnimationFrame(function () {
-
-			setStyle(fromRule.style, "transition", "all " + duration + " " + easing + " 0s");
-
-			requestAnimationFrame(function () {
-				// применился начальный стиль
-				// применяем опции перехода
-				var property, transform;
-				for (property in properties) {
-					if (property === "transform") {
-						property = "";
-						for (transform in properties.transform) {
-							property += " " + transform + "(" + properties.transform[transform].to + ")"; 
-						}
-						setStyle(toStyle, "transform", property);
-					} else {
-						setStyle(toStyle, property, properties[property].to);
-					}
+		for (property in properties) {
+			prop = getVendorPropName(property, dummy_style, true);
+			from_buffer += prop + ":";
+			to_buffer += prop + ":";
+			if (property === "transform") {
+				for (transform in properties[property]) {
+					from_buffer += transform + "(" + properties[property][transform].from + ")" + " ";
+					to_buffer += transform + "(" + properties[property][transform].to + ")" + " ";
 				}
-			});
+			} else {
+				from_buffer += properties[property].from;
+				to_buffer += properties[property].to;
+			}
+			from_buffer += ";";
+			to_buffer += ";";
+		}
 
-		});
+		to_buffer += getVendorPropName("transition", dummy_style, true) + ": all " + instance.duration + " " + instance.easing + " 0s;";
+		
+		if (instance.selectorMode) {
+			target = instance.target;
+			target.from.style.cssText = from_buffer;
+		} else {
+			target = instance.target;
+			for (i = 0; i in target; i += 1) {
+				target[i].style.cssText = instance.beginCssText[i] + ";" + from_buffer;
+			}
+		}
+		// форсированная отрисовка
+		window.scrollBy(0, 0);
+		if (instance.selectorMode) {
+			target.to.style.cssText = to_buffer;
+		} else {
+			for (i = 0; i in target; i += 1) {
+				target[i].style.cssText = instance.beginCssText[i] + ";" + to_buffer;
+			}
+		}
 	};
 
 	// для делегирования всплывающих событий конца анимации
-	var transitionEndHandler = function handler(event) {
+	var transitionEnd_delegator = function (event) {
 
-		var instance, i;
+		var instance, i, current, duration = event.elapsedTime + 's', id;
 
-		if (event.elapsedTime in instances) {
-			instances = instances[event.elapsedTime];
+		current = instances_by_duration[duration];
+		if (current) {
+			for (i = current.length; i-- && !instance; ) {
+				id = current[i];
+				instance = instances[id];
 
-			for (i = instances.length; i--; ) {
+				if (instance &&
+						event.propertyName in instance.properties && 
+							instance.selector ? matchesSelector.call(event.target, instance.selector):true) {
 
-				if (matchesSelector.call(event.target, instances[i].id)) {
+					delete instances[id];
+					current.splice(i, 1);
 
-					instance = instances[i];
-					delete instances[i];
-
-					var ruleIndex = Array.prototype.indexOf.call(cssRules, instance.fromRule);
-					stylesheet.deleteRule(ruleIndex);
+					if (instance.selectorMode) {
+						var ruleIndex = Array.prototype.indexOf.call(cssRules, instance.target.from);
+						stylesheet.deleteRule(ruleIndex);
+					}
 
 					instance.complete();
 				}
@@ -66,3 +74,10 @@
 			}
 		}
 	}
+
+	// обработка события конца анимации на элементе.
+	var transitionEnd_element = function (event) {
+		var _this = event.target;
+		_this.style[ getVendorPropName("transition", dummy_style) ] = "";
+		_this.removeEventListener(transitionEnd, transitionEnd_element);
+	};
