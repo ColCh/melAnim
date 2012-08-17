@@ -1,79 +1,61 @@
 /*--------------------------- ГЛАВНАЯ ФУНКЦИЯ АНИМАЦИИ ---------------------------------*/
-	var animate = function (target, properties, duration, easing, callback, classicMode) {
+	var animate = function (target, properties, duration, easing, callback, mode) {
 
 		// уникальный ID анимации
-		var id = Math.random();
+		var id = "mel_anim_" + ( Math.random() * 1e6 | 0 ).toString(36);
 
 		// объект с информацией о текущей анимации
 		var instance = instances[id] = {};
 
-		// определение цели анимирования (селектор\элемент)
-		var selectorMode;
-
-		if (typeof target === "string") {
-			// строку считаем селектором
-			selectorMode = true;
-		} else if ("nodeType" in target) {
-			// передан элемент
-			selectorMode = false;
-			target = [target];
-		} else if ("0" in target) {
-			// что-то, похожее на массив.
-			selectorMode = false;
-		}
-
-		// определение режима анимации (классический\переходы)
-		// оставляем возможность ручной смены режима
-		if (classicMode === undefined) {
-			if (transition_supported) {
-				classicMode = true;
-			} else {
-				classicMode = false;
+		// selector mode |  classic mode  |  result
+		//      0        |      0         |     0
+		//      0        |      1         |     1
+		//      1        |      0         |     2
+		//      1        |      1         |     3
+		if (typeof mode !== "number" || mode < 0 || mode > 3) {
+			mode = 0;
+			if (typeof target === "string") {
+				// строку считаем селектором
+				mode |= SELECTOR_MODE;
+			}
+			if (!animation_supported) {
+				mode |= CLASSIC_MODE;
 			}
 		}
 
 		// подготовка к анимированию - расстановка в порядок стилей, и подобное.
-		if (classicMode) {
+		if (mode & CLASSIC_MODE) { // классический режим.
 
 			// приводим в порядок анимируемые свойства.
 			properties = normalize_properties(properties);
 			duration = parseFloat(duration, 10) * 1000;
 			easing = easings[easing] || easings.linear; 
 
-			if (selectorMode) {
+			if (mode & SELECTOR_MODE) { // анимация селектора
 				var rule = addRule(target);
 				// в цели должен быть массив
 				target = [rule.style];
-			} else {
+			} else { // анимация элементов
 				// запоминаем текущие инлайновые стили.
 				instance.beginCssText = [];
 				for (var i = 0; i in target; i += 1 ) {
 					instance.beginCssText[i] = target[i].style.cssText;
 				}
 			} 
-		} else {
-			if (!instances_by_duration[duration]) {
-				instances_by_duration[duration] = [];
-			}
-			instances_by_duration[duration].push(id);
-
-			if (selectorMode) {
+		} else { // режим анимации
+			instance.keyframes = addRule(keyframes + " " + id);
+			if (mode & SELECTOR_MODE) {
 				instance.selector = target;
-				var rules = {};
-				rules.from = addRule(target);
-				rules.to = addRule(target);
-				target = rules;
+				target = [ addRule(target) ];
 			} else {
-				instance.beginCssText = [];
-				for (var i = 0; i in target; i += 1) {
-					instance.beginCssText[i] = target[i].style.cssText;
-					target[i].addEventListener(transitionEnd, transitionEnd_element, false);
+				if ("nodeType" in target) {
+					target = [target];
 				}
 			}
 		}
 
 		instance.target = target;
-		instance.selectorMode = selectorMode;
+		instance.mode = mode;
 		instance.properties = properties;
 		instance.duration = duration;
 		instance.easing = easing;
@@ -81,10 +63,10 @@
 		instance.id = id;
 
 		// анимирование
-		if (classicMode) {
+		if (mode & CLASSIC_MODE) {
 			animateClassic(instance);
 		} else {
-			animateTransition(instance);
+			animateAnimation(instance);
 		}
 		
 		// возвращает ID для манипулирования анимацией после её запуска.
@@ -92,7 +74,7 @@
 	};
 
 	var normalize_properties = function (properties) {
-		var property, from, to, delta, dimension;
+		var property, from, to, dimension;
 		
 		// нельзя изменять текущие анимируемые свойства.
 		var normalized_properties = {};
@@ -125,10 +107,8 @@
 					from = parseFloat(from[1], 10);
 					to = parseFloat(to[1], 10);
 
-					delta = to - from;
-
 					normalized_properties[property].from = from;
-					normalized_properties[property].delta = delta;
+					normalized_properties[property].to = to;
 					normalized_properties[property].dimension = dimension;
 				}
 			}

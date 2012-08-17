@@ -2,11 +2,8 @@
 	var ids = [];
 
 	var animateClassic = function (instance) {
-
-		instance.started = getNow();
-
 		ids.push(instance.id);
-
+		instance.started = getNow();
 		if (ids.length === 1) {
 			requestAnimationFrame(renderTicks);
 		}
@@ -31,25 +28,25 @@
 			easing = instance.easing(progr, time, 0, 1, instance.duration);
 
 			for (property in properties) {
-				if (property in steps) {
-					step = steps[property];
-				} else if (/color/i.test(property)) {
-					step = steps.color;
+				propName = getVendorPropName(property, dummy_style, true);
+
+				if (/*!propName &&*/ property in hooks) {
+					buffer += hooks[property](instance, properties[property], easing) || ""; 
 				} else {
-					step = steps._default;
-				}
-				
-				propVal = step(properties[property], easing);
-				if (property in hooks) {
-					hooks[property](); // TODO
-				} else {
-					propName = getVendorPropName(property, dummy_style, true);
+					if (property in steps) {
+						step = steps[property];
+					} else if (/color/i.test(property)) {
+						step = steps.color;
+					} else {
+						step = steps._default;
+					}
+					propVal = step(properties[property], easing);
 					buffer += propName + ":" + propVal + ";";
 				}
 			}
 			for (k = instance.target.length; k--; ) {
 				target = instance.target[k];
-				if ("nodeType" in target) {
+				if (instance.mode ^ SELECTOR_MODE) {
 					target.style.cssText = instance.beginCssText[k] + ";" + buffer;
 				} else {
 					target.cssText = buffer;
@@ -68,13 +65,16 @@
 	};
 
 	var steps = {
+		_count: function (from, to, easing) {
+			return (1 - easing) * from + easing * to;	
+		},
 		_default: function (property, easing) {
-			return (property.delta * easing + property.from).toFixed(3) + property.dimension;
+			var res = steps._count(property.from, property.to, easing).toFixed(3) + property.dimension;
 		},
 		color: function (prop, easing) {
 			var i = 3, val = [];
 			while (i--) {
-				val[i] = Math.ceil((prop.to[i] - prop.from[i]) * easing + prop.from[i]);
+				val[i] = Math.floor( steps._count(prop.from[i], prop.to[i], easing) );
 			}
 			return "rgb(" + val.join(", ") + ")";
 		},
@@ -86,5 +86,3 @@
 			return res;
 		}
 	};
-
-	var hooks = {};

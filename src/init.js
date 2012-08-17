@@ -2,7 +2,7 @@
 	window['animate'] = function () {
 
 		// определение префикса для текущего браузера.
-		var prefixReg = /^(Moz|webkit|O|ms)(?=[A-Z])/, property;
+		var prefixReg = /^(Moz|webkit|O|ms)(?=[A-Z])/, property, i;
 
 		for (property in dummy_style) {
 			if (prefixReg.test(property)) {
@@ -13,15 +13,15 @@
 		}
 
 		// определение фич
-		var transitionEndEventNames = { "": "transitionend", "webkit": "webkitTransitionEnd", "O": "oTransitionEnd", "ms": "MSTransitionEnd" };
-		if (getVendorPropName("transition", dummy_style, true)) {
-			transition_supported = true;
-			transitionEnd = transitionEndEventNames[prefix] || transitionEndEventNames[""];
-			document.body.addEventListener(transitionEnd, transitionEnd_delegator, false);
+		if (getVendorPropName("animation", dummy_style, true)) {
+			animation_supported = true;
+			keyframes = "@" + ("animation" in gVPN_cache ? "-"+lowPrefix+"-":"") + "keyframes";
+			for (i = animationEndEventNames.length; i--; ) {
+				document.body.addEventListener(animationEndEventNames[i], animationEndHandler, true);
+			}
 		}
 		var animStartTime = getVendorPropName("animationStartTime", window);
 		requestAnimationFrame = getVendorPropVal("requestAnimationFrame", window) || requestAnimationFrame;
-		matchesSelector = getVendorPropVal("matchesSelector", dummy) || matchesSelector;
 
 		if (animStartTime) {
 			getNow = makeGetter(animStartTime, window);
@@ -38,4 +38,5 @@
 		if (arguments.length) {
 			return animate.apply(this, arguments);
 		}
+		return true;
 	};

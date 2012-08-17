@@ -1,14 +1,24 @@
 /*--------------------------- ОБЬЯВЛЕНИЯ ---------------------------------*/
 	var 
-		// поддерживаются ли переходы текущим браузером
-		transition_supported,
 
-		// имя события конца анимации
-		transitionEnd,
-
+		// константы
+		SELECTOR_MODE = 2,
+		CLASSIC_MODE = 1,
+		
 		// вендорный префикс для текущего браузера
 		prefix,
 		lowPrefix,
+
+		// поддерживаются ли анимации текущим браузером
+		animation_supported,
+
+		// имена событий конца анимации
+		animationEndEventNames = ["animationend", "webkitAnimationEnd", "OAnimationEnd", "MSAnimationEnd"],
+		// имя события конца анимации для текущего браузера
+		animationEnd,
+
+		// имя css-правила для кейфреймов анимации
+		keyframes,
 
 		// элемент, где можно проверить поддержку фич
 		dummy = document.documentElement,
@@ -28,12 +38,6 @@
 			setTimeout(function () {
 				callback( getNow() );
 			}, 16);
-		},
-
-		// проверит принадлежность элемента селектору.
-		//  - требуется сторонняя библиотека.
-		matchesSelector = function (selector) {
-			return window["jQuery"]["find"]["matchesSelector"](this, selector);
 		},
 
 		// функции, изменяющие прогресс.
@@ -79,15 +83,14 @@
 					return lowPrefix + propName;
 				}
 			}
+			return null;
 		},
 
 		// то же самое, но вместо имени свойства вернёт его значение.
-		// - для всяких matchesSelector.
+		// - для всяких requestAnimationFrame.
 		getVendorPropVal = function (propName, obj, css) {
 			propName = getVendorPropName(propName, obj, css);
-			if (propName) {
-				return obj[propName];
-			}
+			return propName ? obj[propName]:propName;
 		},
 
 		// кеш для getVendorPropName
@@ -113,7 +116,7 @@
 				text = text || " ";
 
 				if (stylesheet.insertRule) {
-						stylesheet.insertRule(selector + "{" + text + "}", index);
+						stylesheet.insertRule(selector + " " + "{" + text + "}", index);
 				} else {
 						stylesheet.addRule(selector, text, index);
 				}
