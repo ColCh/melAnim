@@ -51,9 +51,6 @@
 
 		//ruleIndex = Array.prototype.indexOf.call(cssRules, instance.target[0]);
 		//stylesheet.deleteRule(ruleIndex);
-		if (!animationEnd) {
-			animationEnd = event.type;
-		}
 
 		instance.complete();
 	}

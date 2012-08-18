@@ -1,6 +1,9 @@
 /*--------------------------- ИНИЦИАЛИЗАЦИЯ ---------------------------------*/
 	window['animate'] = function () {
 
+		// имена событий конца анимации
+		var animationEndEventNames = ["animationend", "webkitAnimationEnd", "OAnimationEnd", "MSAnimationEnd"];
+
 		// определение префикса для текущего браузера.
 		var prefixReg = /^(Moz|webkit|O|ms)(?=[A-Z])/, property, i;
 
@@ -15,8 +18,9 @@
 		// определение фич
 		if (getVendorPropName("animation", dummy_style, true)) {
 			animation_supported = true;
-			keyframes = "@" + ("animation" in gVPN_cache ? "-"+lowPrefix+"-":"") + "keyframes";
-			for (i = animationEndEventNames.length; i--; ) {
+			keyframes = "@" + ("animation" in gVPN_cache[1] ? "-"+lowPrefix+"-":"") + "keyframes";
+			i = animationEndEventNames.length;
+			while (i--) {
 				document.body.addEventListener(animationEndEventNames[i], animationEndHandler, true);
 			}
 		}

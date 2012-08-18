@@ -2,7 +2,7 @@
 	var animate = function (target, properties, duration, easing, callback, mode) {
 
 		// уникальный ID анимации
-		var id = "mel_anim_" + ( Math.random() * 1e6 | 0 ).toString(36);
+		var id = "mel_anim_" + animations_amount++;
 
 		// объект с информацией о текущей анимации
 		var instance = instances[id] = {};
@@ -32,17 +32,15 @@
 			easing = easings[easing] || easings.linear; 
 
 			if (mode & SELECTOR_MODE) { // анимация селектора
-				var rule = addRule(target);
-				// в цели должен быть массив
-				target = [rule.style];
+				target = [addRule(target).style];
 			} else { // анимация элементов
 				// запоминаем текущие инлайновые стили.
 				instance.beginCssText = [];
-				for (var i = 0; i in target; i += 1 ) {
-					instance.beginCssText[i] = target[i].style.cssText;
+				if ("nodeType" in target) {
+					target = [target];
 				}
 			} 
-		} else { // режим анимации
+		} else { // режим CSS3 анимации
 			instance.keyframes = addRule(keyframes + " " + id);
 			if (mode & SELECTOR_MODE) {
 				instance.selector = target;

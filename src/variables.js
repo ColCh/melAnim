@@ -12,11 +12,6 @@
 		// поддерживаются ли анимации текущим браузером
 		animation_supported,
 
-		// имена событий конца анимации
-		animationEndEventNames = ["animationend", "webkitAnimationEnd", "OAnimationEnd", "MSAnimationEnd"],
-		// имя события конца анимации для текущего браузера
-		animationEnd,
-
 		// имя css-правила для кейфреймов анимации
 		keyframes,
 
@@ -27,13 +22,17 @@
 		// запущенные экземпляры анимаций.
 		instances = {},
 
+		// количество анимаций с момента загрузки страницы
+		// для генерации ID
+		animations_amount = 0,
+
 		// вернёт отметку времени.
-		// тут будет геттер animationStartTime, если оно поддерживается
 		getNow = function () {
 			return +new Date;
 		},
 		
 		// выполнит callback перед отрисовкой, и передаст в него отметку времени
+		// это полифил
 		requestAnimationFrame = function (callback) {
 			setTimeout(function () {
 				callback( getNow() );
@@ -42,6 +41,7 @@
 
 		// функции, изменяющие прогресс.
 		// должны быть похожи на timing-function'ы из CSS Transition's
+		// TODO
 		easings = {
 			"ease": function (progr) {
 				return (-Math.cos(pos*Math.PI)/2) + 0.5;
@@ -60,28 +60,33 @@
 			}
 		},
 
-		// вернёт имя свойства, добавит к нему префикс при возможности
+		// вернёт имя свойства, добавит к нему префикс при необходимости.
 		// для css-свойств может возвращать я двух типах - для dom css, и для правил css. 
 		getVendorPropName = function (propName, obj, css) {
-			if (css && propName in gVPN_cache) {
-				return gVPN_cache[propName];
-			}
-			if (propName in obj || 
-					(css && (propName.replace(/-(.)/g, function(a, letter){return letter.toUpperCase()}) in obj))) {
+			var camelcased, cache;
+			css |= 0; // to number
+			cache = gVPN_cache[css];
 
+			if (propName in obj) {
 				return propName;
+			} else if (propName in cache) {
+				return cache[propName];
 			} else {
-				var origProp = propName;
-				propName = propName.charAt(0).toUpperCase() + propName.slice(1);
-				if (prefix + propName in obj) {
-					if (css) {
-						return (gVPN_cache[origProp] = "-" + prefix + "-" + origProp);
-					} else {
-						return prefix + propName;
-					}
-				} else if (lowPrefix + propName in obj) {
-					return lowPrefix + propName;
+
+				camelcased = propName.replace(/-(.)/g, gVPN_replace_callback);
+
+				if (css && camelcased in obj) {
+					return cache[propName] = propName;
 				}
+
+				camelcased = camelcased.charAt(0).toUpperCase() + camelcased.slice(1);
+
+				if (prefix + camelcased in obj) {
+					return cache[propName] = css ? "-" + prefix + "-" + propName:prefix + camelcased;
+				} else if (lowPrefix + propName in obj) {
+					return cache[propName] = lowPrefix + propName;
+				}
+
 			}
 			return null;
 		},
@@ -94,15 +99,11 @@
 		},
 
 		// кеш для getVendorPropName
-		gVPN_cache = {},
+		gVPN_cache = [ {}, {} ],
 
-		// вернёт функцию, которая при вызове будет читать указанное имя свойства из
-		// указанного объекта
-		// сделано для animationStartTime
-		makeGetter = function (prop, obj) {
-			return function () {
-				return obj[prop];
-			};
+		// закешировання функция для перевода имён правил из css в dom
+		gVPN_replace_callback = function (a, letter) {
+			return letter.toUpperCase();
 		},
 
 		// своя таблица стилей.

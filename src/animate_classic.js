@@ -3,7 +3,6 @@
 
 	var animateClassic = function (instance) {
 		ids.push(instance.id);
-		instance.started = getNow();
 		if (ids.length === 1) {
 			requestAnimationFrame(renderTicks);
 		}
@@ -20,17 +19,22 @@
 			properties = instance.properties;
 			buffer = "";
 
-			time = now - instance.started;
-			progr = time / instance.duration;
-			if (progr > 1) {
-				progr = 1;
+			if (instance.started) {
+				time = now - instance.started;
+				progr = time / instance.duration;
+				if (progr > 1) {
+					progr = 1;
+				}
+			} else {
+				time = progr = 0;
+				instance.started = now;
 			}
 			easing = instance.easing(progr, time, 0, 1, instance.duration);
 
 			for (property in properties) {
 				propName = getVendorPropName(property, dummy_style, true);
 
-				if (/*!propName &&*/ property in hooks) {
+				if (!propName &&/**/ property in hooks) {
 					buffer += hooks[property](instance, properties[property], easing) || ""; 
 				} else {
 					if (property in steps) {
@@ -44,9 +48,13 @@
 					buffer += propName + ":" + propVal + ";";
 				}
 			}
-			for (k = instance.target.length; k--; ) {
+			k = instance.target.length; 
+			while(k--) {
 				target = instance.target[k];
 				if (instance.mode ^ SELECTOR_MODE) {
+					if (instance.beginCssText[k] === undefined) {
+						instance.beginCssText[k] = target.style.cssText;
+					}
 					target.style.cssText = instance.beginCssText[k] + ";" + buffer;
 				} else {
 					target.cssText = buffer;
@@ -69,7 +77,7 @@
 			return (1 - easing) * from + easing * to;	
 		},
 		_default: function (property, easing) {
-			var res = steps._count(property.from, property.to, easing).toFixed(3) + property.dimension;
+			return steps._count(property.from, property.to, easing).toFixed(3) + property.dimension;
 		},
 		color: function (prop, easing) {
 			var i = 3, val = [];
