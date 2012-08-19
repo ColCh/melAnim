@@ -15,9 +15,9 @@
 		deg2rad = Math.PI / 180,
 		
 		progid = "progid:",
-		prefix = "DXImageTransform.Microsoft.",
-		Matrix = prefix + "Matrix",
-		Alpha = prefix + "Alpha";
+		filter_prefix = "DXImageTransform.Microsoft.",
+		Matrix = filter_prefix + "Matrix",
+		Alpha = filter_prefix + "Alpha";
 
 	hooks.transform = function (instance, transforms, easing) {
 		var matrix = [ [1, 0], [0, 1]], dx = 0, dy = 0, zoom = 0, math = Math, sin, cos, tan, rad, value;

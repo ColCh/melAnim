@@ -117,9 +117,12 @@
 
 					if (!from) {
 						if (!computed) {
-							computed = window.getComputedStyle ? window.getComputedStyle(target, ""):target.currentStyle;
+							computed = window.getComputedStyle ? window.getComputedStyle(target[0], ""):target[0].currentStyle;
 						}
-						from = getVendorPropValue(property, computed, false);
+						from = getVendorPropVal(property, computed, false);
+						if (!dimension_reg.test(from)) {
+							from = "0";
+						}
 					}
 
 					from = dimension_reg.exec(from);

@@ -1,4 +1,4 @@
-/*--------------------------- АНИМИРОВАНИЕ С ПОМОЩЬЮ ПЕРЕХОДОВ ---------------------------------*/
+/*--------------------------- АНИМИРОВАНИЕ С ПОМОЩЬЮ CSS3 АНИМАЦИИ ---------------------------------*/
 	var animateAnimation = function (instance) {
 		// генерируем строки стилей для перехода.
 		var from_buffer = "", to_buffer = "", property, properties = instance.properties, transform, prop;
@@ -35,7 +35,8 @@
 			target[i].style[ animation + "Name" ] = instance.id;
 			target[i].style[ animation + "Duration" ] = instance.duration;
 			target[i].style[ animation + "TimingFunction" ] = instance.easing;
-			target[i].style[ animation + "FillMode" ] = "forwards";
+			//target[i].style[ animation + "FillMode" ] = "forwards";
+			target[i].style[ animation + "Direction" ] = "normal";
 		}
 	};
 
@@ -46,8 +47,13 @@
 
 		delete instances[id];
 
-		//var ruleIndex = Array.prototype.indexOf.call(cssRules, instance.keyframes);
-		//stylesheet.deleteRule(ruleIndex);
+		var to_kf = instance.keyframes.findRule("100%").style;
+		var to_style = instance.target[0].style;
+
+		to_style.cssText += to_kf.cssText;
+
+		var ruleIndex = Array.prototype.indexOf.call(cssRules, instance.keyframes);
+		stylesheet.deleteRule(ruleIndex);
 
 		//ruleIndex = Array.prototype.indexOf.call(cssRules, instance.target[0]);
 		//stylesheet.deleteRule(ruleIndex);

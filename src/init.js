@@ -2,18 +2,7 @@
 	window['animate'] = function () {
 
 		// имена событий конца анимации
-		var animationEndEventNames = ["animationend", "webkitAnimationEnd", "OAnimationEnd", "MSAnimationEnd"];
-
-		// определение префикса для текущего браузера.
-		var prefixReg = /^(Moz|webkit|O|ms)(?=[A-Z])/, property, i;
-
-		for (property in dummy_style) {
-			if (prefixReg.test(property)) {
-				prefix = property.match(prefixReg)[1];
-				lowPrefix = prefix.toLowerCase();
-				break;
-			}
-		}
+		var animationEndEventNames = ["animationend", "webkitAnimationEnd", "OAnimationEnd", "MSAnimationEnd"], i;
 
 		// определение фич
 		if (getVendorPropName("animation", dummy_style, true)) {

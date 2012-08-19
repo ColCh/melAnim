@@ -73,7 +73,7 @@
 		// вернёт имя свойства, добавит к нему префикс при необходимости.
 		// для css-свойств может возвращать я двух типах - для dom css, и для правил css. 
 		getVendorPropName = function (propName, obj, css) {
-			var camelcased, cache;
+			var camelcased, cache, prfx, i;
 			css |= 0; // to number
 			cache = gVPN_cache[css];
 
@@ -91,10 +91,18 @@
 
 				camelcased = camelcased.charAt(0).toUpperCase() + camelcased.slice(1);
 
-				if (prefix + camelcased in obj) {
-					return cache[propName] = css ? "-" + prefix + "-" + propName:prefix + camelcased;
-				} else if (lowPrefix + propName in obj) {
-					return cache[propName] = lowPrefix + propName;
+				prfx = prefix ? [prefix]:["webkit", "Moz", "O", "ms"];
+				i = prfx.length;
+				while(i--) {
+					if (prfx[i] + camelcased in obj) {
+						prefix = prfx[i];
+						lowPrefix = prefix.toLowerCase();
+						return cache[propName] = css ? "-" + prefix + "-" + propName:prefix + camelcased;
+					} else if (lowPrefix + propName in obj) {
+						prefix = prfx[i];
+						lowPrefix = prefix.toLowerCase();
+						return cache[propName] = lowPrefix + propName;
+					}
 				}
 
 			}
