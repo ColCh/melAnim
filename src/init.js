@@ -24,13 +24,8 @@
 				document.body.addEventListener(animationEndEventNames[i], animationEndHandler, true);
 			}
 		}
-		var animStartTime = getVendorPropName("animationStartTime", window);
 		requestAnimationFrame = getVendorPropVal("requestAnimationFrame", window) || requestAnimationFrame;
 
-		if (animStartTime) {
-			getNow = makeGetter(animStartTime, window);
-		}
-		
 		// добавление своей таблицы стилей.
 		stylesheet = document.createElement("style");
 		document.body.appendChild(stylesheet);

@@ -60,6 +60,16 @@
 			}
 		},
 
+		// алиасы для времён
+		times = {
+			"slow": 600,
+			"fast": 200,
+
+			_default: 400
+		},
+
+		duration_reg = /(\d+)(m?s)/,
+
 		// вернёт имя свойства, добавит к нему префикс при необходимости.
 		// для css-свойств может возвращать я двух типах - для dom css, и для правил css. 
 		getVendorPropName = function (propName, obj, css) {
@@ -68,7 +78,7 @@
 			cache = gVPN_cache[css];
 
 			if (propName in obj) {
-				return propName;
+				return cache[propName] = propName;
 			} else if (propName in cache) {
 				return cache[propName];
 			} else {

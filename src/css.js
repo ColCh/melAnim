@@ -1,193 +1,108 @@
-/*--------------------------- УСТАНОВКА СТИЛЕЙ ---------------------------------*/
+/*--------------------------- ХУКИ ДЛЯ СТИЛЕЙ ---------------------------------*/
 	var hooks = {},
+		
+		multiply = function (A, B) {
+			var C = [[], []];
+			C[0][0] = A[0][0] * B[0][0] + A[0][1] * B[1][0];
+			C[0][1] = A[0][0] * B[0][1] + A[0][1] * B[1][1];
+			C[1][0] = A[1][0] * B[0][0] + A[1][1] * B[1][0];
+			C[1][1] = A[1][0] * B[0][1] + A[1][1] * B[1][1];
+			return C;
+		},
 
-	trimSides = /(?:^\s+)|(?:\s+$)/,
+		cache,
 
-	setStyle = function (style, name, value) {
-		var origName = name;
+		deg2rad = Math.PI / 180,
+		
+		progid = "progid:",
+		prefix = "DXImageTransform.Microsoft.",
+		Matrix = prefix + "Matrix",
+		Alpha = prefix + "Alpha";
 
-		if (dummy.style[name] === undefined || name.indexOf("-") !== -1) {
-			name = normalized[name] || normalizeName(name);
-		}
-		if (name) {
-			// в IE установка неверного значения породит ошибку.
-			try { style[name] = value; } catch (e) { return false; }
-		} else if (hooks[origName]) {
-			// нормализированное имя не найдено. даем шанс хукам.
-			return hooks[origName].interceptor(style, origName, value, hooks[origName].cache);
-		}
-	},
+	hooks.transform = function (instance, transforms, easing) {
+		var matrix = [ [1, 0], [0, 1]], dx = 0, dy = 0, zoom = 0, math = Math, sin, cos, tan, rad, value;
+		var transform, current, needs_correction = false;
 
-	normalized = {},
+		// формируем матрицу трансформации
+		for (transform in transforms) {
+			current = transforms[transform];
+			value = steps._count(current.from, current.to, easing);
 
-	dashReg = /-(.)/g,
+			switch (transform) {
+				case "rotate":
+					needs_correction = true;
+					rad = value * deg2rad;
+					sin = math.sin(rad);
+					cos = math.cos(rad);
+					matrix = multiply(matrix, [
+						[cos, -sin],
+						[sin, cos]
+					]);
+					break;
+				case "translateX":
+					dx += value;
+					break;
+				case "translateY":
+					dy += value;
+					break;
+				case "skewX":
+					tan = math.tan(value * deg2rad);
 
-	ccCallback = function () {
-		return arguments[1].toUpperCase();
-	},
+					matrix = multiply(matrix, [
+						[1, tan],
+						[0, 1]
+					]);
+					break;
+				case "skewY":
+					tan = math.tan(value * deg2rad);
 
-	normalizeName = function (name) {
-		var i, camelcased;
-
-		if (!normalized[name]) {
-			camelcased = name.replace(dashReg, ccCallback);
-			if (dummy.style[camelcased] === undefined) {
-				// похоже, мы имеем дело с CSS3 свойством. итерируем префиксы.
-				camelcased = camelcased.charAt().toUpperCase() + camelcased.slice(1);
-				for (i = 0; i in prefixes; i += 1) {
-					if (prefixes[i] + camelcased in dummy.style) {
-						normalized[name] = prefixes[i] + camelcased;
-					}
-				}
-			} else {
-				normalized[name] = camelcased;
+					matrix = multiply(matrix, [
+						[1, 0],
+						[tan], 1]);
+					break;
+				case "scaleX":
+					matrix[0][0] *= value;
+					break;
+				case "scaleY":
+					matrix[1][1] *= value;
+					break;
 			}
 		}
 
-		return normalized[name] || false;
-	};
+		var target, i = instance.target.length, matrFilter;
+		var origWidth, origHeight;
+		while(i--) {
+			target = instance.target[i];
 
-	setStyle.attachHook = function (propName, func) {
-		hooks[propName] = { 
-			"cache": {},
-			"interceptor": func
-		};
-	};
-	
-	var transformReg = /(\w+)\(([-\d.]+)\w*(?:,\s?([-\d.]+)\w*)?\)/,
-	
-			multiply = function (A, B) {
-				var C = [[], []];
-				C[0][0] = A[0][0] * B[0][0] + A[0][1] * B[1][0];
-				C[0][1] = A[0][0] * B[0][1] + A[0][1] * B[1][1];
-				C[1][0] = A[1][0] * B[0][0] + A[1][1] * B[1][0];
-				C[1][1] = A[1][0] * B[0][1] + A[1][1] * B[1][1];
-				return C;
-			},
-
-			using_filters = false,
-
-			cache,
-
-			matrixReg = /M\d{2}=[-\d.]+/g;
-
-
-	setStyle.attachHook("transform", function (style, name, value, hook_cache) {
-			// спарсенный параментр транформации
-			// skew(4deg, 5deg) ==> ["skew(4deg, 5deg)", "skew", "4", "5"]
-			// rotate(6deg) ==> ["rotate(6deg)", "rotate", "6", undefined]
-			var matched, i,
-					// обычное состояние
-					matrix = [ [1, 0], [0, 1]],
-					// сдвиг по x/y
-					dx = 0,
-					dy = 0,
-					// scale - вынесено в отдельное свойство.
-					zoom = +style.zoom || 1,
-					// коэффициент для перевода из градусов в радианы
-					deg2rad = Math.PI / 180,
-					// укорочение
-					math = Math,
-					// высчитанные значения. можно заменить на одно.
-					sin, cos, tan, rad,
-
-					origValue = value;
-
-		if (!cache) {
-			cache = hook_cache;
-		}
-
-		// формируем матрицу транформации
-		name = "filter";
-		for (i = 0, value = value.split(/\s(?!-?\d)/); i in value; i += 1) {
-			matched = transformReg.exec(value[i]);
-			switch (matched[1]) {
-			case "rotate":
-				rad = matched[2] * deg2rad;
-				sin = math.sin(rad);
-				cos = math.cos(rad);
-				matrix = multiply(matrix, [
-					[cos, -sin],
-					[sin, cos]
-				]);
-				break;
-			case "translateX":
-				dx += +matched[2];
-				break;
-			case "translateY":
-				dy += +matched[2];
-				break;
-			case "translate":
-				dx += +matched[2];
-				dy += +matched[3];
-				break;
-			case "skewX":
-				matrix = multiply(matrix, [
-					[1, math.tan(matched[2] * deg2rad)],
-					[0, 1]
-				]);
-				break;
-			case "skewY":
-				matrix = multiply(matrix, [
-					[1, 0],
-					[math.tan(matched[2] * deg2rad)], 1]);
-				break;
-			case "skew":
-				//X
-				rad = matched[2] * deg2rad;
-				tan = math.tan(rad);
-				matrix = multiply(matrix, [
-					[1, tan],
-					[0, 1]
-				]);
-
-				//Y
-				rad = matched[3] * deg2rad;
-				tan = math.tan(rad);
-				matrix = multiply(matrix, [
-					[1, 0],
-					[tan, 1]
-				]);
-				break;
-			case "scaleX":
-				matrix[0][0] *= +matched[2];
-				break;
-			case "scaleY":
-				matrix[1][1] *= +matched[2];
-				break;
-			case "scale":
-				matrix[0][0] *= +matched[2];
-				matrix[1][1] *= +matched[3];
-				break;
+			if (target.style.filter.indexOf("Matrix") === -1) {
+				target.style.filter += " " + progid + Matrix + '(M11=1, M12=0, M21=0, M22=1, SizingMethod="auto expand")';
+			}
+			matrFilter = target.filters.item(Matrix);
+			if (needs_correction) {
+				origWidth = target.offsetWidth;
+				origHeight = target.offsetHeight;
+			}
+			matrFilter.M11 = matrix[0][0];
+			matrFilter.M12 = matrix[0][1];
+			matrFilter.M21 = matrix[1][0];
+			matrFilter.M22 = matrix[1][1];
+			if (needs_correction) {
+				target.style.marginLeft = (target.offsetWidth - origWidth) / 2 + "px";
+				target.style.marginTop = (target.offsetHeight - origHeight) / 2 + "px";
 			}
 		}
+	};
 
-		var cacheKey = [];
+	hooks.opacity = function (instance, opacity, easing) {
+		var alpha = Math.ceil(steps._count(opacity.from, opacity.to, easing) * 100);
+		var target, i;
 
-		value = style[name] || "";
-		if (value.indexOf("Matrix") === -1) {
-			value += ' progid:DXImageTransform.Microsoft.Matrix(M11=1, M12=0, M21=0, M22=1, SizingMethod="auto expand")';
+		i = instance.target.length;
+		while(i--) {
+			target = instance.target[i];
+			if (target.style.filter.indexOf("Alpha") === -1) {
+				target.style.filter +=  " " + progid + Alpha + "(Opacity=100)";
+			}
+			target.filters.item(Alpha).opacity = alpha;
 		}
-		// заменяем M11=0 и другие на значения из вычисленной матрицы
-		value = value.replace(matrixReg, function (a) {
-			a = a.slice(0, 4) + matrix[ +a.charAt(1) - 1 ][ +a.charAt(2) - 1 ].toFixed(3);
-			cacheKey.push(a);
-			return a;
-		});
-		cache[cacheKey] = origValue;
-		setStyle(style, name, value);
-		setStyle(style, "zoom", zoom);
-		setStyle(style, "margin-top", dy);
-		setStyle(style, "margin-left", dx);
-	});
-
-	setStyle.attachHook("opacity", function (style, name, value, hook_cache) {
-		var alpha = Math.ceil(parseFloat(value, 10) * 100);
-
-		value = style.filter;
-		if (value.indexOf("Alpha") === -1) {
-			value +=  " progid:DXImageTransform.Microsoft.Alpha(Opacity=100)";
-		}
-		value = value.replace(/Opacity=\d+/i, "Opacity=" + alpha);
-		setStyle(style, "filter", value);
-	});
+	};

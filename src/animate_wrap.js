@@ -24,11 +24,22 @@
 		}
 
 		// подготовка к анимированию - расстановка в порядок стилей, и подобное.
+		if (duration_reg.test(duration)) {
+			if (mode & CLASSIC_MODE) {
+				duration = duration.match(duration_reg);
+				duration = parseFloat(duration[1], 10) * (duration[2] === "s" ? 1000:1);
+			}
+		} else {
+			duration = times[duration] || times._default;
+		}
+		
 		if (mode & CLASSIC_MODE) { // классический режим.
 
 			// приводим в порядок анимируемые свойства.
-			properties = normalize_properties(properties);
-			duration = parseFloat(duration, 10) * 1000;
+			properties = normalize_properties(properties, target);
+			instance.buffer = ";" + properties.buffer;
+			properties = properties.normalized;
+			
 			easing = easings[easing] || easings.linear; 
 
 			if (mode & SELECTOR_MODE) { // анимация селектора
@@ -71,31 +82,45 @@
 		return id;
 	};
 
-	var normalize_properties = function (properties) {
-		var property, from, to, dimension;
+
+	// словит число и размерность значения CSS свойства.
+	var dimension_reg = /(\d*\.?\d+)(.*)/;
+	// размерности по-умолчанию для исключений.
+	var dimensions = { _default: "px", opacity: "", rotate: "deg" };
+
+	var normalize_properties = function (properties, target, extra) {
+		var property, from, to, dimension, buffer = "", propInfo, normalized, computed;
 		
 		// нельзя изменять текущие анимируемые свойства.
 		var normalized_properties = {};
 
-		// словит число и размерность значения CSS свойства.
-		var dimension_reg = /(\d*\.?\d+)(.*)/;
-
-		// размерности по-умолчанию для исключений.
-		var dimensions = { _default: "px", opacity: "", rotate: "deg" };
-
 		for (property in properties) {
-			if (property === "transform") {
-				normalized_properties[property] = normalize_properties(properties[property]);
-			} else {	
-				normalized_properties[property] = {};
 
+			if (!extra || extra !== "transform") {
+				buffer += getVendorPropName(property, dummy_style, true) + ":${" + property + "};";
+			}
+			normalized = {};
+			propInfo = properties[property];
+
+			if (typeof propInfo ===  "object" && !propInfo.from && !propInfo.to) {
+				propInfo = normalize_properties(propInfo, target, (extra ? extra + "-":"") + property);
+				normalized = propInfo.normalized;
+				buffer += propInfo.buffer;
+			} else {	
 				if (/color/i.test(property)) {
-					normalized_properties[property].from = color_to_rgb(properties[property].from);
-					normalized_properties[property].to = color_to_rgb(properties[property].to);
+					normalized.from = color_to_rgb(properties[property].from);
+					normalized.to = color_to_rgb(properties[property].to);
 				} else {
 
-					from = properties[property].from;
-					to = properties[property].to;
+					from = propInfo.from;
+					to = propInfo.to;
+
+					if (!from) {
+						if (!computed) {
+							computed = window.getComputedStyle ? window.getComputedStyle(target, ""):target.currentStyle;
+						}
+						from = getVendorPropValue(property, computed, false);
+					}
 
 					from = dimension_reg.exec(from);
 					to = dimension_reg.exec(to);
@@ -105,13 +130,16 @@
 					from = parseFloat(from[1], 10);
 					to = parseFloat(to[1], 10);
 
-					normalized_properties[property].from = from;
-					normalized_properties[property].to = to;
-					normalized_properties[property].dimension = dimension;
+					normalized.from = from;
+					normalized.to = to;
+					normalized.dimension = dimension;
 				}
 			}
+
+			normalized_properties[property] = normalized;
 		}
-		return normalized_properties;
+
+		return { normalized: normalized_properties, buffer: buffer  };
 	};
 
 	// конвертирует строку с цветом в rgb.

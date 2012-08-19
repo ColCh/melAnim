@@ -2,8 +2,7 @@
 	var ids = [];
 
 	var animateClassic = function (instance) {
-		ids.push(instance.id);
-		if (ids.length === 1) {
+		if (ids.push(instance.id) === 1) {
 			requestAnimationFrame(renderTicks);
 		}
 	};
@@ -14,10 +13,11 @@
 		var buffer;
 		var k, target;
 
-		for (i = ids.length; i--;) {
+		i = ids.length;
+		while (i--) {
 			instance = instances[ids[i]];
 			properties = instance.properties;
-			buffer = "";
+			buffer = instance.buffer;
 
 			if (instance.started) {
 				time = now - instance.started;
@@ -32,22 +32,15 @@
 			easing = instance.easing(progr, time, 0, 1, instance.duration);
 
 			for (property in properties) {
-				propName = getVendorPropName(property, dummy_style, true);
-
-				if (!propName &&/**/ property in hooks) {
+				if (!gVPN_cache[1][property] && hooks[property]) {
 					buffer += hooks[property](instance, properties[property], easing) || ""; 
 				} else {
-					if (property in steps) {
-						step = steps[property];
-					} else if (/color/i.test(property)) {
-						step = steps.color;
-					} else {
-						step = steps._default;
-					}
+					step = /color/i.test(property) ? steps.color:steps[property] || steps._default;
 					propVal = step(properties[property], easing);
-					buffer += propName + ":" + propVal + ";";
+					buffer = buffer.replace("${" + property + "}", propVal);
 				}
 			}
+			
 			k = instance.target.length; 
 			while(k--) {
 				target = instance.target[k];

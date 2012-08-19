@@ -23,7 +23,7 @@
 
 		// добавляем сгенерированные строки стилей в правило кейфреймов
 		var keyframes = instance.keyframes;
-		var add = keyframes.addRule || keyframes.insertRule;
+		var add = keyframes.appendRule || keyframes.insertRule;
 
 		add.call(keyframes, "from { " + from_buffer + "}");
 		add.call(keyframes, "to { " + to_buffer + "}");
