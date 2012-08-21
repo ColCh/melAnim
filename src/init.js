@@ -5,9 +5,12 @@
 		var animationEndEventNames = ["animationend", "webkitAnimationEnd", "OAnimationEnd", "MSAnimationEnd"], i;
 
 		// определение фич
-		if (getVendorPropName("animation", dummy_style, true)) {
+		animation = getVendorPropName("animation", dummy_style, true)
+		if (animation) {
 			animation_supported = true;
-			keyframes = "@" + ("animation" in gVPN_cache[1] ? "-"+lowPrefix+"-":"") + "keyframes";
+			// правило кейфреймов сохраним, чтобы каждый раз не выполнять это условие.
+			keyframes = "@" + (keyframes !== "animation" ? "-"+lowPrefix+"-":"") + "keyframes";
+			// без мытарства с определением верного имени события просто вешаем на все сразу.
 			i = animationEndEventNames.length;
 			while (i--) {
 				document.body.addEventListener(animationEndEventNames[i], animationEndHandler, true);

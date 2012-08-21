@@ -2,7 +2,7 @@
 	var animateAnimation = function (instance) {
 		// генерируем строки стилей для перехода.
 		var from_buffer = "", to_buffer = "", property, properties = instance.properties, transform, prop;
-		var target, i, animation;
+		var target, i;
 
 		for (property in properties) {
 			prop = getVendorPropName(property, dummy_style, true);
@@ -30,13 +30,8 @@
 
 		// прописываем анимацию целям.
 		target = instance.target;
-		animation = getVendorPropName("animation", dummy_style, false);
 		for (i = target.length; i--; ) {
-			target[i].style[ animation + "Name" ] = instance.id;
-			target[i].style[ animation + "Duration" ] = instance.duration;
-			target[i].style[ animation + "TimingFunction" ] = instance.easing;
-			//target[i].style[ animation + "FillMode" ] = "forwards";
-			target[i].style[ animation + "Direction" ] = "normal";
+			target[i].style[animation] = instance.id + " " + instance.duration + " " + instance.easing;
 		}
 	};
 
@@ -47,16 +42,15 @@
 
 		delete instances[id];
 
-		var to_kf = instance.keyframes.findRule("100%").style;
-		var to_style = instance.target[0].style;
-
-		to_style.cssText += to_kf.cssText;
+		var to_buffer = instance.keyframes.findRule("100%").style.cssText, i = instance.target.length, target, animation;
+		animation = getVendorPropName("animation", dummy_style, false);
+		while(i--) {
+			target = instance.target[i];
+			target.style.cssText += to_buffer;
+		}
 
 		var ruleIndex = Array.prototype.indexOf.call(cssRules, instance.keyframes);
 		stylesheet.deleteRule(ruleIndex);
-
-		//ruleIndex = Array.prototype.indexOf.call(cssRules, instance.target[0]);
-		//stylesheet.deleteRule(ruleIndex);
 
 		instance.complete();
 	}

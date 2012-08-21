@@ -1,5 +1,5 @@
 /*--------------------------- ГЛАВНАЯ ФУНКЦИЯ АНИМАЦИИ ---------------------------------*/
-	var animate = function (target, properties, duration, easing, callback, mode) {
+	var animate = function (target, properties, duration, easing, callback, force_classic_mode) {
 
 		// уникальный ID анимации
 		var id = "mel_anim_" + animations_amount++;
@@ -12,15 +12,13 @@
 		//      0        |      1         |     1
 		//      1        |      0         |     2
 		//      1        |      1         |     3
-		if (typeof mode !== "number" || mode < 0 || mode > 3) {
-			mode = 0;
-			if (typeof target === "string") {
-				// строку считаем селектором
-				mode |= SELECTOR_MODE;
-			}
-			if (!animation_supported) {
-				mode |= CLASSIC_MODE;
-			}
+		var mode = 0;
+		if (typeof target === "string") {
+			// строку считаем селектором
+			mode |= SELECTOR_MODE;
+		}
+		if (!animation_supported || force_classic_mode) {
+			mode |= CLASSIC_MODE;
 		}
 
 		// подготовка к анимированию - расстановка в порядок стилей, и подобное.
@@ -31,6 +29,9 @@
 			}
 		} else {
 			duration = times[duration] || times._default;
+			if (mode ^ CLASSIC_MODE) {
+				duration += "ms";
+			}
 		}
 		
 		if (mode & CLASSIC_MODE) { // классический режим.
@@ -63,6 +64,7 @@
 			}
 		}
 
+		// собираем экземпляр
 		instance.target = target;
 		instance.mode = mode;
 		instance.properties = properties;

@@ -1,6 +1,8 @@
 /*--------------------------- ХУКИ ДЛЯ СТИЛЕЙ ---------------------------------*/
 	var hooks = {},
 		
+		// перемножит две квадратные матрицы
+		// циклы заинлайнены для быстродействия.
 		multiply = function (A, B) {
 			var C = [[], []];
 			C[0][0] = A[0][0] * B[0][0] + A[0][1] * B[1][0];
@@ -10,17 +12,17 @@
 			return C;
 		},
 
-		cache,
-
+		// коэф. для перевода из градусов в радианы.
 		deg2rad = Math.PI / 180,
 		
+		// строки для гибкого составления имени фильтра, чтобы по сто раз не писать.
 		progid = "progid:",
 		filter_prefix = "DXImageTransform.Microsoft.",
 		Matrix = filter_prefix + "Matrix",
 		Alpha = filter_prefix + "Alpha";
 
 	hooks.transform = function (instance, transforms, easing) {
-		var matrix = [ [1, 0], [0, 1]], dx = 0, dy = 0, zoom = 0, math = Math, sin, cos, tan, rad, value;
+		var matrix = [ [1, 0], [0, 1]], dx = 0, dy = 0, zoom = 0, math = Math, sin, cos, tan, value;
 		var transform, current, needs_correction = false;
 
 		// формируем матрицу трансформации
@@ -30,10 +32,11 @@
 
 			switch (transform) {
 				case "rotate":
+					// центр нужно ставить на место только в случае поворота.
 					needs_correction = true;
-					rad = value * deg2rad;
-					sin = math.sin(rad);
-					cos = math.cos(rad);
+					value *= deg2rad;
+					sin = math.sin(value);
+					cos = math.cos(value);
 					matrix = multiply(matrix, [
 						[cos, -sin],
 						[sin, cos]
@@ -58,7 +61,8 @@
 
 					matrix = multiply(matrix, [
 						[1, 0],
-						[tan], 1]);
+					    [tan, 1] 
+					]);
 					break;
 				case "scaleX":
 					matrix[0][0] *= value;
@@ -69,12 +73,13 @@
 			}
 		}
 
+		// TODO
 		var target, i = instance.target.length, matrFilter;
 		var origWidth, origHeight;
 		while(i--) {
 			target = instance.target[i];
 
-			if (target.style.filter.indexOf("Matrix") === -1) {
+			if (target.style.filter.indexOf(Matrix) === -1) {
 				target.style.filter += " " + progid + Matrix + '(M11=1, M12=0, M21=0, M22=1, SizingMethod="auto expand")';
 			}
 			matrFilter = target.filters.item(Matrix);
@@ -100,7 +105,7 @@
 		i = instance.target.length;
 		while(i--) {
 			target = instance.target[i];
-			if (target.style.filter.indexOf("Alpha") === -1) {
+			if (target.style.filter.indexOf(Alpha) === -1) {
 				target.style.filter +=  " " + progid + Alpha + "(Opacity=100)";
 			}
 			target.filters.item(Alpha).opacity = alpha;

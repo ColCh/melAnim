@@ -65,6 +65,8 @@
 		}
 	};
 
+	// вычисление текущего значения свойства
+	// ключ - имя свойства без вендорного префикса
 	var steps = {
 		_count: function (from, to, easing) {
 			return (1 - easing) * from + easing * to;	
