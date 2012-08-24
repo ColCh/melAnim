@@ -5,7 +5,7 @@
 		var animationEndEventNames = ["animationend", "webkitAnimationEnd", "OAnimationEnd", "MSAnimationEnd"], i;
 
 		// определение фич
-		animation = getVendorPropName("animation", dummy_style, true)
+		animation = getVendorPropName("animation", dummy_style, true);
 		if (animation) {
 			animation_supported = true;
 			// правило кейфреймов сохраним, чтобы каждый раз не выполнять это условие.
@@ -13,14 +13,18 @@
 			// без мытарства с определением верного имени события просто вешаем на все сразу.
 			i = animationEndEventNames.length;
 			while (i--) {
-				document.body.addEventListener(animationEndEventNames[i], animationEndHandler, true);
+				dummy.addEventListener(animationEndEventNames[i], animationEndHandler, true);
 			}
 		}
 		requestAnimationFrame = getVendorPropVal("requestAnimationFrame", window) || requestAnimationFrame;
 
-		// добавление своей таблицы стилей.
+		// добавление своей таблицы стилей перед самым последним тегом <script>.
+		var pos = document.getElementsByTagName("script");
+		pos = pos[ pos.length - 1 ];
+
 		stylesheet = document.createElement("style");
-		document.body.appendChild(stylesheet);
+		pos.parentNode.insertBefore(stylesheet, pos);
+
 		stylesheet = stylesheet.sheet || stylesheet.styleSheet;
 		cssRules = stylesheet.cssRules || stylesheet.rules;
 

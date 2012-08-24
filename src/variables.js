@@ -1,6 +1,9 @@
 /*--------------------------- ОБЬЯВЛЕНИЯ ---------------------------------*/
 	var 
 
+		// шорткат
+		document = window.document,
+
 		// константы
 		SELECTOR_MODE = 2,
 		CLASSIC_MODE = 1,
@@ -36,7 +39,7 @@
 		requestAnimationFrame = function (callback) {
 			setTimeout(function () {
 				callback( getNow() );
-			}, 16);
+			}, 1000 / 60);
 		},
 
 		// функции, изменяющие прогресс.
@@ -98,10 +101,10 @@
 						prefix = prfx[i];
 						lowPrefix = prefix.toLowerCase();
 						return cache[propName] = css ? "-" + prefix + "-" + propName:prefix + camelcased;
-					} else if (lowPrefix + propName in obj) {
+					} else if (lowPrefix + camelcased in obj) {
 						prefix = prfx[i];
 						lowPrefix = prefix.toLowerCase();
-						return cache[propName] = lowPrefix + propName;
+						return cache[propName] = lowPrefix + camelcased;
 					}
 				}
 
