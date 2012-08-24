@@ -37,26 +37,18 @@
 		}
 
 		// добавляем правила в таблицу стилей, или запоминем текущие стили, в зависимости от режима.
+
 		if (mode & CLASSIC_MODE) {
 			easing = easings[easing] || easings.linear; 
-			if (mode & SELECTOR_MODE) {
-				target = [addRule(target).style];
-			} else {
-				// текущие инлайновые стили элементов запомнятся при первом кадре
-				instance.beginCssText = [];
-				if ("nodeType" in target) {
-					target = [target];
-				}
-			} 
 		} else {
 			instance.keyframes = addRule(keyframes + " " + id);
-			if (mode & SELECTOR_MODE) {
-				instance.selector = target;
-				target = [ addRule(target) ];
-			} else {
-				if ("nodeType" in target) {
-					target = [target];
-				}
+		}
+
+		if (mode & SELECTOR_MODE) {
+			target = [ addRule(target) ];
+		} else {
+			if ("nodeType" in target) {
+				target = [ target ];
 			}
 		}
 

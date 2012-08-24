@@ -1,11 +1,12 @@
 /*--------------------------- КЛАССИЧЕСКАЯ АНИМАЦИЯ ---------------------------------*/
-	var ids = [];
-
 	var animateClassic = function (instance) {
 		if (ids.push(instance.id) === 1) {
 			requestAnimationFrame(renderTicks);
 		}
 	};
+
+	// ID'шники запущенных в классическом режиме анимаций.
+	var ids = [];
 
 	var renderTicks = function (now) {
 		var i, instance, property, time, progr, easing, step, properties;
@@ -22,39 +23,40 @@
 			if (instance.started) {
 				time = now - instance.started;
 				progr = time / instance.duration;
-				if (progr > 1) {
-					progr = 1;
-				}
 			} else {
+				// первый запуск; будут проставляться значения "от"
 				time = progr = 0;
 				instance.started = now;
+				instance.beginCssText = [];
 			}
-			easing = instance.easing(progr, time, 0, 1, instance.duration);
 
-			for (property in properties) {
-				if (!gVPN_cache[1][property] && hooks[property]) {
-					buffer += hooks[property](instance, properties[property], easing) || ""; 
-				} else {
-					step = /color/i.test(property) ? steps.color:steps[property] || steps._default;
-					propVal = step(properties[property], easing);
-					buffer = buffer.replace("${" + property + "}", propVal);
-				}
-			}
-			
-			k = instance.target.length; 
-			while(k--) {
-				target = instance.target[k];
-				if (instance.mode ^ SELECTOR_MODE) {
-					if (instance.beginCssText[k] === undefined) {
-						instance.beginCssText[k] = target.style.cssText;
+			if (progr < 1) {
+
+				easing = instance.easing(progr, time, 0, 1, instance.duration);
+
+				// вычисляем значения для свойств и записываем в буффер.
+				for (property in properties) {
+					if (!gVPN_cache[1][property] && hooks[property]) {
+						buffer += hooks[property](instance, properties[property], easing) || ""; 
+					} else {
+						step = /color/i.test(property) ? steps.color:steps[property] || steps._default;
+						propVal = step(properties[property], easing);
+						buffer = buffer.replace("${" + property + "}", propVal);
 					}
-					target.style.cssText = instance.beginCssText[k] + ";" + buffer;
-				} else {
-					target.cssText = buffer;
 				}
-			}
-		
-			if (progr === 1) {
+				
+				// применяем буффер к целям.
+				k = instance.target.length;
+				while(k--) {
+					target = instance.target[k];	
+					if (instance.beginCssText[k] === undefined) {
+						instance.beginCssText[k] = target.style.cssText + ";";
+					}
+					target.style.cssText = instance.beginCssText[k] + buffer;
+				}
+
+			} else {
+				// анимация закончена.
 				delete instances[ ids.splice(i, 1)[0] ];
 				instance.complete();
 			}
