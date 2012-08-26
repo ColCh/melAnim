@@ -16,7 +16,7 @@
 				dummy.addEventListener(animationEndEventNames[i], animationEndHandler, true);
 			}
 		}
-		requestAnimationFrame = getVendorPropVal("requestAnimationFrame", window) || requestAnimationFrame;
+		requestAnimationFrame = getVendorPropVal("requestAnimationFrame", window, false) || requestAnimationFrame;
 
 		// добавление своей таблицы стилей перед самым последним тегом <script>.
 		var pos = document.getElementsByTagName("script");
@@ -31,7 +31,7 @@
 		/* вызов оригинальной функции анимирования */
 		window['animate'] = animate;
 		if (arguments.length) {
-			return animate.apply(this, arguments);
+			return animate.apply(window, arguments);
 		}
 		return true;
 	};

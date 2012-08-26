@@ -1,8 +1,9 @@
 /*--------------------------- ОБЬЯВЛЕНИЯ ---------------------------------*/
 	var 
 
-		// шорткат
+		// шорткаты
 		document = window.document,
+		undefined,
 
 		// константы
 		SELECTOR_MODE = 2,
@@ -29,7 +30,7 @@
 
 		// количество анимаций с момента загрузки страницы
 		// для генерации ID
-		animations_amount = 0,
+		animationsAmount = 0,
 
 		// вернёт отметку времени.
 		getNow = Date.now || function () { return +new Date; },
@@ -47,7 +48,7 @@
 		// TODO
 		easings = {
 			"ease": function (progr) {
-				return (-Math.cos(pos*Math.PI)/2) + 0.5;
+				return ( - Math.cos(progr * Math.PI) / 2) + 0.5;
 			},
 			"ease-out": function (progr) {
 				return Math.sin(progr * Math.PI / 2);
@@ -72,6 +73,8 @@
 		},
 
 		duration_reg = /(\d+)(m?s?)/,
+
+		color = /color/i,
 
 		// вернёт имя свойства, добавит к нему префикс при необходимости.
 		// для css-свойств может возвращать я двух типах - для dom css, и для правил css. 

@@ -10,11 +10,11 @@
 	// пройдётся по свойствам и приведёт их в скрипто-читабельный вид.
 	var normalize_properties = function (instance, properties) {
 
-		var classic_mode = instance.mode & CLASSIC_MODE, normalized_properties = {};
+		var classic_mode = instance.animMode & CLASSIC_MODE, normalized_properties = {};
 		var prop, prefixed_prop, prop_info;
 		
 		// для классического вида - шаблон, для анимации - cssText кейфреймов.
-		instance.buffer = classic_mode ? ";":({ from: "", to: ";" });
+		instance.propsBuffer = classic_mode ? ";":({ from: "", to: ";" });
 
 		if (!classic_mode && typeof properties === "string") {
 			// PARSE 
@@ -39,7 +39,7 @@
 
 		// для css анимации нужны только буфферы.
 		if (classic_mode) {
-			instance.properties = normalized_properties;
+			instance.props = normalized_properties;
 		}
 	};
 
@@ -48,8 +48,8 @@
 		_default: function (classic_mode, prefixed_prop, orig_prop, source, instance, destination, write_buffer) {
 			var from, to, dimension;
 
-			from = source.from;
-			to = source.to;
+			from = source["from"];
+			to = source["to"];
 
 			if (from === undefined) {
 				// COMPUTED
@@ -58,12 +58,12 @@
 			if (classic_mode) {
 
 				if (write_buffer) {
-					instance.buffer += prefixed_prop + ":${" + orig_prop + "};";
+					instance.propsBuffer += prefixed_prop + ":${" + orig_prop + "};";
 				}
 
 				destination = destination[orig_prop] = {};
 
-				if (/color/i.test(orig_prop)) {
+				if (color.test(orig_prop)) {
 					destination.from = color_to_rgb(from);
 					destination.to = color_to_rgb(to);
 				} else {
@@ -72,42 +72,43 @@
 
 					dimension = (from[2] === to[2]) ? from[2] : (orig_prop in dimensions ? dimensions[orig_prop]:dimensions._default);
 
-					from = parseFloat(from[1], 10);
-					to = parseFloat(to[1], 10);
+					from = parseFloat(from[1]);
+					to = parseFloat(to[1]);
 
 					destination.from = from;
 					destination.to = to;
 					destination.dimension = dimension;
 				}
 			} else if (write_buffer) {
-				instance.buffer.from += prefixed_prop + ":" + from + ";";
-				instance.buffer.to += prefixed_prop + ":" + to + ";";
+				instance.propsBuffer.from += prefixed_prop + ":" + from + ";";
+				instance.propsBuffer.to += prefixed_prop + ":" + to + ";";
 			}
 		},
 
 		transform: function (classic_mode, prefixed_prop, orig_prop, source, instance, destination) {
-			var transform;
+			var transform, transformInfo;
 	
 			if (classic_mode) {
-				instance.buffer += prefixed_prop + ":${" + orig_prop + "};";
+				instance.propsBuffer += prefixed_prop + ":${" + orig_prop + "};";
 				destination = destination[orig_prop] = {};
 			} else {
-				instance.buffer.from += prefixed_prop + ":";
-				instance.buffer.to += prefixed_prop + ":";
+				instance.propsBuffer.from += prefixed_prop + ":";
+				instance.propsBuffer.to += prefixed_prop + ":";
 			}
 
 			for (transform in source) {
+				transformInfo = source[transform];
 				if (classic_mode) {
-					normalize._default(classic_mode, prefixed_prop, transform, source[transform], instance, destination, false);
+					normalize._default(classic_mode, prefixed_prop, transform, transformInfo, instance, destination, false);
 				} else {
-					instance.buffer.from += transform + "(" + source[transform].from + ") ";
-					instance.buffer.to += transform + "(" + source[transform].to + ") ";
+					instance.propsBuffer.from += transform + "(" + transformInfo["from"] + ") ";
+					instance.propsBuffer.to += transform + "(" + transformInfo["to"] + ") ";
 				}
 			}
 
 			if (!classic_mode) {
-				instance.buffer.from += ";";
-				instance.buffer.to += ";";
+				instance.propsBuffer.from += ";";
+				instance.propsBuffer.to += ";";
 			}
 		}
 	};
