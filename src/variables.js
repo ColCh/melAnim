@@ -24,6 +24,9 @@
 		// элемент, где можно проверить поддержку фич
 		dummy = document.documentElement,
 		dummy_style = dummy.style,
+		
+		// объект со всеми хуками.
+		hooks = animate["hooks"] = {},
 
 		// запущенные экземпляры анимаций.
 		instances = {},
@@ -54,7 +57,7 @@
 				return Math.sin(progr * Math.PI / 2);
 			},
 			"ease-in": function (progr) {
-				return progr * progr;
+				return Math.pow(time / duration, 2);
 			},
 			"ease-in-out": function (progr) {
 				return progr;
@@ -69,10 +72,10 @@
 			"slow": 600,
 			"fast": 200,
 
-			_default: 400
+			_default: 0
 		},
 
-		duration_reg = /(\d+)(m?s?)/,
+		durationReg = /^\d+(m?s?)$/,
 
 		color = /color/i,
 

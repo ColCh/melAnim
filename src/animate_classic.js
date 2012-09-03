@@ -1,5 +1,6 @@
 /*--------------------------- КЛАССИЧЕСКАЯ АНИМАЦИЯ ---------------------------------*/
 	var animateClassic = function (instance) {
+		instance.timingFunction = easings[instance.timingFunction] || easings.linear;
 		if (!ids.length) {	
 			requestAnimationFrame(renderTicks);
 		}
@@ -12,54 +13,76 @@
 
 	var renderTicks = function (now) {
 		var i, instance, property, time, progr, easing, step, properties;
-		var propVal, propName, propInfo;
-		var buffer;
+		var propVal, propInfo, procents, l, from, to, propEasing, propProgr;
 		var k, target;
+		var buffer = "";
 
 		i = ids.length;
 		while (i--) {
 			instance = instances[ids[i]];
 			properties = instance.props;
-			buffer = instance.propsBuffer;
 
-			if (instance.started) {
-				time = now - instance.started;
-				progr = time / instance.animationDuration;
-				if (progr > 1) {
-					// гарантируется точность того, что при последнем кадре будут применены конечные значения
-					progr = easing = 1;
-				} else {
-					easing = instance.timingFunction(progr, time, 0, 1, instance.animationDuration);
-				}
-			} else {
-				// первый кадр; будут проставляться значения "от"
-				easing = progr = 0;
+			if (!instance.started) {
+				// первый кадр.
 				instance.started = now;
-				instance.beginCssText = [];
+				progr = 0;
+			} else {
+				progr = (now - instance.started) / instance.animationDuration;
+				if (progr > 1) {
+					progr = 1;
+				}
 			}
 
+			easing = instance.timingFunction(progr);
 
-			// вычисляем значения для свойств и записываем в буффер.
+			// вычисление текущего значения для свойств.
 			for (property in properties) {
 				propInfo = properties[property];
-				if (!gVPN_cache[1][property] && hooks[property]) {
-					buffer += hooks[property](instance, propInfo, easing) || ""; 
+				procents = propInfo.procents;
+
+				if (procents[propInfo.currProc + 1] < progr) {
+					propInfo.currProc++;
+					propInfo.started = now;
+				}
+
+				from = procents[propInfo.currProc];
+				to = procents[ propInfo.currProc + 1 ];
+				
+				if (from) {
+					propProgr = (now - propInfo.started) / from / instance.animationDuration;
+					if (propProgr > 1 || progr === 1) {
+						propProgr = 1;
+					}
+					propEasing = instance.timingFunction(propProgr);
 				} else {
-					step = color.test(property) ? steps.color:steps[property] || steps._default;
-					propVal = step(propInfo, easing);
-					buffer = buffer.replace("${" + property + "}", propVal);
+					propEasing = easing;
+				}
+
+				step = steps[property] || steps._count;
+
+				if (propInfo[from] === undefined) {
+					k = instance.targets.length;
+					while (k--) {
+						propInfo.special[k].currentValue = step(propInfo.special[k].from, propInfo[to], propEasing);
+					}
+				} else {
+					propInfo.currentValue = step(propInfo[from], propInfo[to], propEasing);
 				}
 			}
 			
-			// применяем буффер к целям.
+			// применяем изменения к элементам.
 			k = instance.targets.length;
 			while(k--) {
-				target = instance.targets[k];	
-				if (instance.beginCssText[k] === undefined) {
-					// запоминаем начальный стиль.
-					instance.beginCssText[k] = target.style.cssText + ";";
+				target = instance.targets[k];
+				for (property in properties) {
+					propInfo = properties[property];
+					propVal = propInfo.currentValue || propInfo.special[k].currentValue;
+					if (renderHooks[property]) {
+						renderHooks[property](propVal, instance.targets, propInfo);
+					} else {
+						target.style[properties[property].prefixed] = propVal + propInfo.dimension;
+					}
 				}
-				target.style.cssText = instance.beginCssText[k] + buffer;
 			}
 
 			if (progr === 1) {
@@ -77,12 +100,9 @@
 
 	// вычисление текущего значения свойства
 	// ключ - имя свойства без вендорного префикса
-	var steps = {
+	var steps = hooks["steps"] = {
 		_count: function (from, to, easing) {
 			return (1 - easing) * from + easing * to;	
-		},
-		_default: function (property, easing) {
-			return steps._count(property.from, property.to, easing) + property.dimension;
 		},
 		color: function (prop, easing) {
 			var i = 3, val = [];
@@ -91,11 +111,11 @@
 			}
 			return "rgb(" + val.join(", ") + ")";
 		},
-		transform: function (prop, easing) {
-			var transform, res = "";
-			for (transform in prop) {
-				res += transform + "(" + steps._default(prop[transform], easing) + ")" + " ";
+		transform: function (from, to, prop, easing) {
+			var transform, transforms = prop.transforms, transformInfo;
+			for (transform in transforms) {
+				transformInfo = transforms[transform];
+				transformInfo.currentValue = steps._count(transformInfo[from], transformInfo[to], easing);
 			}
-			return res;
 		}
 	};

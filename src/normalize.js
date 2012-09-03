@@ -1,7 +1,7 @@
 /*--------------------------- НОРМАЛИЗИРОВАНИЕ СВОЙСТВ ---------------------------------*/
 
 	// словит число и размерность значения CSS свойства.
-	var dimension_reg = /(\d*\.?\d+)(.*)/;
+	var dimensionReg = /(-?\d*\.?\d+)(.*)/;
 
 	// размерности по-умолчанию для исключений.
 	var dimensions = { _default: "px", opacity: "", rotate: "deg" };
@@ -10,111 +10,81 @@
 	// пройдётся по свойствам и приведёт их в скрипто-читабельный вид.
 	var normalize_properties = function (instance, properties) {
 
-		var classic_mode = instance.animMode & CLASSIC_MODE, normalized_properties = {};
-		var prop, prefixed_prop, prop_info;
+		var classicMode = instance.classicMode, normalizedProperties = {};
+		var prop, prefixedProp, propInfo, dest;
 		
-		// для классического вида - шаблон, для анимации - cssText кейфреймов.
-		instance.propsBuffer = classic_mode ? ";":({ from: "", to: ";" });
-
-		if (!classic_mode && typeof properties === "string") {
-			// PARSE 
+		if (!classicMode) {
+			instance.buffer = {};
 		}
 
 		for (prop in properties) {
 
-			// информация о анимируемом свойстве. { to [, from] : css_value }, или css_"to"_value (строка)
-			prop_info = properties[prop];
-			// имя свойства, приведённое в порядок, для вставки в таблицу стилей
-			prefixed_prop = getVendorPropName(prop, dummy_style, true);
+			propInfo = properties[prop];
+			prefixedProp = getVendorPropName(prop, dummy_style, classicMode);
 
-			if (classic_mode) {
-				// значение - css_"to"_value
-				if (typeof prop_info === "string") {
-					
-				}
+			if (classicMode) {
+				dest = normalizedProperties[prop] = {};
+				dest.prefixed = prefixedProp;
+				dest.procents = [];
+				dest.currProc = 0;
 			}
 
-			(normalize[prop] || normalize._default) (classic_mode, prefixed_prop, prop, prop_info, instance, normalized_properties, true);
+			(normalize[prop] || normalize._default) (classicMode, prefixedProp, propInfo, instance, normalizedProperties, dest);
 		}
 
 		// для css анимации нужны только буфферы.
-		if (classic_mode) {
-			instance.props = normalized_properties;
+		if (classicMode) {
+			instance.props = normalizedProperties;
 		}
 	};
 
-	// функции для нормализирования отдельных свойств. шаблон "стратегия"
-	var normalize = {
-		_default: function (classic_mode, prefixed_prop, orig_prop, source, instance, destination, write_buffer) {
-			var from, to, dimension;
+	var procsreg = /^(\d{1,3})%?$/;
 
-			from = source["from"];
-			to = source["to"];
-
-			if (from === undefined) {
-				// COMPUTED
-			}
-
-			if (classic_mode) {
-
-				if (write_buffer) {
-					instance.propsBuffer += prefixed_prop + ":${" + orig_prop + "};";
+	// функции для нормализирования отдельных свойств.
+	var normalize = hooks["normalize"] = {
+		_default: function (classicMode, prop, source, instance, destination, dest) {
+			var procent, value, dimension, buffer, i;
+			if (source["100%"] || source["to"]) {
+				if (classicMode && (!source["0%"] || !source["from"])) {
+					dest.procents.push(0);
+					i = instance.targets.length;
+					while (i--) {
+						if (!dest.special) {
+							dest.special = {};
+						}
+						(dest.special[i] = {}).from = getCSS(instance.targets[i], prop);
+					}
 				}
-
-				destination = destination[orig_prop] = {};
-
-				if (color.test(orig_prop)) {
-					destination.from = color_to_rgb(from);
-					destination.to = color_to_rgb(to);
-				} else {
-					from = dimension_reg.exec(from);
-					to = dimension_reg.exec(to);
-
-					dimension = (from[2] === to[2]) ? from[2] : (orig_prop in dimensions ? dimensions[orig_prop]:dimensions._default);
-
-					from = parseFloat(from[1]);
-					to = parseFloat(to[1]);
-
-					destination.from = from;
-					destination.to = to;
-					destination.dimension = dimension;
+				for (procent in source) {
+					value = source[procent];
+					procent = procent === "from" ? "0%":procent === "to" ? "100%":procent;
+					if (procsreg.test(procent)) {
+						if (classicMode) {
+							procent = parseInt(procent, 10) / 100;
+							value = value.match(dimensionReg);
+							dest[procent] = parseFloat(value[1]);
+							dest.dimension = dest.dimension || value[2];
+							dest.procents.push(procent);
+						} else {
+							instance.buffer[procent] = (instance.buffer[procent] || "") + prop + ":" + value + ";"
+						}
+					}
 				}
-			} else if (write_buffer) {
-				instance.propsBuffer.from += prefixed_prop + ":" + from + ";";
-				instance.propsBuffer.to += prefixed_prop + ":" + to + ";";
 			}
 		},
 
-		transform: function (classic_mode, prefixed_prop, orig_prop, source, instance, destination) {
-			var transform, transformInfo;
-	
-			if (classic_mode) {
-				instance.propsBuffer += prefixed_prop + ":${" + orig_prop + "};";
-				destination = destination[orig_prop] = {};
-			} else {
-				instance.propsBuffer.from += prefixed_prop + ":";
-				instance.propsBuffer.to += prefixed_prop + ":";
-			}
-
+		transform: function (classicMode, prop, source, instance, destination, dest) {
+			var transform;
+			dest.transforms = {};
 			for (transform in source) {
-				transformInfo = source[transform];
-				if (classic_mode) {
-					normalize._default(classic_mode, prefixed_prop, transform, transformInfo, instance, destination, false);
-				} else {
-					instance.propsBuffer.from += transform + "(" + transformInfo["from"] + ") ";
-					instance.propsBuffer.to += transform + "(" + transformInfo["to"] + ") ";
-				}
-			}
-
-			if (!classic_mode) {
-				instance.propsBuffer.from += ";";
-				instance.propsBuffer.to += ";";
+				dest.transforms[transform] = {};
+				normalize._default(classicMode, prop, source[transform], instance, dest, dest.transforms[transform]);
 			}
 		}
 	};
 
 	// конвертирует строку с цветом в rgb.
-	var color_to_rgb = function (color) {
+	var colorToRGB = function (color) {
 		// пока только hex
 		color = parseInt( color.slice(1), 16);
 		return [ color >> 16 & 0xFF, color >> 8 & 0xFF, color & 0xFF ];

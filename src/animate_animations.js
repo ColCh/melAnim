@@ -1,38 +1,57 @@
 /*--------------------------- АНИМИРОВАНИЕ С ПОМОЩЬЮ CSS3 АНИМАЦИИ ---------------------------------*/
 	var animateAnimation = function (instance) {
-		var targets, i;
+		var target, i, k;
 
 		// добавляем сгенерированные строки стилей в правило кейфреймов
-		var keyframes = instance.keyframes;
-		var add = keyframes.appendRule || keyframes.insertRule;
-		var buffer = instance.propsBuffer;
+		/** @type {CSSKeyframesRule} */ var keyfrs = instance.keyframes = addRule(keyframes + " "+ instance.animationId);
+		var add = keyfrs.appendRule || keyfrs.insertRule;
+		var buffer = instance.buffer, procent;
 
-		add.call(keyframes, "0% { " + buffer.from + "}");
-		add.call(keyframes, "100% { " + buffer.to + "}");
+		for (procent in buffer) {
+			add.call(keyfrs, procent + "{" + buffer[procent] + "}");
+		}
 
-		// прописываем анимацию целям.
-		targets = instance.targets;
-		var anim = animation + ":" + instance.animationId + " " + instance.animationDuration + " " + instance.timingFunction;
-		for (i = targets.length; i--; ) {
-			targets[i].style.cssText += ";" + anim;
+		var to = keyfrs.findRule("100%").style;
+
+		i = instance.targets.length;
+		while (i--) {
+			target = instance.targets[i].style;
+			target[animation + "Name"] += (target[animation + "Name"] ? ", ":"") + instance.animationId;
+			target[animation + "Duration"] += (target[animation + "Duration"] ? ", ":"") + instance.animationDuration;
+			target[animation + "TimingFunction"] += (target[animation + "TimingFunction"] ? ", ":"") + instance.timingFunction;
+			k = to.length;
+			while (k--) {
+				target[ to[k] ] = to[ to[k] ];
+			}
 		}
 	};
 
 	// для делегирования всплывающих событий конца анимации
 	var animationEndHandler = function (event) {
 
-		var id = event.animationName, instance = instances[id];
+		var id = event.animationName, instance = instances[id], cache, pos, target;
 
-		delete instances[id];
-
-		var to_buffer = instance.keyframes.findRule("100%").style.cssText, i = instance.targets.length, target;
-		while(i--) {
-			target = instance.targets[i];
-			target.style.cssText += to_buffer;
+		if (!instance) {
+			// уже удалена или анимируется "чужой".
+			return;
 		}
 
+		// удаляем кейфреймы с таблицы стилей.
 		var ruleIndex = Array.prototype.indexOf.call(cssRules, instance.keyframes);
 		stylesheet.deleteRule(ruleIndex);
 
+		// убираем прописанную анимацию.
+		i = instance.targets.length;
+		while (i--) {
+			target = instance.targets[i].style;
+
+			target[animation + "Name"] = target[animation + "Name"].replace(new RegExp("(?:^|, )" + instance.animationId), "");
+			target[animation + "Duration"] = target[animation + "Duration"].replace(new RegExp("(?:^|, )" + instance.animationDuration), "");
+			target[animation + "TimingFunction"] = target[animation + "TimingFunction"].replace(new RegExp("(?:^|, )" + instance.timingFunction), "");
+		}
+
+		// удаляем экземпляр
+		delete instances[id];
+
 		instance.completeHandler();
-	}
+	};

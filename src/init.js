@@ -1,37 +1,30 @@
 /*--------------------------- ИНИЦИАЛИЗАЦИЯ ---------------------------------*/
-	window['animate'] = function () {
+	var animationEndEventNames = ["animationend", "webkitAnimationEnd", "OAnimationEnd", "MSAnimationEnd"], i;
 
-		// имена событий конца анимации
-		var animationEndEventNames = ["animationend", "webkitAnimationEnd", "OAnimationEnd", "MSAnimationEnd"], i;
+	// определение фич
+	animation = getVendorPropName("animation", dummy_style, false);
 
-		// определение фич
-		animation = getVendorPropName("animation", dummy_style, true);
-		if (animation) {
-			animation_supported = true;
-			// правило кейфреймов сохраним, чтобы каждый раз не выполнять это условие.
-			keyframes = "@" + (keyframes !== "animation" ? "-"+lowPrefix+"-":"") + "keyframes";
-			// без мытарства с определением верного имени события просто вешаем на все сразу.
-			i = animationEndEventNames.length;
-			while (i--) {
-				dummy.addEventListener(animationEndEventNames[i], animationEndHandler, true);
-			}
+	if (animation) {
+		animation_supported = true;
+		// правило кейфреймов сохраним, чтобы каждый раз не выполнять это условие.
+		keyframes = "@" + (animation !== "animation" ? "-"+lowPrefix+"-":"") + "keyframes";
+		// без мытарства с определением верного имени события просто вешаем на все сразу.
+		i = animationEndEventNames.length;
+		while (i--) {
+			dummy.addEventListener(animationEndEventNames[i], animationEndHandler, true);
 		}
-		requestAnimationFrame = getVendorPropVal("requestAnimationFrame", window, false) || requestAnimationFrame;
+	}
 
-		// добавление своей таблицы стилей перед самым последним тегом <script>.
-		var pos = document.getElementsByTagName("script");
-		pos = pos[ pos.length - 1 ];
+	requestAnimationFrame = getVendorPropVal("requestAnimationFrame", window, false) || requestAnimationFrame;
 
-		stylesheet = document.createElement("style");
-		pos.parentNode.insertBefore(stylesheet, pos);
+	// добавление своей таблицы стилей перед самым последним тегом <script>.
+	var pos = document.getElementsByTagName("script");
+	pos = pos[ pos.length - 1 ];
 
-		stylesheet = stylesheet.sheet || stylesheet.styleSheet;
-		cssRules = stylesheet.cssRules || stylesheet.rules;
+	stylesheet = document.createElement("style");
+	pos.parentNode.insertBefore(stylesheet, pos);
 
-		/* вызов оригинальной функции анимирования */
-		window['animate'] = animate;
-		if (arguments.length) {
-			return animate.apply(window, arguments);
-		}
-		return true;
-	};
+	stylesheet = stylesheet.sheet || stylesheet.styleSheet;
+	cssRules = stylesheet.cssRules || stylesheet.rules;
+
+	window["animate"] = animate;
