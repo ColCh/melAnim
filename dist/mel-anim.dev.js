@@ -1,7 +1,5 @@
-/** @license melAnim.js by melky (coloured_chalk@mail.ru). Dual licensed under the MIT and GPL licenses. */
-
-/**
- * @author melky
+/**@license melAnim.js by melky (coloured_chalk@mail.ru). Dual licensed under the MIT and GPL licenses. */
+/**@author melky
  * 
  *
  * Copyright 2012, Maxim Sysoev ( coloured_chalk@mail.ru )

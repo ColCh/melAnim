@@ -4,7 +4,6 @@
     
     var directionsReg = new RegExp("^(?:(?:" + ["normal", "reverse", "alternate", "alternate-reverse"].join(")|(?:") + "))$");
 
-    
     var easingAliases = {
         "ease": [0.25, 0.1, 0.25, 1.0],
         "linear": [0.0, 0.0, 1.0, 1.0],
@@ -18,6 +17,20 @@
     
     window.Animation = Animation;
     
+    /**
+     * @constructor
+     * 
+     * @param {Element} elements
+     * @param {Object} properties
+     * @param {string} duration
+     * @param {string} easing
+     * @param {Function} complete
+     * @param {string} fillMode
+     * @param {string} delay
+     * @param {number} iterationCount
+     * @param {string} direction
+     * @param {boolean} classicMode
+     */
     function Animation (elements, properties, duration, easing, complete, fillMode, delay, iterationCount, direction, classicMode) {
         classicMode = classicMode || ! getVendorPropName("animation");
         var Constructor;
@@ -26,13 +39,19 @@
         }
         return new Constructor(elements, properties, duration, easing, complete, fillMode, delay, iterationCount, direction, classicMode);
     }
+    
     Animation.prototype.fillInstance = function (elements, properties, duration, easing, complete, fillMode, delay, iterationCount, direction, classicMode) {
         this.id = mel + animCount++;
 
-        this.elements = elements.nodeType === undefined ? Array.prototype.slice.call(elements) : [elements];
+        elements = elements.nodeType === undefined ? Array.prototype.slice.call(elements) : [elements];
         
-        for(var i = this.elements.length; i; i--) {
-            this.elements = { element: this.elements[i], computedPropValues: {} };
+        this.elements = [];
+
+        for(var i = 0; i < elements.length; i++) {
+            this.elements.push({
+                element: elements[i],
+                computedPropValues: {}
+            });
         }
 
         this.duration = durationReg.test(duration) ? duration : "400ms";
@@ -54,19 +73,34 @@
         "to": "100%"
     };
     Animation.prototype.blendHooks = {};
+
+
+
     Animation.prototype.css = function (element, propertyName, propertyValue) {
         var action = propertyValue === undefined ? "get":"set";
+
         if (this.cssHooks[propertyName] && this.cssHooks[propertyName][action]) {
+
             return this.cssHooks[propertyName][action](element, propertyName, propertyValue);
-        } else {
-            if (element.style[propertyName] === undefined) {
-                propertyName = getVendorPropName(propertyName);
-            }
-            if (propertyValue === undefined) {
-                return element.style[propertyName];
-            } else {
-                element.style[propertyName] = propertyValue;
-            }
+
+        } 
+
+        propertyName = getVendorPropName(propertyName);
+
+        if (propertyValue === undefined) {
+
+            return parseFloat(getComputedStyle(element)[propertyName]);
+
+        } 
+
+        if (typeof propertyValue === "number") {
+            propertyValue += "px";
         }
+
+        element.style[propertyName] = propertyValue;
+        
     };
+
+
+
     Animation.prototype.cssHooks = {};

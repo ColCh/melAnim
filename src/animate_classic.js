@@ -4,6 +4,15 @@
     var durationReg = /^\d+(m?s?)$/;
     var cssValueReg = /(-?\d*\.?\d+)(.*)/;
 
+    var SPECIAL = "special";
+
+    /**
+     * @constructor
+     * @this {ClassicAnimation}
+     *
+     * @extends Animation
+     * @see Animation
+     * */
     function ClassicAnimation (elements, properties, duration, easing, complete, fillMode, delay, iterationCount, direction, classicMode) {
         this.fillInstance.apply(this, arguments);
         
@@ -13,6 +22,8 @@
         this.keys = [];
         this.currentValues = {};
         
+        this.properties = [];
+        
         this.duration = this.parseTime(this.duration);
         this.delay = this.parseTime(this.delay);
         
@@ -20,13 +31,23 @@
         easing = easingAliases[this.easing];
         this.easing = new CubicBezier(easing[0], easing[1], easing[2], easing[3]);
         
+        this.easingEpsilon = this.easing.solveEpsilon(this.duration);
+
+        this.currentValues = {};
+
+        for (var i = 0; i < this.elements.length; i++) {
+            this.elements[i].currentValues = {};
+        }
+
         this.processProperties(properties);
     }
     
+    
     inherit(ClassicAnimation, Animation);
   
-
-
+    /* ВЫСОКОУРОВНЕВЫЕ МЕТОДЫ */
+    
+    
     // обработка анимируемых свойств перед анимацией
     ClassicAnimation.prototype.processProperties = function (properties) {
         var propertyName, propKeyframes;
@@ -36,12 +57,25 @@
             this.addProperty(propertyName, propKeyframes);
         }
 
-        this.sortKeys(0, this.keys.length - 1);
+        this.sortKeys();
+    };
+    
+    
+    ClassicAnimation.prototype.tick = function () {
+        var currentFractionalTime = this.getFractionalTime();
+        var fetchedValues = this.fetchValues(currentFractionalTime);
+        this.renderValues(fetchedValues);
+    };
+
+    ClassicAnimation.prototype.start = function () {
+        this.tick();
+        this.loop();
     };
 
 
+    /* НИЗКОУРОВНЕВЫЕ МЕТОДЫ */
 
-    // добавит свойство property с параметрами анимации keyframes в анимацию
+
     ClassicAnimation.prototype.addProperty = function (property, keyframes) {
         var key, keyVal;
         
@@ -51,10 +85,9 @@
         for (key in keyframes) {
             
             keyVal = keyframes[key];
-            // преобразование "to" в "100%".
             key = this.keyframeAliases[key] || key;
-            
-            key = parseInt(key.match(keyReg), 10);
+            key = key.match(keyReg);
+            key = parseInt(key, 10);
             if (isNaN(key) || key < 0 || key > 100) continue;
 
             key /= 100;
@@ -71,47 +104,42 @@
 
         // если не переданы начальные или конечные ключевые кадры, то используются значения из вычисленного стиля.
         if (!this.propertyHasKeyframesAt(property, 0) || !this.propertyHasKeyframesAt(property, 1)) {
-            for (var i = this.elements.length; i; i--) {
+            for (var i = 0; i < this.elements.length; i++) {
                 this.elements[i].computedPropValues[property] = this.css(this.elements[i].element, property);
             }
         }
         
+        this.properties.push(property);
     };
-
-
+ 
     
-    // есть ли у свойства ключевой кадр.
+    
     ClassicAnimation.prototype.propertyHasKeyframesAt = function (property, key) {
         return key in this.keyframes && property in this.keyframes[key];
     };
 
-
-
-    // приведёт вид времени из анимационного к милисекундам.
+    
+    
     ClassicAnimation.prototype.parseTime = function (timeString) {
         return parseFloat(timeString) * (timeString.match(durationReg)[1] === "s" ? 1000 : 1);
     };
 
 
 
-    // вернёт текущее значение временной функции анимации.
-    ClassicAnimation.prototype.progress = function (scale, offset) {
-        
+    ClassicAnimation.prototype.getAnimationProgress = function (fractionalTime, scale, offset) {
+
         var duration = this.duration;
         
         if ( ! duration) {
             return 1.0;
         }
-        
-        if (this.iterationCount > 0) {
-            duration *= this.iterationCount;
-            if (this.elapsedTime >= duration) {
-                return this.iterationCount % 2 ? 1.0 : 0.0;
-            }
+    
+        duration *= this.iterationCount;
+        if (this.elapsedTime >= duration) {
+            return this.iterationCount % 2 ? 1.0 : 0.0;
         }
         
-        var fractionalTime = this.fractionalTime;
-        var iteration = parseInt(fractionalTime, 10);
+        var iteration = Math.floor(fractionalTime);
         
         fractionalTime -= iteration;
         
@@ -119,28 +147,110 @@
             fractionalTime = 1 - fractionalTime;
         }
         
-        if (scale !== undefined && scale != 1 || offset) {
-            fractionalTime = (fractionalTime - offset) * scale;
+        if (scale !== 1 || offset) {
+            // WTF
+            //fractionalTime = (fractionalTime - offset) * scale;
         }
-        
-        return this.easing.solve(fractionalTime, this.easing.solveEpsilon(this.duration));
+                
+        return this.easing.solve(fractionalTime, this.easingEpsilon);
         
     };
 
 
 
-    // общий метод для старта анимации
-    ClassicAnimation.prototype.start = function () {
-        this.tick();
-        this.loop();
+    ClassicAnimation.prototype.fetchValues = function (fractionalTime) {
+
+        debugger
+        
+        var keys = this.getCurrentKeys(fractionalTime);
+        
+        var fromKey = keys[0];
+        var toKey = keys[1];
+
+        var fromKeyframe = this.keyframes[fromKey];
+        var toKeyframe = this.keyframes[toKey];
+
+        var timingFunctionValue = this.getAnimationProgress(fractionalTime, 1, 0);
+                
+        var property, i = this.properties.length;
+
+        while (i--) {
+
+            property = this.properties[i];
+
+            if (property in fromKeyframe && property in toKeyframe) {
+
+                this.currentValues[property] = this.blend(fromKeyframe[property], toKeyframe[property], timingFunctionValue);
+
+            } else {
+
+                this.currentValues[property] = SPECIAL;
+
+                if (keys[0] === 0 && fromKeyframe[property] === undefined) {
+                    for (var i = 0; i < this.elements.length; i++) {
+                        this.elements[i].currentValues[property] = this.blend(this.elements[i].computedPropValues[property], toKeyframe[property], timingFunctionValue);
+                    }
+                }  else if (keys[1] === 100 && toKeyframe[property] === undefined) {
+                    for (var i = 0; i < this.elements.length; i++) {
+                        this.elements[i].currentValues[property] = this.blend(fromKeyframe[property], this.elements[i].computedPropValues[property], timingFunctionValue);
+                    }
+                }
+
+            }
+        }
+         
     };
 
 
-    // отсортирует ключевые кадры по возрастанию 
+
+    ClassicAnimation.prototype.renderValues = function () {
+        var propertyName, propertyValue, i, isSpecial;
+
+        for (propertyName in this.currentValues) {
+
+            propertyValue = this.currentValues[propertyName];
+            isSpecial = propertyValue === SPECIAL;
+
+            for (i = 0; i < this.elements.length; i++) {
+                if (isSpecial) {
+                    propertyValue = this.elements[i].currentValues[propertyName];
+                }
+
+                this.css(this.elements[i].element, propertyName, propertyValue);
+            }
+        }
+    };
+
+
+
+    ClassicAnimation.prototype.blend = function (from, to, progress) {
+        return (to - from) * progress + from;
+    };
+   
+
+
+    ClassicAnimation.prototype.getFractionalTime = function () {
+        var fractionalTime = this.elapsedTime / this.duration;
+        if (fractionalTime > 1) {
+            fractionalTime = 1;
+        }
+        return fractionalTime;
+    };
+
+
+
     ClassicAnimation.prototype.sortKeys = function (low, high) {
         var bearing = this.keys[ low + high >> 1 ];
-        var i = low, j = high;
+        var i, j;
         var temp;
+
+        if (low === undefined && high  === undefined) {
+            low = 0;
+            high = this.keys.length - 1;
+        }
+
+        i = low;
+        j = high;
         
         do {  
             while(this.keys[i] < bearing) ++i;
@@ -158,71 +268,11 @@
     };
 
 
-    // вычислит значения свойст в текущий момент времени
-    ClassicAnimation.prototype.fetchValues = function () {
-        
-        var keyframes = this.getCurrentKeys(this.fractionalTime);
-        
-        var offset = keyframes.prev.key;
-        var scale = 1.0 / (keyframes.next.key - keyframes.prev.key);
-        
-        var progress = this.progress(scale, offset);
-        
-        var property;
-        
-        var currentValues = this.currentValues = {};
-        
-        for (property in keyframes.prev.keyframe) {
-            keyframes = this.getCurrentKeyframes(this.fractionalTime, property);
-            currentValues[property] = this.blend(keyframes.prev.keyframe[property], keyframes.next.keyframe[property], progress).toFixed(2);
-        }
-    };
 
-
-
-    // вычислит значение по формуле
-    ClassicAnimation.prototype.blend = function (from, to, progress) {
-        return (to - from) * progress + from;
-    };
-
-
-
-    // отрисует текущие значения свойств на элементах.
-    ClassicAnimation.prototype.renderValues = function () {
-        
-        var property, i, elements = this.elements;
-        
-        for (property in this.currentValues) {
-            for (i = 0; i < elements.length; i++) {
-                elements[i].style[property] = this.currentValues[property] + "px";
-            }
-        }
-    };
-
-
-
-    // обработка кадра в текущий момент времени.
-    ClassicAnimation.prototype.tick = function () {
-        this.refreshFractionalTime();
-        this.fetchValues();
-        this.renderValues();
-    };
-
-    // вернёт прогресс анимации.
-    ClassicAnimation.prototype.refreshFractionalTime = function () {
-        this.fractionalTime = this.elapsedTime / this.duration;
-    };
-
-
-
-    // вернёт два кейфрейма, значения которых будут использоваться на данном этапе.
-    // опционально указывается свойство, для которого отбирать ключевые кадры.
     ClassicAnimation.prototype.getCurrentKeys = function (fractionalTime, property) {
         
-        var nextIndex = - 1, prevIndex = - 1;
+        var nextIndex = -1, prevIndex = -1;
         
-        // TODO бинарный поиск
-
         for ( var i = 0, b = this.keys.length, key; i < b; i++) {
             key = this.keys[i];
             
@@ -255,7 +305,6 @@
 
 
 
-    // общий метод для обработки кадра анимации
     ClassicAnimation.prototype.loop = function () {
         var self = this;
         

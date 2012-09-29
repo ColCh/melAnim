@@ -24,4 +24,15 @@
 	<natures>
 		<nature>org.eclipse.wst.jsdt.core.jsNature</nature>
 	</natures>
+	<filteredResources>
+		<filter>
+			<id>1348645087801</id>
+			<name></name>
+			<type>6</type>
+			<matcher>
+				<id>org.eclipse.ui.ide.multiFilter</id>
+				<arguments>1.0-name-matches-false-false-mel-anim.compiled.js</arguments>
+			</matcher>
+		</filter>
+	</filteredResources>
 </projectDescription>
