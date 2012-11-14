@@ -20,7 +20,7 @@ module.exports = function (grunt) {
             dist:{
                 src:['<banner:meta.banner>', '<file_strip_banner:src/start.js>', '<file_strip_banner:src/begin.js>', '<file_strip_banner:src/animate_wrap.js>', '<file_strip_banner:src/animate_animations.js>', '<file_strip_banner:src/animate_classic.js>', '<file_strip_banner:src/hooks.js>', '<file_strip_banner:src/end.js>'],
                 dest:'dist/mel-anim.compiled.js',
-                separator: '---------------------------------------'
+                separator: '\n/*---------------------------------------*/\n'
             }
         },
         min:{
@@ -46,22 +46,17 @@ module.exports = function (grunt) {
         var port = grunt.config("server.port") || 8000;
         var base = require("path").resolve(".");
         var cb = this.async();
-        
+
         grunt.log.writeln("Starting web server at port " + port);
 
         connect().
-        
         	use(connect.static(base)).
-        
 				use(function (req, res) {
 					res.removeHeader("Content-Encoding");
+                    grunt.task.run("concat");
 					res.end(grunt.file.read(grunt.config("concat.dist.dest")));
 				}).
-					
-					listen(port, function () {
-						grunt.task.run("concat");
-						grunt.log.writeln("Hello!");
-					});
+					listen(port);
 
     });
 
