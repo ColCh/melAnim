@@ -25,9 +25,11 @@
 
         this.elapsedTime = 0;
         
-        this.keyframes = {};
+        this.keyframes = { 0: {}, 1: {} };
 
-        this.keys = [];
+        this.keys = [ 0, 1 ];
+
+        this.activeKey = 0;
 
         this.properties = [];
 
@@ -65,7 +67,7 @@
     
     
     ClassicAnimation.prototype.tick = function () {
-        var currentFractionalTime = this.getFractionalTime();
+        var currentFractionalTime = this.getFractionalTime(this.activeKey);
         var fetchedValues = this.fetchValues(currentFractionalTime);
         this.renderValues(fetchedValues);
     };
@@ -140,7 +142,7 @@
 
             key /= 100;
 
-            if (!this.keyframes[key]) {
+            if (this.keyframes[key] === undefined) {
                 this.keyframes[key] = {};
                 this.keys.push(key);
             }
@@ -150,6 +152,8 @@
 
         }
 
+        this.properties.push(property);
+
 
         // если не переданы начальные или конечные ключевые кадры, то используются значения из вычисленного стиля.
         if (!this.propertyHasKeyframesAt(property, 0) || !this.propertyHasKeyframesAt(property, 1)) {
@@ -157,8 +161,6 @@
                 this.elements[i].computedPropValues[property] = this.css(this.elements[i].element, property);
             }
         }
-        
-        this.properties.push(property);
     };
 
     
@@ -166,9 +168,6 @@
     ClassicAnimation.prototype.propertyHasKeyframesAt = function (property, key) {
         return key in this.keyframes && property in this.keyframes[key];
     };
-
-    
-    
 
 
 
@@ -194,8 +193,7 @@
         }
         
         if (scale !== 1 || offset) {
-            // WTF
-            //fractionalTime = (fractionalTime - offset) * scale;
+            fractionalTime = (fractionalTime - offset) * scale;
         }
                 
         return this.easing.solve(fractionalTime, this.easingEpsilon);
@@ -214,7 +212,13 @@
         var fromKeyframe = this.keyframes[fromKey];
         var toKeyframe = this.keyframes[toKey];
 
-        var timingFunctionValue = this.getAnimationProgress(fractionalTime, 1, 0);
+        if (this.activeKey < fromKey) {
+            this.activeKey = fromKey;
+        }
+
+        var offset = this.activeKey;
+
+        var timingFunctionValue = this.getAnimationProgress(fractionalTime, 1, offset);
                 
         var property, b = this.properties.length;
 
@@ -222,7 +226,7 @@
 
             property = this.properties[b];
 
-            if (property in fromKeyframe && property in toKeyframe) {
+            if (property in fromKeyframe && property in toKeyframe && fromKeyframe[property] !== SPECIAL) {
 
                 this.currentValues[property] = this.blend(fromKeyframe[property], toKeyframe[property], timingFunctionValue);
 
@@ -273,7 +277,7 @@
    
 
 
-    ClassicAnimation.prototype.getFractionalTime = function () {
+    ClassicAnimation.prototype.getFractionalTime = function (offset) {
         var fractionalTime = this.elapsedTime / this.duration;
         if (fractionalTime > 1) {
             fractionalTime = 1;
