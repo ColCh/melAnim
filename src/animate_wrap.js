@@ -14,55 +14,108 @@
         "step-end": [1, "end"],
         _default: "ease"
     };
+
+    var fillModes = {
+        "forwards": null
+    };
+
+    var cssAnimationsSupported = !! getVendorPropName("animation");
     
     window.Animation = Animation;
     
     /**
+     * Конструктор анимаций.
      * @constructor
      * 
-     * @param {Element} elements
-     * @param {Object} properties
-     * @param {string} duration
-     * @param {string} easing
-     * @param {Function} complete
-     * @param {string} fillMode
-     * @param {string} delay
-     * @param {number} iterationCount
-     * @param {string} direction
-     * @param {boolean} classicMode
+     * @param {(Element|Array.<Element>)} elements Элемент или коллекция элементов для анимирования.
+     * @param {Object} properties Свойства для анимирования.
+     * @param {string=} duration Длительность анимации. По-умолчанию : "400ms".
+     * @param {string=} easing Как будут прогрессировать значения свойств. По-умолчанию : "linear".
+     * @param {Function=} complete Функция, которая исполнится после завершения анимации. По-умолчанию : "noop".
+     * @param {string=} fillMode Как поступать со значениями анимируемых свойств. По-умолчанию : "forwards".
+     * @param {string=} delay Задержка перед стартом анимаци. По-умолчанию : "0s".
+     * @param {number=} iterationCount Количество итераций анимации. По-умолчанию : "1".
+     * @param {string=} direction Направление анимации. По-умолчанию : "normal".
+     * @param {boolean=} classicMode Форcированный классический режим. По-умолчанию : "false".
      */
     function Animation (elements, properties, duration, easing, complete, fillMode, delay, iterationCount, direction, classicMode) {
-        classicMode = classicMode || ! getVendorPropName("animation");
-        var Constructor;
-        if (classicMode) {
-            Constructor = ClassicAnimation;
-        }
-        return new Constructor(elements, properties, duration, easing, complete, fillMode, delay, iterationCount, direction, classicMode);
-    }
-    
-    Animation.prototype.fillInstance = function (elements, properties, duration, easing, complete, fillMode, delay, iterationCount, direction, classicMode) {
-        this.id = mel + animCount++;
 
-        elements = elements.nodeType === undefined ? Array.prototype.slice.call(elements) : [elements];
-        
-        this.elements = [];
+        classicMode = classicMode || !cssAnimationsSupported;
 
-        for(var i = 0; i < elements.length; i++) {
-            this.elements.push({
-                element: elements[i],
-                computedPropValues: {}
-            });
-        }
+        var self = new (classicMode ? ClassicAnimation:CssAnimation);
 
-        this.duration = durationReg.test(duration) ? duration : "400ms";
-        this.easing = typeof easing === "string" ? (easingAliases[easing] || CubicBezier.reg.test(easing) || Steps.reg.test(easing) ? easing : easingAliases._default) : easingAliases._default;
-        this.fillMode = fillMode;
-        this.delay = durationReg.test(delay) ? delay : "0s";
-        this.complete = typeof complete === "function" ? complete : noop;
-        this.direction = directionsReg.test(direction) ? direction : "normal";
-        this.iterationCount = iterationCount === "infinite" ? iterationCount : parseFloat(iterationCount) < 0 ? "1" : iterationCount;
-        this.state = "paused";
+        // инициализация для всех видов анимаций :
+
+        self.id = self.generateId();
+
+        // в любом случае должны иметь массив.
+        self.elements = self.isElement(elements) ? [elements] : Array.prototype.slice.call(elements);
+
+        self.duration = self.isTimeStringValid(duration) ? duration : "400ms";
+
+        // TODO
+        self.easing = typeof easing === "string" ? (easingAliases[easing] || CubicBezier.reg.test(easing) || Steps.reg.test(easing) ? easing : easingAliases._default) : easingAliases._default;
+
+        self.fillMode = fillMode in fillModes ? fillMode : "forwards";
+
+        self.delay = self.isTimeStringValid(delay) ? delay : "0s";
+
+        self.complete = typeof complete === "function" ? complete : noop;
+
+        self.direction = directionsReg.test(direction) ? direction : "normal";
+
+        self.iterationCount = iterationCount === "infinite" ? iterationCount : parseFloat(iterationCount) < 0 ? "1" : iterationCount;
+
+        // инициализация определённого вида анимации.
+
+        self.initialize();
+
+        self.processProperties(properties);
+
+        self.setState("initialized");
+
+        return {
+
+            "start": function () {
+                self.start();
+                self.setState("started");
+            }
+
+        };
     };
+
+
+
+    Animation.prototype.setState = function (state) {
+        // TODO Event Emitter.
+        this.state = state;
+    };
+
+
+
+    Animation.prototype.isElement = function (argument) {
+        return "nodeType" in argument;
+    };
+
+
+    Animation.prototype.isTimeStringValid = function (timeString) {
+        return durationReg.test(timeString);
+    };
+
+
+
+    Animation.prototype.parseTime = function (timeString) {
+        return parseFloat(timeString) * (timeString.match(durationReg)[1] === "s" ? 1000 : 1);
+    };
+
+
+
+    Animation.prototype.generateId = function () {
+        return mel + animCount++;
+    };
+
+
+
     Animation.prototype.setPlayingState = function (state) {
         if (state === "running" || state === "paused") {
             this.state = state;
@@ -75,7 +128,13 @@
     Animation.prototype.blendHooks = {};
 
 
-
+    /**
+     * @param {Element} element
+     * @param {string} propertyName
+     * @param {string=} propertyValue
+     *
+     * @return {string}
+     * */
     Animation.prototype.css = function (element, propertyName, propertyValue) {
         var action = propertyValue === undefined ? "get":"set";
 

@@ -13,38 +13,41 @@
      * @extends Animation
      * @see Animation
      * */
-    function ClassicAnimation (elements, properties, duration, easing, complete, fillMode, delay, iterationCount, direction, classicMode) {
-        this.fillInstance.apply(this, arguments);
-        
+    function ClassicAnimation () {}
+
+
+
+    inherit(ClassicAnimation, Animation);
+
+
+
+    ClassicAnimation.prototype.initialize = function () {
+
         this.elapsedTime = 0;
         
         this.keyframes = {};
+
         this.keys = [];
+
+        this.properties = [];
+
         this.currentValues = {};
         
-        this.properties = [];
-        
         this.duration = this.parseTime(this.duration);
+
         this.delay = this.parseTime(this.delay);
         
         // TODO разные изинги.
-        easing = easingAliases[this.easing];
+        var easing = easingAliases[this.easing];
+
         this.easing = new CubicBezier(easing[0], easing[1], easing[2], easing[3]);
         
         this.easingEpsilon = this.easing.solveEpsilon(this.duration);
 
-        this.currentValues = {};
+        this.elements = this.convertElementsToClasses(this.elements);
 
-        for (var i = 0; i < this.elements.length; i++) {
-            this.elements[i].currentValues = {};
-        }
-
-        this.processProperties(properties);
     }
-    
-    
-    inherit(ClassicAnimation, Animation);
-  
+
     /* ВЫСОКОУРОВНЕВЫЕ МЕТОДЫ */
     
     
@@ -75,15 +78,60 @@
 
     /* НИЗКОУРОВНЕВЫЕ МЕТОДЫ */
 
+    ClassicAnimation.prototype.convertElementsToClasses = function (elements) {
+
+        var elementClassesArray = [];
+
+        for(var i = 0; i < elements.length; i++) {
+            elementClassesArray.push({
+                element: elements[i],
+                computedPropValues: {},
+                currentValues: {}
+            });
+        }
+
+        return elementClassesArray;
+    };
+
+
+
+    var relativeValueReg = /^([+\-])=/;
+
+    // TODO остальные относительные изменения.
+    var relativeOperations = {
+
+        "+": function (beginValue, relativeValue) {
+
+        }
+
+    };
+
+
 
     ClassicAnimation.prototype.addProperty = function (property, keyframes) {
         var key, keyVal;
-        
-        // TODO относительное изменение
-        // TODO передача конечного стиля
+
+        if (typeof keyframes === "string") {
+            if (relativeValueReg.test(keyframes)) {
+                return; // TODO!!!!
+                // передано относительное изменение
+
+                var sign = keyframes.match(relativeValueReg)[1];
+
+                var computedValue = this.css();
+
+                var relativeValue = parseFloat(keyframes);
+
+                keyframes = {
+                }
+            } else {
+                // передано конечное значение
+                keyframes = { "100%": keyframes };
+            }
+        }
         
         for (key in keyframes) {
-            
+
             keyVal = keyframes[key];
             key = this.keyframeAliases[key] || key;
             key = key.match(keyReg);
@@ -91,16 +139,17 @@
             if (isNaN(key) || key < 0 || key > 100) continue;
 
             key /= 100;
-            
+
             if (!this.keyframes[key]) {
                 this.keyframes[key] = {};
                 this.keys.push(key);
             }
-            
-            keyVal = keyVal.match(cssValueReg); 
+
+            keyVal = keyVal.match(cssValueReg);
             this.keyframes[key][property] = parseFloat(keyVal[1]);
 
         }
+
 
         // если не переданы начальные или конечные ключевые кадры, то используются значения из вычисленного стиля.
         if (!this.propertyHasKeyframesAt(property, 0) || !this.propertyHasKeyframesAt(property, 1)) {
@@ -111,7 +160,7 @@
         
         this.properties.push(property);
     };
- 
+
     
     
     ClassicAnimation.prototype.propertyHasKeyframesAt = function (property, key) {
@@ -120,9 +169,6 @@
 
     
     
-    ClassicAnimation.prototype.parseTime = function (timeString) {
-        return parseFloat(timeString) * (timeString.match(durationReg)[1] === "s" ? 1000 : 1);
-    };
 
 
 
@@ -160,8 +206,6 @@
 
     ClassicAnimation.prototype.fetchValues = function (fractionalTime) {
 
-        debugger
-        
         var keys = this.getCurrentKeys(fractionalTime);
         
         var fromKey = keys[0];
@@ -172,11 +216,11 @@
 
         var timingFunctionValue = this.getAnimationProgress(fractionalTime, 1, 0);
                 
-        var property, i = this.properties.length;
+        var property, b = this.properties.length;
 
-        while (i--) {
+        while (b--) {
 
-            property = this.properties[i];
+            property = this.properties[b];
 
             if (property in fromKeyframe && property in toKeyframe) {
 
