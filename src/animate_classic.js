@@ -241,12 +241,12 @@
                 this.currentValues[property] = SPECIAL;
 
                 if (keys[0] === 0 && fromKeyframe[property] === undefined) {
-                    for (var i = 0; i < this.elements.length; i++) {
-                        this.elements[i].currentValues[property] = this.blend(this.elements[i].computedPropValues[property], toKeyframe[property], timingFunctionValue);
+                    for (var j = 0; j < this.elements.length; j++) {
+                        this.elements[j].currentValues[property] = this.blend(this.elements[j].computedPropValues[property], toKeyframe[property], timingFunctionValue);
                     }
                 }  else if (keys[1] === 100 && toKeyframe[property] === undefined) {
-                    for (var i = 0; i < this.elements.length; i++) {
-                        this.elements[i].currentValues[property] = this.blend(fromKeyframe[property], this.elements[i].computedPropValues[property], timingFunctionValue);
+                    for (var j = 0; j < this.elements.length; j++) {
+                        this.elements[j].currentValues[property] = this.blend(fromKeyframe[property], this.elements[j].computedPropValues[property], timingFunctionValue);
                     }
                 }
 
