@@ -126,6 +126,9 @@
         "to": "100%"
     };
     Animation.prototype.blendHooks = {};
+    Animation.prototype.cssNumberProperies = {
+        "opacity": true
+    };
 
 
     /**
@@ -148,11 +151,16 @@
 
         if (propertyValue === undefined) {
 
-            return parseFloat(getComputedStyle(element)[propertyName]);
+            propertyValue = getComputedStyle(element)[propertyName];
 
+            if (!isNaN(parseFloat(propertyValue))) {
+                propertyValue = parseFloat(propertyValue);
+            }
+
+            return propertyValue;
         } 
 
-        if (typeof propertyValue === "number") {
+        if (typeof propertyValue === "number" && !this.cssNumberProperies[propertyName]) {
             propertyValue += "px";
         }
 
