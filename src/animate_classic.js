@@ -29,8 +29,6 @@
 
         this.keys = [ 0, 1 ];
 
-        this.activeKey = 0;
-
         this.properties = [];
 
         this.currentValues = {};
@@ -204,27 +202,35 @@
 
     ClassicAnimation.prototype.fetchValues = function (fractionalTime) {
 
-        var keys = this.getCurrentKeys(fractionalTime);
+        var keys;
         
-        var fromKey = keys[0];
-        var toKey = keys[1];
+        var fromKey;
+        var toKey;
 
-        var fromKeyframe = this.keyframes[fromKey];
-        var toKeyframe = this.keyframes[toKey];
+        var fromKeyframe;
+        var toKeyframe;
 
-        if (this.activeKey < fromKey) {
-            this.activeKey = fromKey;
-        }
+        var offset;
 
-        var offset = this.activeKey;
-
-        var timingFunctionValue = this.getAnimationProgress(fractionalTime, 1, offset);
+        var timingFunctionValue;
                 
-        var property, b = this.properties.length;
+        var property, i, b;
 
-        while (b--) {
+        for(i = 0, b = this.properties.length; i < b; i++) {
 
-            property = this.properties[b];
+            property = this.properties[i];
+
+            keys = this.getCurrentKeys(fractionalTime, property);
+
+            fromKey = keys[0];
+            toKey = keys[1];
+
+            fromKeyframe = this.keyframes[fromKey];
+            toKeyframe = this.keyframes[toKey];
+
+            offset = fromKey;
+
+            timingFunctionValue = this.getAnimationProgress(fractionalTime, 1, offset);
 
             if (property in fromKeyframe && property in toKeyframe && fromKeyframe[property] !== SPECIAL) {
 
