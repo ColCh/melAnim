@@ -53,7 +53,9 @@
         // в любом случае должны иметь массив.
         self.elements = self.isElement(elements) ? [elements] : Array.prototype.slice.call(elements);
 
-        if ()
+        if (type(self.elements) !== array) {
+            self.error("Коллекция элементов %o должна быть массивом!", self.elements);
+        }
 
         self.duration = self.isTimeStringValid(duration) ? duration : "400ms";
 
@@ -64,18 +66,38 @@
         self.easing = typeof easing === "string" ? (easing in easingAliases || CubicBezier.reg.test(easing) || Steps.reg.test(easing) ? easing : easingAliases._default) : typeof easing === "function" && classicMode ? easing:easingAliases._default;
 
         if (easing !== self.easing) {
-            self.warn("%o заменён на %o из-за несовместимости режимов", easing, self.easing);
+            self.warn("Временная функция %o заменена на %o", easing, self.easing);
         }
 
         self.fillMode = fillMode in fillModes ? fillMode : "forwards";
 
+        if (fillMode !== self.fillMode) {
+            self.warn("Режим заполнения %s заменён на %s", fillMode, self.fillMode);
+        }
+
         self.delay = self.isTimeStringValid(delay) ? delay : "0s";
 
-        self.complete = typeof complete === "function" ? complete : noop;
+        if (delay !== self.delay) {
+            self.warn("%s заменён на %s", delay, self.delay);
+        }
+
+        self.complete = type(complete) === "function" ? complete : noop;
+
+        if (type(complete) !== "function") {
+            self.info("Не передан обработчик завершения анимации или он не является функцией");
+        }
 
         self.direction = directionsReg.test(direction) ? direction : "normal";
 
+        if (direction !== self.direction) {
+            self.warn("Направление анимации заменено с %s на %s", self.direction, direction);
+        }
+
         self.iterationCount = iterationCount === "infinite" ? iterationCount : parseFloat(iterationCount) < 0 ? "1" : iterationCount;
+
+        if (iterationCount !== self.iterationCount) {
+            self.warn("Количество проходов анимации заменено с %d на %d", self.iterationCount, iterationCount);
+        }
 
         // инициализация определённого вида анимации.
 
