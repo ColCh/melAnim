@@ -53,10 +53,19 @@
         // в любом случае должны иметь массив.
         self.elements = self.isElement(elements) ? [elements] : Array.prototype.slice.call(elements);
 
+        if ()
+
         self.duration = self.isTimeStringValid(duration) ? duration : "400ms";
 
-        // TODO
-        self.easing = typeof easing === "string" ? (easingAliases[easing] || CubicBezier.reg.test(easing) || Steps.reg.test(easing) ? easing : easingAliases._default) : easingAliases._default;
+        if (duration !== self.duration) {
+            self.warn("Продолжительность одного цикла была заменена с %i на %i", duration, self.duration);
+        }
+
+        self.easing = typeof easing === "string" ? (easing in easingAliases || CubicBezier.reg.test(easing) || Steps.reg.test(easing) ? easing : easingAliases._default) : typeof easing === "function" && classicMode ? easing:easingAliases._default;
+
+        if (easing !== self.easing) {
+            self.warn("%o заменён на %o из-за несовместимости режимов", easing, self.easing);
+        }
 
         self.fillMode = fillMode in fillModes ? fillMode : "forwards";
 

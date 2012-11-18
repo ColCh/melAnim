@@ -32,13 +32,32 @@
         this.duration = this.parseTime(this.duration);
 
         this.delay = this.parseTime(this.delay);
-        
-        // TODO разные изинги.
-        var easing = easingAliases[this.easing];
 
-        this.easing = new CubicBezier(easing[0], easing[1], easing[2], easing[3]);
-        
-        this.easingEpsilon = this.easing.solveEpsilon(this.duration);
+
+        var easing = this.easing, points;
+
+        if (easing in easingAliases) {
+            points = easingAliases[easing];
+
+            if (points.length === 4) {
+                easing = new CubicBezier(points[0], points[1], points[2], points[3]);
+            } else if (points.length === 2) {
+                points = new Steps(points[0], points[1]);
+            } else {
+                this.error("Точки %o не соответствуют ни одной из встроенных easing", easing);
+            }
+
+        } else if (CubicBezier.reg.test(easing)) {
+            points = easing.match(CubicBezier.reg);
+            points = points.slice(1);
+            easing = new CubicBezier(points[0], points[1], points[2], points[3]);
+        } else if (Steps.reg.test(easing)) {
+            points = easing.match(Steps.reg);
+            points = points.slice(1);
+            easing = new Steps(points[0], points[1]);
+        }
+
+        this.easing = easing;
 
         this.elements = this.convertElementsToClasses(this.elements);
 
@@ -236,9 +255,9 @@
         }
 
         if (this.easing instanceof  CubicBezier || this.easing instanceof  Steps) {
-            return this.easing.solve(fractionalTime, this.easingEpsilon);
+            return this.easing.solve(fractionalTime, this.duration);
         } else if (typeof this.easing === "function") {
-            return this.easing(fractionalTime);
+            return this.easing(fractionalTime, this.duration);
         } else {
             return fractionalTime;
         }

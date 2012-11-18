@@ -158,8 +158,8 @@
         
         return t2;
     };
-    CubicBezier.prototype.solve = function (x, epsilon) {
-        return this.sampleCurveY(this.solveCurveX(x, epsilon));
+    CubicBezier.prototype.solve = function (x, duration) {
+        return this.sampleCurveY(this.solveCurveX(x, this.solveEpsilon(duration)));
     };
     CubicBezier.reg = /^cubic-bezier\((-?\d*\.?\d+), (-?\d*\.?\d+), (-?\d*\.?\d+), (-?\d*\.?\d+)\)$/;
 
