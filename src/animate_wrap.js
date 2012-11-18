@@ -36,7 +36,7 @@
      * @param {Function=} complete Функция, которая исполнится после завершения анимации. По-умолчанию : "noop".
      * @param {string=} fillMode Как поступать со значениями анимируемых свойств. По-умолчанию : "forwards".
      * @param {string=} delay Задержка перед стартом анимаци. По-умолчанию : "0s".
-     * @param {number=} iterationCount Количество итераций анимации. По-умолчанию : "1".
+     * @param {number=} iterationCount Количество проходов анимации. По-умолчанию : "1".
      * @param {string=} direction Направление анимации. По-умолчанию : "normal".
      * @param {boolean=} classicMode Форcированный классический режим. По-умолчанию : "false".
      */
@@ -57,7 +57,7 @@
             self.error("Коллекция элементов %o должна быть массивом!", self.elements);
         }
 
-        self.duration = self.isTimeStringValid(duration) ? duration : "400ms";
+        self.duration = self.isTimeStringValid(duration) && parseFloat(duration) >= 0 ? duration : "400ms";
 
         if (duration !== self.duration) {
             self.warn("Продолжительность одного цикла была заменена с %i на %i", duration, self.duration);

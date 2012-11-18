@@ -28,6 +28,8 @@
         this.properties = [];
 
         this.currentValues = {};
+
+        this.iterationCount = this.iterationCount === "infinite" ? Number.POSITIVE_INFINITY : parseFloat(this.iterationCount);
         
         this.duration = this.parseTime(this.duration);
 
