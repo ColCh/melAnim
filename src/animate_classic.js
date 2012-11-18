@@ -1,8 +1,4 @@
     var requestAnimationFrame = window[getVendorPropName("requestAnimationFrame", true)] || function (callback) { setTimeout(callback, 1000 / 60); };
-    
-    var keyReg = /^\d{1,3}%$/;
-    var durationReg = /^\d+(m?s?)$/;
-    var cssValueReg = /(-?\d*\.?\d+)(.*)/;
 
     var SPECIAL = "special";
 
@@ -46,6 +42,12 @@
 
         this.elements = this.convertElementsToClasses(this.elements);
 
+        this.previousFetch = 0;
+
+        this.totalDuration = this.duration * this.iterationCount;
+
+        this.fractionalTime = 0;
+
     }
 
     /* ВЫСОКОУРОВНЕВЫЕ МЕТОДЫ */
@@ -65,14 +67,21 @@
     
     
     ClassicAnimation.prototype.tick = function () {
-        var currentFractionalTime = this.getFractionalTime(this.activeKey);
-        var fetchedValues = this.fetchValues(currentFractionalTime);
-        this.renderValues(fetchedValues);
+        this.fetchValues();
+        this.renderValues();
     };
 
     ClassicAnimation.prototype.start = function () {
+        if (this.delay < 0) {
+            this.elapsedTime += - this.delay;
+        }
         this.tick();
         this.loop();
+    };
+
+    ClassicAnimation.prototype.animationEnded = function () {
+        this.info("Анимация %o закончена", this);
+        this.complete();
     };
 
 
@@ -113,6 +122,7 @@
 
         if (typeof keyframes === "string") {
             if (relativeValueReg.test(keyframes)) {
+                this.error("Относительное изменение не поддерживается");
                 return; // TODO!!!!
                 // передано относительное изменение
 
@@ -136,7 +146,10 @@
             key = this.keyframeAliases[key] || key;
             key = key.match(keyReg);
             key = parseInt(key, 10);
-            if (isNaN(key) || key < 0 || key > 100) continue;
+            if (isNaN(key) || key < 0 || key > 100) {
+                this.warn("Ключ %d не соответствует стандарту", key);
+                continue;
+            }
 
             key /= 100;
 
@@ -169,38 +182,71 @@
 
 
 
-    ClassicAnimation.prototype.getAnimationProgress = function (fractionalTime, scale, offset) {
+    ClassicAnimation.prototype.getFractionalTime = function () {
 
-        var duration = this.duration;
-        
-        if ( ! duration) {
-            return 1.0;
+        var fractionalTime = this.duration ? this.elapsedTime / this.duration : 1.0;
+
+        if (fractionalTime < 0) {
+            fractionalTime = 0;
         }
-    
-        duration *= this.iterationCount;
-        if (this.elapsedTime >= duration) {
-            return this.iterationCount % 2 ? 1.0 : 0.0;
+
+        var integralTime = Math.floor(fractionalTime);
+        var integralIterations = Math.floor(this.iterationCount);
+        var iterationsHasFractional = this.iterationCount - integralIterations;
+
+        if (this.iterationCount !== "infinite" && !iterationsHasFractional){
+            integralTime = Math.min(integralTime, integralIterations - 1);
         }
-        
-        var iteration = Math.floor(fractionalTime);
-        
-        fractionalTime -= iteration;
-        
-        if (this.direction === "alternate" && iteration & 1) {
+
+        fractionalTime -= integralTime;
+
+        if (fractionalTime > 1) {
+            fractionalTime = 1;
+        }
+
+        if ((this.direction == "alternate" && integralTime & 1)
+            || (this.direction == "alternate-reverse" && !integralTime & 1)
+            || this.direction == "reverse") {
             fractionalTime = 1 - fractionalTime;
         }
+
+        return fractionalTime;
+    };
+
+
+    ClassicAnimation.prototype.getAnimationProgress = function (scale, offset) {
         
+        if (!this.duration) {
+            this.info("У анимации %o нулевая продолжительность повторений", this);
+            return 1.0;
+        }
+
+        var elapsedTime = this.elapsedTime;
+
+        if (this.iterationCount > 0 && elapsedTime >= this.totalDuration) {
+            var integralIterationCount = Math.floor(this.iterationCount);
+            var iterationCountHasFractional = this.iterationCount - integralIterationCount;
+            return integralIterationCount % 2 || iterationCountHasFractional ? 1.0 : 0.0;
+        }
+
+        var fractionalTime = this.fractionalTime;
+
         if (scale !== 1 || offset) {
             fractionalTime = (fractionalTime - offset) * scale;
         }
-                
-        return this.easing.solve(fractionalTime, this.easingEpsilon);
-        
+
+        if (this.easing instanceof  CubicBezier || this.easing instanceof  Steps) {
+            return this.easing.solve(fractionalTime, this.easingEpsilon);
+        } else if (typeof this.easing === "function") {
+            return this.easing(fractionalTime);
+        } else {
+            return fractionalTime;
+        }
     };
 
 
 
-    ClassicAnimation.prototype.fetchValues = function (fractionalTime) {
+    ClassicAnimation.prototype.fetchValues = function () {
 
         var keys;
         
@@ -210,9 +256,11 @@
         var fromKeyframe;
         var toKeyframe;
 
-        var offset;
+        var offset, scale;
 
         var timingFunctionValue;
+
+        var fractionalTime = this.fractionalTime;
                 
         var property, i, b;
 
@@ -229,8 +277,9 @@
             toKeyframe = this.keyframes[toKey];
 
             offset = fromKey;
+            scale = 1.0 / (toKey - fromKey);
 
-            timingFunctionValue = this.getAnimationProgress(fractionalTime, 1, offset);
+            timingFunctionValue = this.getAnimationProgress(scale, offset);
 
             if (property in fromKeyframe && property in toKeyframe && fromKeyframe[property] !== SPECIAL) {
 
@@ -280,16 +329,6 @@
     ClassicAnimation.prototype.blend = function (from, to, progress) {
         return (to - from) * progress + from;
     };
-   
-
-
-    ClassicAnimation.prototype.getFractionalTime = function (offset) {
-        var fractionalTime = this.elapsedTime / this.duration;
-        if (fractionalTime > 1) {
-            fractionalTime = 1;
-        }
-        return fractionalTime;
-    };
 
 
 
@@ -330,7 +369,7 @@
         for ( var i = 0, b = this.keys.length, key; i < b; i++) {
             key = this.keys[i];
             
-            if (property && this.keyframes[property] === undefined) {
+            if (property && this.keyframes[key][property] === undefined) {
                 continue;
             }
             
@@ -364,18 +403,18 @@
         
         requestAnimationFrame(function (now) {
 
-            if (!self.started) {
-                self.started = now;
-            }
+            self.elapsedTime += now - (self.previousFetch || now);
 
-            self.elapsedTime = now - self.started;
+            self.fractionalTime = self.getFractionalTime();
 
             self.tick();
 
-            if (self.elapsedTime < self.duration) {
+            self.previousFetch = now;
+
+            if (self.elapsedTime < self.totalDuration) {
                 self.loop();
             } else {
-                self.complete();
+                self.animationEnded();
             }
 
         });

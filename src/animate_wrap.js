@@ -1,6 +1,8 @@
     var animCount = 0;
     
-    var durationReg = /^(\d+)(m?s?)$/;
+    var durationReg = /^-?(\d*\.?\d+)(m?s?)$/;
+    var keyReg = /^\d{1,3}%$/;
+    var cssValueReg = /(-?\d*\.?\d+)(.*)/;
     
     var directionsReg = new RegExp("^(?:(?:" + ["normal", "reverse", "alternate", "alternate-reverse"].join(")|(?:") + "))$");
 
@@ -19,7 +21,7 @@
         "forwards": null
     };
 
-    var cssAnimationsSupported = !! getVendorPropName("animation");
+    var cssAnimationsSupported = !!getVendorPropName("animation");
     
     window.Animation = Animation;
     
@@ -74,9 +76,12 @@
 
         self.setState("initialized");
 
+        self.info("Анимация инициализирована: %o", self);
+
         return {
 
             "start": function () {
+                self.info("Анимация %d стартовала", self.id);
                 self.start();
                 self.setState("started");
             }
@@ -105,7 +110,7 @@
 
 
     Animation.prototype.parseTime = function (timeString) {
-        return parseFloat(timeString) * (timeString.match(durationReg)[1] === "s" ? 1000 : 1);
+        return parseFloat(timeString) * (timeString.match(durationReg)[2] === "s" ? 1000 : 1);
     };
 
 
@@ -171,3 +176,20 @@
 
 
     Animation.prototype.cssHooks = {};
+
+
+    Animation.prototype.assert = function () {
+        console.assert.apply(console, arguments);
+    };
+
+    Animation.prototype.warn = function () {
+        console.warn.apply(console, arguments);
+    };
+
+    Animation.prototype.info = function () {
+        console.info.apply(console, arguments);
+    };
+
+    Animation.prototype.error = function () {
+        console.error.apply(console, arguments);
+    };
