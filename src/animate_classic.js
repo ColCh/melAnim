@@ -91,10 +91,7 @@
     };
 
     ClassicAnimation.prototype.start = function () {
-        if (this.delay < 0) {
-            this.elapsedTime += - this.delay;
-        }
-        this.tick();
+        this.elapsedTime -= this.delay;
         this.loop();
     };
 
@@ -236,7 +233,7 @@
     ClassicAnimation.prototype.getAnimationProgress = function (scale, offset) {
         
         if (!this.duration) {
-            this.info("У анимации %o нулевая продолжительность повторений", this);
+            this.info("У анимации %o нулевая продолжительность цикла", this);
             return 1.0;
         }
 
@@ -254,7 +251,7 @@
             fractionalTime = (fractionalTime - offset) * scale;
         }
 
-        if (this.easing instanceof  CubicBezier || this.easing instanceof  Steps) {
+        if (this.easing instanceof CubicBezier || this.easing instanceof  Steps) {
             return this.easing.solve(fractionalTime, this.duration);
         } else if (typeof this.easing === "function") {
             return this.easing(fractionalTime, this.duration);
@@ -423,12 +420,12 @@
         requestAnimationFrame(function (now) {
 
             self.elapsedTime += now - (self.previousFetch || now);
-
-            self.fractionalTime = self.getFractionalTime();
-
-            self.tick();
-
             self.previousFetch = now;
+
+            if (self.elapsedTime >= 0) {
+                self.fractionalTime = self.getFractionalTime();
+                self.tick();
+            }
 
             if (self.elapsedTime < self.totalDuration) {
                 self.loop();

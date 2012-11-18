@@ -90,13 +90,13 @@
         self.direction = directionsReg.test(direction) ? direction : "normal";
 
         if (direction !== self.direction) {
-            self.warn("Направление анимации заменено с %s на %s", self.direction, direction);
+            self.warn("Направление анимации заменено с %s на %s", direction, self.direction);
         }
 
         self.iterationCount = iterationCount === "infinite" ? iterationCount : parseFloat(iterationCount) < 0 ? "1" : iterationCount;
 
         if (iterationCount !== self.iterationCount) {
-            self.warn("Количество проходов анимации заменено с %d на %d", self.iterationCount, iterationCount);
+            self.warn("Количество проходов анимации заменено с %d на %d", iterationCount, self.iterationCount);
         }
 
         // инициализация определённого вида анимации.
