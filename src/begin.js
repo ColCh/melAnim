@@ -170,9 +170,10 @@
         this.stepAtStart = stepAtStart;
     }
     Steps.prototype.solve = function (x) {
-        if (this.stepAtStart)
-            return Math.min(1.0, (this.numberOfSteps * x + 1) / this.numberOfSteps);
-        return this.numberOfSteps * x / this.numberOfSteps;
+        if (this.stepAtStart){
+            return Math.min(1.0, (Math.floor(this.numberOfSteps * x) + 1) / this.numberOfSteps);
+        }
+        return Math.floor(this.numberOfSteps * x) / this.numberOfSteps;
     };
     Steps.reg = /^steps\((\d+)(?:, ((?:start)|(?:end)))?\)$/;
 

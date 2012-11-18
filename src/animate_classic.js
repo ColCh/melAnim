@@ -43,8 +43,8 @@
 
             if (points.length === 4) {
                 easing = new CubicBezier(points[0], points[1], points[2], points[3]);
-            } else if (points.length === 2) {
-                points = new Steps(points[0], points[1]);
+            } else if (points.length === 2 || points.length === 1) {
+                easing = new Steps(points[0], points[1] === "start");
             } else {
                 this.error("Точки %o не соответствуют ни одной из встроенных easing", easing);
             }
@@ -56,7 +56,7 @@
         } else if (Steps.reg.test(easing)) {
             points = easing.match(Steps.reg);
             points = points.slice(1);
-            easing = new Steps(points[0], points[1]);
+            easing = new Steps(parseFloat(points[0]), points[1] === "start");
         }
 
         this.easing = easing;
