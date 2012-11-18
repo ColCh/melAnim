@@ -53,7 +53,7 @@
         // в любом случае должны иметь массив.
         self.elements = self.isElement(elements) ? [elements] : Array.prototype.slice.call(elements);
 
-        if (type(self.elements) !== array) {
+        if (type(self.elements) !== "array") {
             self.error("Коллекция элементов %o должна быть массивом!", self.elements);
         }
 
