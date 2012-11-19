@@ -63,6 +63,9 @@
 
         this.elements = this.convertElementsToClasses(this.elements);
 
+        this.fillsBackwards = this.fillMode === "both" || this.fillMode === "backwards";
+        this.fillsForwards = this.fillMode === "both" || this.fillMode === "forwards";
+
         this.previousFetch = 0;
 
         this.totalDuration = this.duration * this.iterationCount;
@@ -95,10 +98,12 @@
     ClassicAnimation.prototype.start = function () {
         this.elapsedTime -= this.delay;
         this.loop();
+        this.setState("waitingtobackwardsfill");
     };
 
     ClassicAnimation.prototype.animationEnded = function () {
         this.info("Анимация %o закончена", this);
+        this.setState("complete");
         this.complete();
     };
 
@@ -424,7 +429,20 @@
             self.elapsedTime += now - (self.previousFetch || now);
             self.previousFetch = now;
 
-            if (self.elapsedTime >= 0) {
+            if (self.state ===  "waitingtobackwardsfill") {
+                self.info("У анимации %o значения заполнены из нулевого кадра", self);
+                self.fractionalTime = self.getFractionalTime();
+                self.tick();
+                self.setState("waitingtostart");
+            }
+
+            if (self.elapsedTime >= 0 && self.state === "waitingtostart") {
+                self.info("Анимация %o стартовала", self);
+                self.setState("looping");
+            }
+
+            if (self.state === "looping") {
+                self.assert(self.elapsedTime >= 0, "Анимирование с отрицательным временем со старта");
                 self.fractionalTime = self.getFractionalTime();
                 self.tick();
             }

@@ -18,7 +18,9 @@
     };
 
     var fillModes = {
-        "forwards": null
+        "forwards": null,
+        "backwards": null,
+        "both": null
     };
 
     var cssAnimationsSupported = !!getVendorPropName("animation");
@@ -112,9 +114,7 @@
         return {
 
             "start": function () {
-                self.info("Анимация %d стартовала", self.id);
                 self.start();
-                self.setState("started");
             }
 
         };
