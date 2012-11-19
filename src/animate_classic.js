@@ -103,6 +103,11 @@
 
     ClassicAnimation.prototype.animationEnded = function () {
         this.info("Анимация %o закончена", this);
+
+        if (!this.fillsForwards) {
+            self.error("Не поддерживается");
+        }
+
         this.setState("complete");
         this.complete();
     };
