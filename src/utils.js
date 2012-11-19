@@ -164,3 +164,57 @@
     function getComputedStyle (element) {
         return window.getComputedStyle ? window.getComputedStyle(element) : element.currentStyle;
     }
+
+
+
+    function addRule (selector, csstext) {
+        var rules = stylesheet.cssRules || stylesheet.rules;
+        var index = rules.length;
+
+        if (stylesheet.insertRule) {
+            stylesheet.insertRule(selector + " " + "{" + csstext + "}", index);
+        } else {
+            stylesheet.addRule(selector, csstext, rules.length);
+        }
+
+        return rules[index];
+    }
+
+
+    function addClass (elem, value) {
+        var classNames, i, setClass;
+
+        if (!elem.className) {
+
+            elem.className = value;
+
+        } else {
+
+            classNames = value.split(/\s+/);
+            setClass = " " + elem.className + " ";
+
+            for (i = 0; i < classNames.length; i++ ) {
+                if (setClass.indexOf(" " + classNames[i] + " ") < 0 ) {
+                    setClass += classNames[i] + " ";
+                }
+            }
+            elem.className = setClass.replace(/^\s+|\s+$/g, "");
+
+        }
+    }
+
+    function removeClass (elem, value) {
+        var className, elem, i;
+
+        value = value.split(/\s+/);
+
+        className = " " + elem.className + " ";
+
+        for (i = 0; i < value.length; i++) {
+            while (className.indexOf(" " + removes[i] + " ") !== -1) {
+                className = className.replace(" " + removes[i] + " ", " ");
+            }
+        }
+
+        elem.className = className.replace(/^\s+|\s+$/g, "");
+    }

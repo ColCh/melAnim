@@ -19,17 +19,3 @@
     var stylesheet = document.createElement("style");
     document.getElementsByTagName("script")[0].parentNode.appendChild(stylesheet);
     stylesheet = stylesheet.sheet || stylesheet.styleSheet;
-
-
-
-    function addRule (selector, csstext) {
-        var rules = stylesheet.rules || stylesheet.cssRules;
-        
-        if (stylesheet.insertRule) {
-            stylesheet.insertRule(selector + " " + "{" + csstext + "}", rules.length);
-        } else {
-            stylesheet.addRule(selector, csstext, rules.length);
-        }
-        
-        return rules[rules.length];
-    }
