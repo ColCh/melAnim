@@ -98,14 +98,30 @@
     ClassicAnimation.prototype.start = function () {
         this.elapsedTime -= this.delay;
         this.loop();
-        this.setState("waitingtobackwardsfill");
+
+        if (this.delay <= 0 || (this.fillsBackwards && this.delay > 0)) {
+            this.setState("waitingtobackwardsfill");
+        } else {
+            this.setState("waitingtostart");
+        }
     };
 
     ClassicAnimation.prototype.animationEnded = function () {
         this.info("Анимация %o закончена", this);
 
         if (!this.fillsForwards) {
-            self.error("Не поддерживается");
+
+            var i, elemClass, property;
+
+            for (i = 0; i < this.elements.length; i++) {
+
+                elemClass = this.elements[i];
+
+                for (property in elemClass.computedPropValues) {
+                    this.css(elemClass.element, property, elemClass.computedPropValues[property]);
+                }
+
+            }
         }
 
         this.setState("complete");
@@ -193,19 +209,10 @@
 
         this.properties.push(property);
 
-
-        // если не переданы начальные или конечные ключевые кадры, то используются значения из вычисленного стиля.
-        if (!this.propertyHasKeyframesAt(property, 0) || !this.propertyHasKeyframesAt(property, 1)) {
-            for (var i = 0; i < this.elements.length; i++) {
-                this.elements[i].computedPropValues[property] = this.css(this.elements[i].element, property);
-            }
+        for (var i = 0; i < this.elements.length; i++) {
+            this.elements[i].computedPropValues[property] = this.css(this.elements[i].element, property);
         }
-    };
 
-    
-    
-    ClassicAnimation.prototype.propertyHasKeyframesAt = function (property, key) {
-        return key in this.keyframes && property in this.keyframes[key];
     };
 
 
@@ -343,6 +350,7 @@
             isSpecial = propertyValue === SPECIAL;
 
             for (i = 0; i < this.elements.length; i++) {
+
                 if (isSpecial) {
                     propertyValue = this.elements[i].currentValues[propertyName];
                 }
@@ -436,7 +444,7 @@
 
             if (self.state ===  "waitingtobackwardsfill") {
                 self.info("У анимации %o значения заполнены из нулевого кадра", self);
-                self.fractionalTime = self.getFractionalTime();
+                self.fractionalTime = 0;
                 self.tick();
                 self.setState("waitingtostart");
             }

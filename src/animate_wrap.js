@@ -24,6 +24,8 @@
     };
 
     var cssAnimationsSupported = !!getVendorPropName("animation");
+
+
     
     window.Animation = Animation;
     
@@ -101,6 +103,20 @@
             self.warn("Количество проходов анимации заменено с %d на %d", iterationCount, self.iterationCount);
         }
 
+        self.rule = addRule("." + self.id, " ");
+
+        if (!self.rule) {
+            self.error("Попытка создать правило в таблице стилей %o была неудачна", stylesheet);
+        }
+
+        self.info("У анимируемых элементов будет класс %s", self.id);
+
+        var i;
+
+        for (i = 0; i < self.elements.length; i++) {
+            addClass(self.elements[i], self.id);
+        }
+
         // инициализация определённого вида анимации.
 
         self.initialize();
@@ -175,6 +191,8 @@
      * @return {string}
      * */
     Animation.prototype.css = function (element, propertyName, propertyValue) {
+
+        var isElement = this.isElement(element);
         var action = propertyValue === undefined ? "get":"set";
 
         if (this.cssHooks[propertyName] && this.cssHooks[propertyName][action]) {
@@ -200,7 +218,12 @@
             propertyValue += "px";
         }
 
-        element.style[propertyName] = propertyValue;
+        if (isElement) {
+            element.style[propertyName] = propertyValue;
+        } else {
+            // CSSStyleDeclaration
+            element[propertyName] = propertyValue;
+        }
         
     };
 
