@@ -46,6 +46,17 @@
      */
     function Animation (elements, properties, duration, easing, complete, fillMode, delay, iterationCount, direction, classicMode) {
 
+        if (type(duration) === "object") {
+            classicMode = duration.classicMode;
+            direction = duration.direction;
+            iterationCount = duration.iterationCount;
+            delay = duration.delay;
+            fillMode = duration.fillMode;
+            complete = duration.complete;
+            easing = duration.easing;
+            duration = duration.duration;
+        }
+
         classicMode = classicMode || !cssAnimationsSupported;
 
         var self = new (classicMode ? ClassicAnimation:CssAnimation);
