@@ -50,64 +50,29 @@
 
         var self = new (classicMode ? ClassicAnimation:CssAnimation);
 
-        // инициализация для всех видов анимаций :
+        // инициализация для всех видов анимаций
+        // проверка входных данных
 
         self.id = self.generateId();
 
         // в любом случае должны иметь массив.
         self.elements = self.isElement(elements) ? [elements] : Array.prototype.slice.call(elements);
 
-        if (type(self.elements) !== "array") {
-            self.error("Коллекция элементов %o должна быть массивом!", self.elements);
-        }
-
         self.duration = self.isTimeStringValid(duration) && parseFloat(duration) >= 0 ? duration : "400ms";
-
-        if (duration !== self.duration) {
-            self.warn("Продолжительность одного цикла была заменена с %i на %i", duration, self.duration);
-        }
 
         self.easing = typeof easing === "string" ? (easing in easingAliases || CubicBezier.reg.test(easing) || Steps.reg.test(easing) ? easing : easingAliases._default) : typeof easing === "function" && classicMode ? easing:easingAliases._default;
 
-        if (easing !== self.easing) {
-            self.warn("Временная функция %o заменена на %o", easing, self.easing);
-        }
-
         self.fillMode = fillMode in fillModes ? fillMode : "forwards";
-
-        if (fillMode !== self.fillMode) {
-            self.warn("Режим заполнения %s заменён на %s", fillMode, self.fillMode);
-        }
 
         self.delay = self.isTimeStringValid(delay) ? delay : "0s";
 
-        if (delay !== self.delay) {
-            self.warn("%s заменён на %s", delay, self.delay);
-        }
-
         self.complete = type(complete) === "function" ? complete : noop;
-
-        if (type(complete) !== "function") {
-            self.info("Не передан обработчик завершения анимации или он не является функцией");
-        }
 
         self.direction = directionsReg.test(direction) ? direction : "normal";
 
-        if (direction !== self.direction) {
-            self.warn("Направление анимации заменено с %s на %s", direction, self.direction);
-        }
-
         self.iterationCount = iterationCount === "infinite" ? iterationCount : parseFloat(iterationCount) < 0 ? "1" : iterationCount;
 
-        if (iterationCount !== self.iterationCount) {
-            self.warn("Количество проходов анимации заменено с %d на %d", iterationCount, self.iterationCount);
-        }
-
         self.rule = addRule("." + self.id, " ");
-
-        if (!self.rule) {
-            self.error("Попытка создать правило в таблице стилей %o была неудачна", stylesheet);
-        }
 
         self.info("У анимируемых элементов будет класс %s", self.id);
 
@@ -122,8 +87,6 @@
         self.initialize();
 
         self.processProperties(properties);
-
-        self.setState("initialized");
 
         self.info("Анимация инициализирована: %o", self);
 
