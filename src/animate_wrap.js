@@ -44,11 +44,13 @@
      * @param {string=} direction Направление анимации. По-умолчанию : "normal".
      * @param {boolean=} classicMode Форcированный классический режим. По-умолчанию : "false".
      */
-    function Animation (elements, properties, duration, easing, complete, fillMode, delay, iterationCount, direction, classicMode) {
+    function Animation (elements, properties, duration, easing, complete, fillMode, delay, iterationCount, direction, start, iteration, classicMode) {
 
         if (type(duration) === "object") {
             classicMode = duration.classicMode;
             direction = duration.direction;
+            start = duration.start;
+            iteration = duration.iteration;
             iterationCount = duration.iterationCount;
             delay = duration.delay;
             fillMode = duration.fillMode;

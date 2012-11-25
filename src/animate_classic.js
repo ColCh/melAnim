@@ -125,7 +125,7 @@
         }
 
         this.setState("complete");
-        this.complete();
+        this.oncomplete();
     };
 
 
@@ -230,6 +230,7 @@
         var iterationsHasFractional = this.iterationCount - integralIterations;
 
         if (this.iterationCount !== "infinite" && !iterationsHasFractional){
+            console.log(integralTime, integralIterations);
             integralTime = Math.min(integralTime, integralIterations - 1);
         }
 
@@ -450,6 +451,7 @@
             }
 
             if (self.elapsedTime >= 0 && self.state === "waitingtostart") {
+                self.onstart();
                 self.info("Анимация %o стартовала", self);
                 self.setState("looping");
             }
@@ -458,6 +460,14 @@
                 self.assert(self.elapsedTime >= 0, "Анимирование с отрицательным временем со старта");
                 self.fractionalTime = self.getFractionalTime();
                 self.tick();
+
+                if (self.elapsedTime < self.totalDuration) {
+                    if (self.fractionalTime === 1) {
+                        self.info("%o : итерация %i из %i", self, Math.floor(self.totalDuration / self.elapsedTime), self.iterationCount);
+                        self.oniteration();
+                    }
+                }
+
             }
 
             if (self.elapsedTime < self.totalDuration) {
@@ -465,6 +475,5 @@
             } else {
                 self.animationEnded();
             }
-
         });
     };
