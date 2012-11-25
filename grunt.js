@@ -18,7 +18,7 @@ module.exports = function (grunt) {
         },
         concat:{
             dist:{
-                src:['<banner:meta.banner>', '<file_strip_banner:src/start.js>', '<file_strip_banner:src/utils.js>', '<file_strip_banner:src/begin.js>', '<file_strip_banner:src/animate_wrap.js>', '<file_strip_banner:src/animate_animations.js>', '<file_strip_banner:src/animate_classic.js>', '<file_strip_banner:src/hooks.js>', '<file_strip_banner:src/end.js>'],
+                src:['<banner:meta.banner>', '<file_strip_banner:src/start.js>', '<file_strip_banner:src/utils.js>', '<file_strip_banner:src/constants.js>', '<file_strip_banner:src/begin.js>', '<file_strip_banner:src/animate_wrap.js>', '<file_strip_banner:src/animate_animations.js>', '<file_strip_banner:src/animate_classic.js>', '<file_strip_banner:src/hooks.js>', '<file_strip_banner:src/end.js>'],
                 dest:'dist/mel-anim.compiled.js',
                 separator: '\n/*---------------------------------------*/\n'
             }

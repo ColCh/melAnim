@@ -9,12 +9,9 @@
         // aka linear easing.
         function noop (x) { return x; }
 
-
-    //TODO Play-State / Fill-Mode
-
     var dummy = document.documentElement.style, prefix, lowPrefix;
 
-
+    var timeStringReg = /^-?(\d*\.?\d+)(m?s?)$/;
 
     var stylesheet = document.createElement("style");
     document.getElementsByTagName("script")[0].parentNode.appendChild(stylesheet);
