@@ -116,13 +116,30 @@
     }
 
     /**
+     * Преобразует строку в верхний регистр
+     * @param {string} str
+     * @return {string}
+     */
+    function toUpperCase (str) {
+        return String.prototype.toUpperCase.call(toString(str));
+    }
+    /**
+     * Преобразует строку в нижний регистр
+     * @param {string} str
+     * @return {string}
+     */
+    function toLowerCase (str) {
+        return String.prototype.toLowerCase.call(toString(str));
+    }
+
+    /**
      * Обработает строку времени вида %время%+%размерность%
      * @param {string|number} timeString
      * @return {number|undefined} обработанное время в миллисекундах или undefined в случае неудачи
      */
     function parseTimeString (timeString) {
 
-        var matched = toString(timeString).match(timeStringReg);
+        var matched = toString(timeString).match(cssNumericValueReg);
         var numeric, coefficient;
 
         if (timeString) {
@@ -302,8 +319,6 @@
     CubicBezier.prototype.solve = function (x, duration) {
         return this.sampleCurveY(this.solveCurveX(x, this.solveEpsilon(duration)));
     };
-    CubicBezier.reg = /^cubic-bezier\((-?\d*\.?\d+), (-?\d*\.?\d+), (-?\d*\.?\d+), (-?\d*\.?\d+)\)$/;
-
 
 
     function Steps (numberOfSteps, stepAtStart) {
@@ -316,8 +331,6 @@
         }
         return Math.floor(this.numberOfSteps * x) / this.numberOfSteps;
     };
-    Steps.reg = /^steps\((\d+)(?:, ((?:start)|(?:end)))?\)$/;
-
 
 
     function inherit (child, parent) {

@@ -1,4 +1,4 @@
-    var animCount = 0;
+
     
     var durationReg = /^-?(\d*\.?\d+)(m?s?)$/;
     var keyReg = /^\d{1,3}%$/;
@@ -117,23 +117,6 @@
     Animation.prototype.setState = function (state) {
         // TODO Event Emitter.
         this.state = state;
-    };
-
-
-
-    Animation.prototype.isElement = function (argument) {
-        return "nodeType" in argument;
-    };
-
-
-    Animation.prototype.isTimeStringValid = function (timeString) {
-        return durationReg.test(timeString);
-    };
-
-
-
-    Animation.prototype.parseTime = function (timeString) {
-        return parseFloat(timeString) * (timeString.match(durationReg)[2] === "s" ? 1000 : 1);
     };
 
 

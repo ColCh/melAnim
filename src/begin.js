@@ -3,15 +3,24 @@
         mel = "mel_animation_",
     
         document = window.document,
+
+        parseInt = window.parseInt,
+
+        parseFloat = window.parseFloat,
     
         undefined;
-    
-        // aka linear easing.
-        function noop (x) { return x; }
 
     var dummy = document.documentElement.style, prefix, lowPrefix;
 
-    var timeStringReg = /^-?(\d*\.?\d+)(m?s?)$/;
+    var cssNumericValueReg = /(-?\d*\.?\d+)(.*)/;
+
+    var animCount = 0;
+
+    var noop = function () {};
+
+    var cubicBezierReg = /^cubic-bezier\(((?:\s*\d*\.?\d+\s*,\s*){3}\d*\.?\d+\s*)\)$/i;
+
+    var stepsReg = /^steps\((\d+)(?:,\s*((?:start)|(?:end)))?\)$/i;
 
     var stylesheet = document.createElement("style");
     document.getElementsByTagName("script")[0].parentNode.appendChild(stylesheet);
