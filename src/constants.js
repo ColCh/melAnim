@@ -1,5 +1,13 @@
+    /**
+     * Объект, содержащий константы
+     * @enum {object}
+     */
     var constants = {};
 
+    /**
+     * Возможные варианты направления анимации
+     * @enum {number}
+     */
     var directions = constants["directions"] = {};
 
     var DIRECTION_NORMAL = directions["normal"] = changeRadix.binToDec("00");
@@ -7,6 +15,10 @@
     var DIRECTION_ALTERNATE = directions["alternate"] = changeRadix.binToDec("10");
     var DIRECTION_ALTERNATE_REVERSE = directions["alternate-reverse"] = changeRadix.binToDec("11");
 
+    /**
+     * Возможные варианты отображения свойств перед стартом анимации и после её окончания
+     * @enum {number}
+     */
     var fillmodes = constants["fillModes"] = {};
 
     var FILLMODE_NONE = fillmodes["none"] = changeRadix.binToDec("00");
