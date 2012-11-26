@@ -273,10 +273,11 @@
         X0 = 0.5 * equationValue;
         X1 = 1.5 * equationValue;
 
-    function CubicBezier (p1x, p1y, p2x, p2y) {
-        this.cx = 3.0 * p1x;
-        this.bx = 3.0 * (p2x - p1x) - this.cx;
-        this.ax = 1.0 - this.cx - this.bx;
+        while (Math.abs(X0 - X1) > epsilon) {
+            cache = X1;
+            X1 = findEquationRoot.contraction(equation, X0, X1, equationValue);
+            X0 = cache;
+        }
 
         return X1;
     }
@@ -307,48 +308,76 @@
 
         return curr - F_CURR * DELTA_CURR_PREV / DELTA_F;
     };
-    CubicBezier.prototype.sampleCurveDerivativeX = function (t) {
-        return (3.0 * this.ax * t + 2.0 * this.bx) * t + this.cx;
+
+    /**
+     * Представление аналога временной функции transition-timing-function
+     * Кубическая кривая Безье.
+     *
+     * @param {number} p1x
+     * @param {number} p1y
+     * @param {number} p2x
+     * @param {number} p2y
+     * @param {number} fractionalTime Вход. Это X.
+     * @param {number=} epsilon Погрешность
+     * @return {number} Выходное значение - easing - Y.
+     */
+    function cubicBezier (p1x, p1y, p2x, p2y, fractionalTime, epsilon) {
+
+        // вернёт значение X при передаваемом времени.
+        var B_bindedToX = function (t) { return cubicBezier.B(p1x, p2x, t); };
+
+        // находим время t, при котором кубическая кривая принимает значение X.
+        var bezierTime = findEquationRoot(B_bindedToX, epsilon, fractionalTime);
+
+        // вычисляем по этому времени Y.
+        var bezierFunctionValue = cubicBezier.B(p1y, p2y, bezierTime);
+
+        return bezierFunctionValue;
+    }
+
+    /**
+     * Вычислит значение кубической кривой Безье при переданном t
+     * Считается, что P0 = (0;0) и P3 = (1;1)
+     * @param {number} coord1
+     * @param {number} coord2
+     * @param {number} t
+     * @return {number}
+     */
+    cubicBezier.B = function (coord1, coord2, t) {
+        return cubicBezier.B1(t) * coord1 + cubicBezier.B2(t) * coord2 + cubicBezier.B3(t);
     };
-    CubicBezier.prototype.solveCurveX = function (x, epsilon) {
-        var t0, t1, t2, x2, d2, i;
 
-        for (t2 = x, i = 0; i < 8; i++) {
-            x2 = this.sampleCurveX(t2) - x;
-            if (Math.abs(x2) < epsilon) {
-                return t2;
-            }
-            d2 = this.sampleCurveDerivativeX(t2);
-            if (Math.abs(d2) < 1e-6) {
-                break;
-            }
-            t2 = t2 - x2 / d2;
-        }
-
-        t0 = 0.0;
-        t1 = 1.0;
-        t2 = x;
-
-        if (t2 < t0)
-            return t0;
-        if (t2 > t1)
-            return t1;
-
-        while (t0 < t1) {
-            x2 = this.sampleCurveX(t2);
-            if (Math.abs(x2 - x) < epsilon)
-                return t2;
-            if (x > x2)
-                t0 = t2;
-            else
-                t1 = t2;
-            t2 = (t1 - t0) * .5 + t0;
-        }
-
-        return t2;
+    /**
+     * @param {number} t
+     * @return {number}
+     */
+    cubicBezier.B1 = function (t) {
+        return 3 * t * (1 - t) * (1 - t);
     };
-    CubicBezier.prototype.solve = function (x, duration) {
-        return this.sampleCurveY(this.solveCurveX(x, this.solveEpsilon(duration)));
+
+    /**
+     * @param {number} t
+     * @return {number}
+     */
+    cubicBezier.B2 = function (t) {
+        return 3 * t * t * (1 - t);
+    };
+
+    /**
+     * @param {number} t
+     * @return {number}
+     */
+    cubicBezier.B3 = function (t) {
+        return t * t * t;
+    };
+
+    /**
+     * Вычислит требуемую точность вычислений, исходя из длительности анимации
+     * @param {number} duration
+     * @return {number}
+     */
+    cubicBezier.solveEpsilon = function (duration) {
+        return 1.0 / (200.0 * duration);
     };
 
 
