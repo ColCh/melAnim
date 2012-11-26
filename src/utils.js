@@ -256,25 +256,56 @@
      */
     getVendorPropName.cache = {};
 
+    /**
+     * Найдёт корень уравнения  вида f(x)=val с указанной точностью
+     * Используется метод хорд
+     * @param {function} equation уравнение
+     * @param {number=} epsilon минимальная разница между двумя приближениями
+     * @param {number=} equationValue значение функции в этой точке
+     * @return {number} приближённое значение корня уравнения
+     */
+    function findEquationRoot (equation, epsilon, equationValue) {
+        var X0, X1, cache;
 
+        equationValue = type(equationValue) === "undefined" ? 0:equationValue;
+        epsilon = type(epsilon) === "undefined" ? findEquationRoot.defaultEpsilon:epsilon;
+
+        X0 = 0.5 * equationValue;
+        X1 = 1.5 * equationValue;
 
     function CubicBezier (p1x, p1y, p2x, p2y) {
         this.cx = 3.0 * p1x;
         this.bx = 3.0 * (p2x - p1x) - this.cx;
         this.ax = 1.0 - this.cx - this.bx;
 
-        this.cy = 3.0 * p1y;
-        this.by = 3.0 * (p2y - p1y) - this.cy;
-        this.ay = 1.0 - this.cy - this.by;
+        return X1;
     }
-    CubicBezier.prototype.solveEpsilon = function (duration) {
-        return 1.0 / (200.0 * duration);
-    };
-    CubicBezier.prototype.sampleCurveX = function (t) {
-        return ((this.ax * t + this.bx) * t + this.cx) * t;
-    };
-    CubicBezier.prototype.sampleCurveY = function (t) {
-        return ((this.ay * t + this.by) * t + this.cy) * t;
+
+    /**
+     * Значение погрешности по-умолчанию
+     * @type {number}
+     * @see findEquationRoot
+     */
+    findEquationRoot.defaultEpsilon = 1e-6;
+
+    /**
+     * Сжимающее отображение
+     * @param {function} equation
+     * @param {number} prev
+     * @param {number} curr
+     * @param {number} equationValue
+     * @return {number}
+     * @see findEquationRoot
+     */
+    findEquationRoot.contraction = function (equation, prev, curr, equationValue) {
+
+        var F_CURR = equation(curr) - equationValue;
+        var F_PREV = equation(prev) - equationValue;
+
+        var DELTA_CURR_PREV = curr - prev;
+        var DELTA_F = F_CURR - F_PREV;
+
+        return curr - F_CURR * DELTA_CURR_PREV / DELTA_F;
     };
     CubicBezier.prototype.sampleCurveDerivativeX = function (t) {
         return (3.0 * this.ax * t + 2.0 * this.bx) * t + this.cx;
