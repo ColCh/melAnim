@@ -380,18 +380,17 @@
         return 1.0 / (200.0 * duration);
     };
 
-
-    function Steps (numberOfSteps, stepAtStart) {
-        this.numberOfSteps = numberOfSteps;
-        this.stepAtStart = stepAtStart;
+    /**
+     * Ступенчатая функция, ограничивающая область выходных значений до определенного числа.
+     * Ступени отсчитываются с конца, или с начала.
+     * @param {number} stepsAmount Количество ступеней
+     * @param {boolean} countFromStart Отсчитывать с начала (true) или с конца (false).
+     * @param {number} fractionalTime
+     */
+    function steps (stepsAmount, countFromStart, fractionalTime) {
+        // если отсчитываем с начала, просто реверсируем функцию
+        return countFromStart ? 1.0 - steps(stepsAmount, countFromStart, 1.0 - fractionalTime) : Math.floor(stepsAmount * fractionalTime) / stepsAmount;
     }
-    Steps.prototype.solve = function (x) {
-        if (this.stepAtStart){
-            return Math.min(1.0, Math.ceil(this.numberOfSteps * x) / this.numberOfSteps);
-        }
-        return Math.floor(this.numberOfSteps * x) / this.numberOfSteps;
-    };
-
 
     function inherit (child, parent) {
         var F = function () {};
