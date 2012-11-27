@@ -43,6 +43,15 @@
     };
 
     /**
+     * Проверит, является ли значение аргумента undefined.
+     * @param x
+     * @return {boolean}
+     */
+    type.undefined = function (x) {
+        return type(x) === "undefined";
+    };
+
+    /**
      *
      * @param {number} number
      * @param {number} fromRadix
