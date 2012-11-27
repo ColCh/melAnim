@@ -487,3 +487,62 @@
     function removeClass (elem, value) {
         elem.className = trim(surround.bySpaces(elem.className).replace(surround.bySpaces(value), ""));
     }
+
+    /**
+     * Установит значение стиля элементу, либо получит текущее
+     * значение свойства, при необходимости конвертируя вывод.
+     * @param {Element} element Элемент
+     * @param {string} propertyName Имя свойства
+     * @param {string=} propertyValue Значение свойства. Если пропустить (undefined) - функция
+     *
+     * @return {string=}
+     * */
+    function css (element, propertyName, propertyValue) {
+
+        var getting = type.undefined(propertyValue);
+        var action = getting ? "get":"set";
+        var hooks = css.hooks;
+        var hookVal;
+        var vendorizedPropertyName;
+
+        vendorizedPropertyName = getVendorPropName(propertyName);
+
+        if (propertyName in hooks && action in hooks[propertyName]) {
+            hookVal = hooks[propertyName][action](element, vendorizedPropertyName, propertyValue);
+        }
+
+        if (getting) {
+
+            if (type.undefined(hookVal)) {
+                //TODO нормализацию значений \ конвертацию.
+                propertyValue = getComputedStyle(element)[vendorizedPropertyName];
+            } else {
+                propertyValue = hookVal;
+            }
+
+        } else {
+
+            if (type.element(element)) {
+                element.style[vendorizedPropertyName] = propertyValue;
+            } else {
+                // CSSStyleDeclaration
+                element[vendorizedPropertyName] = propertyValue;
+            }
+            
+        }
+
+        return propertyValue;
+    };
+
+    /**
+     * Хуки для css.
+     * @type {Object.<string, Object.<string, function>>}
+     */
+    css.hooks = {};
+
+    /**
+     * Флаг, установленный в true, заставляет парсить получаемые значения
+     *
+     * @type {Boolean}
+     */
+    css.convertValues = true;
