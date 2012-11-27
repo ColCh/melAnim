@@ -65,7 +65,7 @@
         // взято с
         // timotheegroleau.com/Flash/experiments/easing_function_generator.htm
         "easeInElastic": [0, -1, 3, -3],
-        "easeOutElastic": [4, -2, 2, 1],
+        "easeOutElastic": [4, -2, 2, 1]//,
         // TODO
         //"easeInOutElastic": [],
 
@@ -75,6 +75,10 @@
         //"easeInOutBounce": []
     };
 
+    /**
+     * Плиближения для кубических кривых
+     * @enum {function}
+     */
     var cubicBezierApproximations = cubicBezierAliases["approximations"] = {
 
         // взято с jQuery
