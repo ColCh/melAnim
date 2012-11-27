@@ -5,6 +5,15 @@
     var aliases = {};
 
     /**
+     * Алиасы для значений ключевых кадров
+     * @enum {number}
+     */
+    var keyAliases = aliases["keys"] = {
+        "from": 0,
+        "to": 100
+    };
+
+    /**
      * Алиасы для временных функций
      * @enum {object}
      */
