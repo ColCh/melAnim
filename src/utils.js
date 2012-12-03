@@ -52,10 +52,22 @@
     };
 
     /**
-     *
+     * Проверит, принадлежит ли число диапазону
+     * @param {number} num
+     * @param {number=} lowbound нижняя граница
+     * @param {number=} highbound верхняя граница
+     * @param {boolean} including включая ли границы
+     * @return {boolean}
+     */
+    function inRange (num, lowbound, highbound, including) {
+        return num > lowbound && num < highbound;
+    }
+
+    /**
+     * Применит parseInt, а потом toString к аргументу
      * @param {number} number
-     * @param {number} fromRadix
-     * @param {number} toRadix
+     * @param {number} fromRadix второй аргумент для parseInt
+     * @param {number} toRadix аргумент для toString
      */
     function changeRadix (number, fromRadix, toRadix) {
         return parseInt(number, fromRadix).toString(toRadix);
@@ -114,6 +126,48 @@
             }
 
         }
+    }
+
+    /**
+     * Пройдётся по элементам массива \ объекта и соберёт новый
+     * из возвращённых значений функции
+     * @param {Array|Object} arg
+     * @param {Function(?, number|string, Object|Array): ?} callback
+     * @return {Array|Object}
+     */
+    function map (arg, callback) {
+        var accum = [];
+
+        each(arg, function (value, index, object) {
+            accum.push(callback(value, index, object));
+        });
+
+        return accum;
+    }
+
+    /**
+     * Создаст объект, где ключами будут переданные аргументы, а значениями - undefined
+     * @type {function(...[?])}
+     * @return {Object.<string, undefined>}
+     */
+    function generateDictionary (/* arguments */) {
+        var obj = {};
+        each(arguments, function (key) {
+            obj[key] = undefined;
+        });
+        return obj;
+    }
+
+    /**
+     * Пройдётся по объекту/массиву с помощью each и заменит
+     * значения в нём на результат функции
+     * @param {Array|Object} obj
+     * @param {function} callback
+     */
+    function eachReplace(obj, callback) {
+        each(obj, function (val, index, obj) {
+            obj[index] = callback(val, index, obj);
+        });
     }
 
     /**
@@ -266,6 +320,23 @@
     getVendorPropName.cache = {};
 
     /**
+     * Вернёт кол-во миллисекунд с 1 Января 1970 00:00:00 UTC
+     * @return {number}
+     */
+    var now = Date.now || function () { return +new Date; };
+
+    /**
+     * Замена для requestAnimationFrame.
+     * @param {function(number)} callback
+     * @return {number} ID таймаута
+     */
+    function rAF_imitation (callback) {
+        return setTimeout(function () {
+            callback(now());
+        }, 1e3 / 60);
+    }
+
+    /**
      * Найдёт корень уравнения  вида f(x)=val с указанной точностью
      * Используется метод хорд
      * @param {function} equation уравнение
@@ -401,11 +472,27 @@
         return countFromStart ? 1.0 - steps(stepsAmount, countFromStart, 1.0 - fractionalTime) : Math.floor(stepsAmount * fractionalTime) / stepsAmount;
     }
 
+    /**
+     * Известная всем функция для прототипного наследования.
+     * @param {Object} child Кто наследует
+     * @param {Object} parent Что наследует
+     */
     function inherit (child, parent) {
-        var F = function () {};
+        var F = noop;
         F.prototype = parent.prototype;
         child.prototype = new F;
         child.prototype.constructor = child;
+    }
+
+    /**
+     * Скопирует свойства одного объекта в другой.
+     * @param {Object|Function} target
+     * @param {Object} source
+     */
+    function merge (target, source) {
+        each(source, function (propertyValue, property) {
+            target[property] = propertyValue;
+        });
     }
 
     /**
@@ -528,7 +615,7 @@
                 // CSSStyleDeclaration
                 element[vendorizedPropertyName] = propertyValue;
             }
-            
+
         }
 
         return propertyValue;
