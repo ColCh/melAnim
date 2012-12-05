@@ -533,6 +533,22 @@
     }
 
     /**
+     * Пропустит ключ через все фильтры и вернёт его
+     * численное представление или undefined.
+     * @param {string|number} key
+     * @return {number?}
+     */
+    function normalizeKey (key) {
+
+        if (type(key) === "string") {
+            key = keyAliases[key] || key;
+            key = parseInt(key, 10);
+        }
+
+        return inRange(key, 0, 100, true) ? key:undefined;
+    }
+
+    /**
      * Добавит правило с указанным селектором и указанным текстом правила.
      * @param selector
      * @param cssText
