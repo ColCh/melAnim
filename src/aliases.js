@@ -92,7 +92,7 @@
 
         // взято с jQuery
         swing: function (p) {
-            return return 0.5 - Math.cos( p*Math.PI ) / 2;
+            return 0.5 - Math.cos( p * Math.PI ) / 2;
         },
 
         // взято с
