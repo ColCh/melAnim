@@ -4,36 +4,42 @@
      */
     var constants = {};
 
+    var DIRECTION_NORMAL = "normal";
+    var DIRECTION_REVERSE = "reverse";
+    var DIRECTION_ALTERNATE = "alternate";
+    var DIRECTION_ALTERNATE_REVERSE = "alternate-reverse";
+
     /**
      * Возможные варианты направления анимации
      * @enum {number}
      */
-    var directions = constants["directions"] = {};
+    var directions = constants["directions"] = generateDictionary(DIRECTION_NORMAL, DIRECTION_REVERSE, DIRECTION_ALTERNATE, DIRECTION_ALTERNATE_REVERSE);
 
-    var DIRECTION_NORMAL = directions["normal"] = changeRadix.binToDec("00");
-    var DIRECTION_REVERSE = directions["reverse"] = changeRadix.binToDec("01");
-    var DIRECTION_ALTERNATE = directions["alternate"] = changeRadix.binToDec("10");
-    var DIRECTION_ALTERNATE_REVERSE = directions["alternate-reverse"] = changeRadix.binToDec("11");
+
+
+    var FILLMODE_NONE = "none";
+    var FILLMODE_FORWARDS = "forwards";
+    var FILLMODE_BACKWARDS = "backwards";
+    var FILLMODE_BOTH = "both";
 
     /**
      * Возможные варианты отображения свойств перед стартом анимации и после её окончания
      * @enum {number}
      */
-    var fillmodes = constants["fillModes"] = {};
+    var fillmodes = constants["fillModes"] = generateDictionary(FILLMODE_NONE, FILLMODE_BACKWARDS, FILLMODE_FORWARDS, FILLMODE_BOTH);
 
-    var FILLMODE_NONE = fillmodes["none"] = changeRadix.binToDec("00");
-    var FILLMODE_FORWARDS = fillmodes["forwards"] = changeRadix.binToDec("01");
-    var FILLMODE_BACKWARDS = fillmodes["backwards"] = changeRadix.binToDec("10");
-    var FILLMODE_BOTH = fillmodes["both"] = changeRadix.binToDec("11");
+
+
+    var PLAYSTATE_RUNNING = "running";
+    var PLAYSTATE_PAUSED = "paused";
 
     /**
      * Возможные варианты состояний анимации
      * @enum {number}
      */
-    var playstates = constants["playStates"] = {};
+    var playstates = constants["playStates"] = generateDictionary(PLAYSTATE_PAUSED, PLAYSTATE_RUNNING);
 
-    var PLAYSTATE_RUNNING = playstates["running"] = changeRadix.binToDec("0");
-    var PLAYSTATE_PAUSED = playstates["paused"] = changeRadix.binToDec("1");
+
 
     var iterationCounts = constants["iterationCounts"] = {};
 
@@ -44,11 +50,3 @@
      * @type {boolean}
      */
     var CSSANIMATIONS_SUPPORTED = !!getVendorPropName("animation");
-
-
-    var DEFAULT_DURATION = "400ms";
-    var DEFAULT_EASING = "ease";
-    var DEFAULT_FILLMODE = FILLMODE_FORWARDS;
-    var DEFAULT_DELAY = 0;
-    var DEFAULT_DIRECTION = DIRECTION_NORMAL;
-    var DEFAULT_ITERATIONCOUNT = 1;
