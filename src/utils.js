@@ -87,7 +87,7 @@
      * @return {boolean}
      */
     function inRange (num, lowbound, highbound, including) {
-        return num > lowbound && num < highbound;
+        return including  ? (num >= lowbound && num <= highbound) : (num > lowbound && num < highbound);
     }
 
     /**
