@@ -26,7 +26,7 @@
     /**
      * Проверит, является ли аргумент функцией.
      *
-     * @param {?} x
+     * @param {Function=} x
      * @return {boolean}
      */
     type.function = function (x) {
@@ -106,20 +106,336 @@
 
     /**
      * Сгенерирует уникальную строку.
-     *
      * @return {string}
      */
     function generateId () {
-        return toString(mel + animCount++);
+        return /** @type {string} */ mel + animCount++;
     }
 
     /**
-     * Применит Array.slice к аргументу
-     * @param {Array|object} arrayLike
+     * Аналог Object.keys
+     * @param {Object} obj
+     */
+    function getKeys (obj) {
+        return map(obj, function (value, index) {
+            return index;
+        });
+    }
+
+    /**
+     * Классический шаблон итератора
+     * @param {Array} collection
+     * @constructor
+     */
+    function Iterator (collection) {
+        this.collection = collection;
+        this.length = collection.length;
+    }
+
+    merge(Iterator.prototype, /** @lends Iterator.prototype */({
+
+        /**
+         * Индекс текущего элемента в коллекции
+         */
+        index: 0,
+        /**
+         * Запомненная длина коллекции
+         */
+        length: 0,
+        /**
+         * Коллекция
+         */
+        collection: [],
+        /**
+         * Возвращается, если значения нет
+         * @see Iterator.next Iterator.previous
+         */
+        none: null,
+
+        /**
+         * Возвратит текущий элемент коллекции
+         * @return {*}
+         */
+        current: function () { return this.collection[this.index]; },
+        /**
+         * Возвратит следующий элемент коллекции или значение по-умолчанию
+         * @return {*}
+         */
+        next: function () { return this.index < this.length ? this.collection[this.index++]:this.none; },
+        /**
+         * Возвратит предыдущий элемент коллекции или значение по-умолчанию
+         * @return {*}
+         */
+        previous: function () { return this.index > 0 ? this.collection[this.index--]:this.none; }
+
+    }));
+
+    /**
+     * Сортировка массива методом быстрой сортировки
+     * @param {Array} array массив
+     * @param {Function=} compare функция сравнения. если не указать, будут сравниваться, как числа
+     * @param {number=} low нижняя граница (по умол. начало массива)
+     * @param {number=} high верхняя граница (по умол. конец массива)
+     */
+    function quickSort (array, compare, low, high) {
+        var bearing = array[ low + high >> 1 ];
+        var i, j;
+        var temp;
+        var callee = quickSort;
+
+        if (array.length < 2) return;
+
+        compare = type.function(compare) ? compare:compareNumbers;
+
+        if (low === undefined && high  === undefined) {
+            low = 0;
+            high = array.length - 1;
+        }
+
+        i = low;
+        j = high;
+
+        do {
+            while(i in array && compare(array[i], bearing, i, array) >= 0) ++i;
+            while(j in array && compare(array[j], bearing, j, array) >= 0) --j;
+            if (i <= j) {
+                temp = array[i];
+                array[i] = array[j];
+                array[j] = temp;
+                i++; j--;
+            }
+        } while (i <= j);
+
+        if (low < j) callee(array, compare, low, j);
+        if (i < high) callee(array, compare, i, high);
+    }
+
+    /**
+     * Вернёт 1, если число положительное
+     * 0, если оно равно 0, и
+     * -1, если оно отрицательное
+     * @param {number} number
+     */
+    function sign (number) {
+        return number === 0 ? 0 : number > 0 ? 1 : -1;
+    }
+
+    /**
+     * Функция для сравнения 2 чисел.
+     * @param {number} a
+     * @param {number} b
+     * @return {number}
+     * @see Array.sort
+     */
+    function compareNumbers (a, b) {
+        return a - b;
+    }
+
+    /**
+     * Сравнит 2 ключевых кадра по их ключам
+     * @param {keyframe} a
+     * @param {keyframe} b
+     * @return {number} отрицальное число, если a < b, положительное число, если a > b, и 0, если они равны
+     * @see compareNumbers
+     */
+    function compareKeyframes (a, b) {
+        return compareNumbers(a.key, b.key);
+    }
+
+    /**
+     * Алгоритм бинарного поиска для нахождения
+     * искомой величины в отсортированном массиве
+     * @param {Array} array отсортированный массив
+     * @param {*} value искомая величина
+     * @param {Function=} compare функция сравнения; если не указать, будут сравниваться, как числа
+     * @param {number=} lowBound нижняя граница (по умол. начало массива)
+     * @param {number=} upperBound верхняя граница (по умол. конец массива)
+     * @return {number} найденный индекс величины или -1
+     * @see Array.sort
+     */
+    function binarySearch (array, value, compare, lowBound, upperBound) {
+
+        var mid, comp;
+
+        if (!type.number(lowBound)) lowBound = 0;
+        if (!type.number(upperBound)) upperBound = array.length - 1;
+
+        compare = type.function(compare) ? compare:compareNumbers;
+
+        do {
+
+            if (lowBound > upperBound || !array.length) {
+                return -1;
+            }
+
+            mid = lowBound + upperBound >> 1;
+
+            comp = compare(value, array[mid], mid, array);
+
+            if (!comp) {
+                return mid;
+            } else if (comp < 0) {
+                upperBound = mid - 1;
+            } else {
+                lowBound = mid + 1;
+            }
+
+        } while (true);
+
+    }
+
+    /**
+     * Просто вызовет функцию с аргументами
+     * @param {Function} func функция
+     * @param {Array=} args массив аргументов
+     * @param {Object=} ctx контекст
+     * @return {*}
+     */
+    function apply (func, args, ctx) {
+        return type.function(func) && func.apply(ctx, args);
+    }
+
+    /**
+     * Вернёт функцию, которая применит список функций,
+     * до тех пор, пока они будут возвращать истинное значение
+     * при переданных аргументах
+     *
+     * альтернатива : f(x) && g(x) && ...
+     *
+     * @param {...Function} functions список функций
+     * @return {Function}
+     */
+    function and (functions) {
+
+        functions = slice(arguments);
+
+        return function (/* args */) {
+            var args = arguments;
+            return each(functions, function (func) { return toBool(apply(func, args)); });
+        };
+    }
+
+    /**
+     * Частичное применение функции
+     * Аргументы можно пропускать, передав
+     * специальное значение "_"; при запуске
+     * пропущенные аргументы заполнятся
+     * слева направо.
+     *
+     * @param {Function} fn функция
+     * @param {Array} args аргументы
+     * @param {Object=} ctx контекст исполнения функции
+     * @return {Function} частично применённая функция
+     *
+     * @example
+     * var line = function (k, x, b) { return k * x + b; };
+     * var id = partial(line, [ 1, _, 0 ]);
+     * id(0);   // 0
+     * id(2);   // 2
+     * id(777); // 777
+     */
+    function partial (fn, args, ctx) {
+
+        function isHole (x) { return x === partial.hole; }
+
+        return function () {
+
+            var fresh = new Iterator(arguments);
+            fresh.none = partial.defaultValue;
+
+            function filter (arg) { return isHole(arg) ? fresh.next():arg; }
+
+            return apply(fn, map(args, filter).concat(slice(fresh.collection, fresh.index)), ctx);
+        };
+    }
+
+    /**
+     * Вернёт функцию, которая передаст первой функции только
+     * указанное количество аргументов
+     * @param {Function} fn
+     * @param {number} num
+     * @return {Function}
+     */
+    function aritilize (fn, num) {
+        return function() {
+            return fn.apply(this, slice(arguments, 0, num));
+        }
+    }
+
+    /**
+     * Обратит порядок аргументов у функции
+     * @param {Function} fn
+     * @param {Object=} ctx Контекст исполнения
+     * @return {Function}
+     */
+    function reverse (fn, ctx) {
+        return function () {
+            apply(fn, slice(arguments).reverse(), ctx);
+        };
+    }
+
+    /**
+     * Аналог bind из ES5. Формат
+     * аргументов, как в partial
+     * @inheritDoc
+     * @see partial
+     */
+    function bind (fn, ctx, args) { return partial(fn, args || [], ctx); }
+
+    /**
+     * Значение для любого аргумента по-умолчанию
+     * @type {undefined}
+     * @private
+     */
+    partial.defaultValue = undefined;
+
+    /**
+     * Специальное значение "дырка", указывающее на то,
+     * что аргумент пропущен
+     * @type {Object}
+     * @private
+     * @see partial
+     */
+    var _ = partial.hole = {};
+
+    /**
+     * Вернёт функцию, которая последовательно
+     * применит список функций к аргуметам
+     *
+     * Альтернатива: f(g(x))
+     *
+     * @param {...Function} functions список функций
+     * @return {Function}
+     */
+    function compose (functions) {
+
+        functions = slice(arguments);
+
+        return function (/* args */) {
+            var args = slice(arguments);
+            each(functions, function (func) { args = [ apply(func, args) ]; });
+            return args;
+        };
+    }
+
+    /**
+     * Применит Array.slice а аргументу
+     * @param {Object} arrayLike Любой объект, похожий на массив
+     * @param {number=} start Начальное смещение
+     * @param {number=} end Конечное смещение
      * @return {Array}
      */
-    function toArray (arrayLike) {
-        return Array.prototype.slice.call(arrayLike, 0);
+    function slice (arrayLike, start, end) {
+        return Array.prototype.slice.call(arrayLike, type.number(start) ? start:0, type.number(end) ? end:undefined);
+    }
+
+    /**
+     * Конвертирует аргумент к булеву типу
+     * @param {*} arg
+     * @return {Boolean}
+     */
+    function toBool (arg) {
+        return !!arg;
     }
 
     /**
@@ -129,30 +445,36 @@
      * @param {function} callback
      */
     function each (arg, callback) {
-
         var i, b;
-
         if (type.array(arg)) {
-
             i = 0;
             b = arg.length;
-
             while (i < b) {
                 if (callback(arg[i], i, arg) === false) {
                     break;
                 }
                 i += 1;
             }
-
         } else {
-
             for (i in arg) if (arg.hasOwnProperty(i)) {
                 if (callback(arg[i], i, arg) === false) {
                     break;
                 }
             }
-
         }
+    }
+
+    /**
+     * Пройдётся по элементам массива\объекта,
+     * применит функцию к каждому; Если хотя бы
+     * одна функция возвратит ложное значение,
+     * перебор прерывается, и функция возвращает false.
+     * @param {array|object} arg
+     * @param {function} callback
+     * @return {boolean}
+     */
+    function every (arg, callback) {
+        return toBool( each(arg, partial(toBool) ) );
     }
 
     /**
@@ -225,7 +547,7 @@
     /**
      * Обработает строку времени вида %время%+%размерность%
      * @param {string|number} timeString
-     * @return {number|undefined} обработанное время в миллисекундах или undefined в случае неудачи
+     * @return {(number|undefined)} обработанное время в миллисекундах или undefined в случае неудачи
      */
     function parseTimeString (timeString) {
 
@@ -237,6 +559,8 @@
             coefficient = parseTimeString.modificators[ matched[2] ] || 1;
             return numeric * coefficient;
         }
+
+        return undefined;
     };
 
     /**
@@ -278,39 +602,28 @@
      * @return {string?}
      * */
     function getVendorPropName (property, target) {
-
         var cache, result, camelCased;
 
         target = !target ? dummy : (target === true ? window:target);
-
-        if (property in target) {
-            return property;
-        }
-
         cache = getVendorPropName.cache;
 
+        if (property in target) {
+            return cache[property] = property;
+        }
+
         if (cache[property] === undefined) {
-
             camelCased = camelCase(property);
-
             if (camelCased in target) {
-
-                cache[property] = camelCased;
-
+                return cache[property] = camelCased;
             } else {
-
                 camelCased = camelCased.charAt(0).toUpperCase() + camelCased.slice(1);
-
                 if (cache.prefix && cache.lowPrefix) {
-
                     if (cache.prefix + camelCased in target) {
                         cache[property] = cache.prefix + camelCased;
                     } else if (cache.lowPrefix + camelCased in target) {
                         cache[property] = cache.lowPrefix + camelCased;
                     }
-
                 } else {
-
                     each(getVendorPropName.prefixes, function (prefix) {
 
                         var lowPrefix = prefix.toLowerCase();
@@ -319,18 +632,16 @@
                             cache.prefix = prefix;
                             cache.lowPrefix = lowPrefix;
                             cache[property] = prefix + camelCased;
-                        } else if (lowPrefix + property in target) {
+                        } else if (lowPrefix + camelCased in target) {
                             cache.prefix = prefix;
                             cache.lowPrefix = lowPrefix;
-                            cache[property] = lowPrefix + property;
+                            cache[property] = lowPrefix + camelCased;
                         }
 
                     });
-
                 }
             }
         }
-
         return cache[property];
     }
 
@@ -355,12 +666,13 @@
     /**
      * Замена для requestAnimationFrame.
      * @param {function(number)} callback
+     * @param {Object=} context контекст исполнения
      * @return {number} ID таймаута
      */
-    function rAF_imitation (callback) {
+    function rAF_imitation (callback, context) {
         return setTimeout(function () {
-            callback(now());
-        }, 1e3 / 60);
+            callback.call(context, now());
+        }, 1e3 / FRAMES_PER_SECOND);
     }
 
     /**
@@ -561,14 +873,17 @@
 
     /**
      * Пропустит ключ через все фильтры и вернёт его
-     * численное представление или undefined.
+     * численное представление в процентах или undefined.
      * @param {string|number} key
-     * @return {number?}
+     * @return {key}
      */
     function normalizeKey (key) {
 
-        if (type(key) === "string") {
-            key = keyAliases[key] || key;
+        /** @typedef {string|number} */
+        key;
+
+        if (type.string(key)) {
+            key = !type.undefined(keyAliases[key]) ? keyAliases[key]:key;
             key = parseInt(key, 10);
         }
 
@@ -577,8 +892,8 @@
 
     /**
      * Добавит правило с указанным селектором и указанным текстом правила.
-     * @param selector
-     * @param cssText
+     * @param {string} selector
+     * @param {string=} cssText
      * @return {CSSRule} Добавленное правило
      */
     function addRule (selector, cssText) {
@@ -586,6 +901,8 @@
         /** @type {CSSRuleList} */
         var rules = stylesheet.cssRules || stylesheet.rules;
         var index = rules.length;
+
+        cssText = cssText || " ";
 
         if (stylesheet.insertRule) {
             stylesheet.insertRule(selector + " " + "{" + cssText + "}", index);
@@ -652,6 +969,10 @@
 
         } else {
 
+            if (!type.string(propertyValue)) {
+                propertyValue = normalize(element, propertyName, propertyValue, true);
+            }
+
             if (type.element(element)) {
                 element.style[vendorizedPropertyName] = propertyValue;
             } else {
@@ -665,14 +986,135 @@
     };
 
     /**
-     * Хуки для css.
+     * Хуки для получения\установки значения свойства.
      * @type {Object.<string, Object.<string, function>>}
      */
     css.hooks = {};
 
     /**
-     * Флаг, установленный в true, заставляет парсить получаемые значения
-     *
-     * @type {Boolean}
+     * Преобразует строкое представление значения в численное и наоборот
+     * @param {Element} element элемент (для относительных значений)
+     * @param {string} propertyName имя свойства
+     * @param {string} propertyValue значение свойства
+     * @param {boolean=} toString к строке (true) или к числу (false)
+     * @return {Array|number|undefined}
      */
-    css.convertValues = true;
+    function normalize (element, propertyName, propertyValue, toString) {
+        var hooks = normalize.hooks;
+        var units = normalize.units;
+        var normalized;
+        var unit;
+        var vendorizedPropertyName;
+
+        vendorizedPropertyName = getVendorPropName(propertyName);
+
+        if (propertyName in hooks) {
+            normalized = hooks[propertyName](element, vendorizedPropertyName, propertyValue, toString);
+        }
+
+        if (type.undefined(normalized)) {
+
+            if (toString) {
+                if (type.number(propertyValue) && !(propertyName in normalize.nopx)) {
+                    normalized = propertyValue + "px";
+                }
+            } else if (!type.number(propertyValue)) {
+                unit = propertyValue.match(cssNumericValueReg)[2];
+
+                if (unit in units) {
+                    normalized = units[unit](element, vendorizedPropertyName, propertyValue);
+                }
+            }
+        }
+
+        return normalized;
+    }
+
+    /**
+     * Хуки для преобразования значения
+     * Первый аргумент - элемент
+     * Второй - имя свойства
+     * Третий - значение
+     * Червёртый - приводим к строке (true) или к числу (false)
+     * @type {Object.<string, function>}
+     */
+    normalize.hooks = {};
+
+    /**
+     * Хуки для преобразования из исходных единиц измерения к абсолютным
+     * @type {Object.<string, function>}
+     */
+    normalize.units = {
+        // это и есть абсолютное значение
+        "px": function (element, propName, propVal) {
+            // просто возвращаем число без "px"
+            return parseFloat(propVal);
+        }
+    };
+
+    /**
+     * Список свойств, к которым не надо добавлять "PX"
+     * при переводе из числа в строку.
+     * @enum {undefined}
+     */
+    normalize.nopx = apply(generateDictionary, "fill-opacity font-weight line-height opacity orphans widows z-index zoom".split(" "));
+
+    /**
+     * Вычисление значения между двумя точками
+     * для анимируемого свойства
+     * @param {string} propertyName Имя свойства
+     * @param {number} from Имя меньшей точки
+     * @param {number} to Имя большей точки
+     * @param {number} timingFunctionValue Значение прогресса между ними
+     * @return {number|Array} Вычисленное значение
+     */
+    function blend (propertyName, from, to, timingFunctionValue) {
+
+        if (propertyName in blend.hooks) {
+            return blend.hooks[propertyName](from, to, timingFunctionValue);
+        }
+
+        return (to - from) * timingFunctionValue + from;
+    }
+
+    /**
+     * Для вычисления значения экзотических свойств
+     * transform или crop, к примеру
+     * @type {Object}
+     * @private
+     * @static
+     */
+    blend.hooks = {};
+
+    /**
+     * Исполнит функцию перед отрисовкой,
+     * передав её текущую отметку времени
+     * Оригинальная функция
+     * @type {Function}
+     * @param {Function}
+     * @return {number} номер таймера
+     */
+    var rAF = window[getVendorPropName("requestAnimationFrame", window)];
+
+    /**
+     * Исполнит функцию перед отрисовкой,
+     * передав её текущую отметку времени
+     * и контекст исполнения
+     * (обёртка)
+     * @type {Function}
+     * @param {Function} callback
+     * @param {Object} context
+     * @return {number} номер таймера
+     */
+    var requestAnimationFrame = !rAF ? rAF_imitation : function (callback, context) {
+        return rAF(function (now) {
+            callback.call(context, now);
+        });
+    };
+
+    /**
+     * Отменит исполнение функции перед отрисовкой
+     * @type {Function}
+     * @param {number} номер таймера
+     */
+    var cancelRequestAnimationFrame = window[getVendorPropName("cancelRequestAnimationFrame", window)] || clearTimeout;
