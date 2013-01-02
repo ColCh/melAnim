@@ -13,6 +13,8 @@
     /** @define {boolean} */
     var ENABLE_DEBUG = true;
 
+    var FRAMES_PER_SECOND = 60;
+
     var dummy = document.documentElement.style, prefix, lowPrefix;
 
     var cssNumericValueReg = /(-?\d*\.?\d+)(.*)/;
@@ -25,6 +27,8 @@
 
     var stepsReg = /^steps\((\d+(?:,\s*(?:start|end))?)\)$/i;
 
-    var stylesheet = document.createElement("style");
-    document.getElementsByTagName("script")[0].parentNode.appendChild(stylesheet);
-    stylesheet = stylesheet.sheet || stylesheet.styleSheet;
+    var style = document.createElement("style");
+
+    document.getElementsByTagName("head")[0].parentNode.appendChild(style);
+
+    var stylesheet = style.sheet || style.styleSheet;
