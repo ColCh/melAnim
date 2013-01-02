@@ -52,6 +52,33 @@
     };
 
     /**
+     * Проверит, является ли аргумент числом
+     * @param {*} x
+     * @return {Boolean}
+     */
+    type.number = function (x) {
+        return type(x) === "number";
+    };
+
+    /**
+     * Проверит, является ли аргумент строковым значением
+     * @param x
+     * @return {Boolean}
+     */
+    type.string = function (x) {
+        return type(x) === "string";
+    };
+
+    /**
+     * Проверит, является ли аргумент объектом
+     * @param {*} x
+     * @return {Boolean}
+     */
+    type.object = function (x) {
+        return type(x) === "object";
+    };
+
+    /**
      * Проверит, принадлежит ли число диапазону
      * @param {number} num
      * @param {number=} lowbound нижняя граница
