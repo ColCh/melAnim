@@ -310,23 +310,6 @@
             // КЛЮЧ_ПРЕДЫДУЩЕГО < ТЕКУЩИЙ_ПРОГРЕСС <= КЛЮЧ_СЛЕДУЮЩЕГО
             keyframes = self.keyframes;
 
-            /*
-            firstKeyframeIndex = binarySearch(keyframes, progr, function (progr, _, index, keyframes) {
-                var previous = keyframes[index];
-                var next = keyframes[index + 1];
-                var inLowerBound, inUpperBound, inBound;
-
-                inLowerBound = previous.key <= progr;
-                inUpperBound = next.key >= progr;
-
-                inBound = inLowerBound && inUpperBound;
-
-                if (inBound) return 0;
-                if (previous.key > progr) return -1;
-                if (next.key < progr) return 1;
-            });
-            */
-
             i = 0;
             while (i < keyframes.length) {
 
@@ -373,80 +356,6 @@
 
                 fetchedProperties[property] = blend(property, from, to, easing);
             }
-
-
-
-
-            //each(this.intrinsic, function (_, name) {
-
-                /*var from = firstKeyframe.properties[name];
-                var to = secondKeyframe.properties[name];
-                var element = self.target;
-                var offset, scale;
-
-                var helpFirstKeyframe, helpSecondKeyframe, i;
-                var helpFrom,  helpTo;
-
-                /* если в первом ключевом кадре нет этого свойства,
-                 * ищем ближайший со значением, двигаясь к начальным значениям
-                 */
-                /*i = firstKeyframeIndex;
-                helpFirstKeyframe = firstKeyframe
-                while (type.undefined(helpFirstKeyframe.properties[name])) {
-                    helpFirstKeyframe = keyframes[i];
-                    i -= 1;
-                }*/
-
-                /*helpFrom = helpFirstKeyframe.properties[name];
-                if (helpFirstKeyframe.key === keyAliases["from"] && (!type.number(helpFrom) && !type.string(helpFrom))) helpFrom = css(element, name);
-                if (!type.number(helpFrom)) helpFrom = normalize(element, name, helpFrom);
-                */
-                /* если во втором ключевом кадре нет этого свойства,
-                * ищем ближайший со значением, двигаясь к конечным значениям
-                */
-                /*
-                i = firstKeyframeIndex;
-                helpSecondKeyframe = secondKeyframe;
-                while (type.undefined(helpSecondKeyframe.properties[name])) {
-                    helpSecondKeyframe = keyframes[i];
-                    i += 1;
-                }
-                */
-                /*
-                helpTo = helpSecondKeyframe.properties[name];
-                if (helpSecondKeyframe.key === keyAliases["to"] && (!type.number(helpTo) && !type.string(helpTo))) helpTo = css(element, name);
-                if (!type.number(helpTo)) helpTo = normalize(element, name, helpTo);
-                */
-                /*
-                if (!type.number(from) && !type.string(from)) {
-                    from = firstKeyframe.properties[name] = (helpTo - helpFrom) * (firstKeyframe.key / (helpFirstKeyframe.key + helpSecondKeyframe.key)) + helpFrom;
-                }
-                *//*
-                if (!type.number(from)) {
-                    from = secondKeyframe.properties[name] = normalize(self.target, name, from, false);
-                }
-                /*
-                if (!type.number(to) && !type.string(to)) {
-                    to = secondKeyframe.properties[name] = (helpTo - helpFrom) * (secondKeyframe.key / (helpFirstKeyframe.key + helpSecondKeyframe.key)) + helpFrom;
-                }*//*
-                if (!type.number(to)) {
-                    to = secondKeyframe.properties[name] = normalize(self.target, name, to, false);
-                }*/
-
-                // TODO доделать нормальный fetching свойств
-           /*
-                var firstKeyframe, secondKeyframe;
-                var from, to;
-                var i;
-                var element = self.target;
-                var offset, scale;
-
-                offset = firstKeyframe.key;
-                scale = 1.0 / (secondKeyframe.key - firstKeyframe.key);
-                easing = timingFunction((progr / 100 - offset) * scale);
-
-                fetchedProperties[name] = blend(name, from, to, easing);
-            }); */
 
             return fetchedProperties;
         },
