@@ -1,5 +1,13 @@
-    //TODO удалить, т.к. директива определена в animate_wrap.js
+    //TODO удалить, т.к. директивы определены в animate_wrap.js
+    var DEFAULT_DURATION = "400ms";
     var DEFAULT_EASING = "ease";
+    var DEFAULT_FILLMODE = "forwards";
+    var DEFAULT_DELAY = 0;
+    var DEFAULT_DIRECTION = "normal";
+    var DEFAULT_ITERATIONCOUNT = 1;
+    var DEFAULT_HANDLER = noop;
+    var DEFAULT_PLAYINGSTATE = "paused";
+
 
     /**
      * Конструктор анимаций с ключевыми кадрами
@@ -17,11 +25,20 @@
         this.iterations = 1;
         this.rule = addRule("." + this.name, "");
         this.intrinsic = {};
-        this.addKeyframe(keyAliases["from"], createObject(this.intrinsic));
-        this.addKeyframe(keyAliases["to"], createObject(this.intrinsic));
+        // начальный и конечный ключевые кадры
+        // их свойства наследуют вычисленные
+        this.addKeyframe(0, createObject(this.intrinsic));
+        this.addKeyframe(1, createObject(this.intrinsic));
     }
 
     merge(KeyframeAnimation.prototype, /** @lends {KeyframeAnimation.prototype} */{
+
+        /**
+         * Имя анимации
+         * @type {string}
+         * @private
+         */
+        name: undefined,
 
         /**
          * Анимируемый элемент
@@ -58,6 +75,13 @@
          * @private
          */
         iterations: undefined,
+
+        /**
+         * Направление анимации
+         * @type {string}
+         * @private
+         */
+        animationDirection: DIRECTION_NORMAL,
 
         /**
          * Объект с особыми смягчениями для свойств
@@ -121,7 +145,7 @@
          * Установка продолжительности анимации
          * @param {number} duration
          */
-        duration:function (duration) {
+        "duration": function (duration) {
             this.animationTime = duration;
         },
 
@@ -130,7 +154,7 @@
          * завершения анимации
          * @param {Function} callback
          */
-        onComplete:function (callback) {
+        "onComplete": function (callback) {
             this.oncomplete = callback;
         },
 
@@ -142,7 +166,7 @@
          * @param {number=} position прогресс в долях (по умол. для всей анимации)
          * @param {string=} property для какого свойства устанавливается (по умол. для всех)
          */
-        easing:function (easing, position, property) {
+        "easing":function (easing, position, property) {
             var keyframe;
             if (type.string(property)) {
                 this.specialEasing[property] = easing;
@@ -157,6 +181,15 @@
                     keyframe.easing = easing;
                 }
             }
+        },
+
+        /**
+         * Установка направления анимации
+         * Допустимые значения см. в документации к CSS3 анимациям
+         * @param {string} animationDirection
+         */
+        "direction": function (animationDirection) {
+            this.animationDirection = animationDirection;
         },
 
         /**
@@ -219,7 +252,7 @@
          * Старт анимации или её продолжение после паузы
          * @param {boolean=} keepOn Продолжить ли предыдущие значения (установка в FALSY запускает заново)
          */
-        start: function (keepOn) {
+        "start": function (keepOn) {
 
             var prop;
 
@@ -241,7 +274,7 @@
          */
         stop: function (gotoEnd) {
 
-            cancelRequestAnimationFrame(this.timeoutId);
+            //cancelRequestAnimationFrame(this.timeoutId);
 
             if (gotoEnd) {
                 this.tick(this.animationTime);
@@ -257,7 +290,7 @@
          * @param {(string|number)=} position позиция, в долях. (по умол. 1)
          * @see KeyframeAnimation.easing
          */
-        propAt:function (name, value, position) {
+        "propAt": function (name, value, position) {
 
             /**
              * Ключевой кадр, имеющий свои свойства и своё смягчение
@@ -272,6 +305,8 @@
             keyframes = this.keyframes;
 
             position = normalizeKey(position);
+            // в долях
+            position /= 100;
 
             if (type.undefined(position)) position = keyAliases["to"];
             if (!type.number(position)) return;
@@ -284,7 +319,8 @@
         },
 
         /**
-         * Высчитает значения свойств
+         * Высчитает значения свойств, вызовет обработчиков итерации\завершения
+         * и завершит анимацию, если нужно. (семантическая ошибка, надо пофиксить)
          * @param {number} elapsedTime прошеднее со старта время
          * @return {Object}
          * @private
@@ -294,14 +330,62 @@
             var i;
             var self = this;
             var keyframes, fetchedProperties, firstKeyframe, secondKeyframe, from, to, property;
-            var element = self.target;
-            var progr, fractionalTime, offset, scale;
+            var element;
+            var progr, offset, scale;
+            var iterations, integralIterations, currentIteration, needsReverse, iterationIsOdd;
             var easing, timingFunction;
 
-            //прогресс анимации без учёта итераций в процентах
-            progr = 100 * elapsedTime / self.animationTime;
+            //прогресс анимации без учёта итераций
+            progr = elapsedTime / self.animationTime;
 
-            if (progr > 100) progr = 100;
+            currentIteration = Math.floor(progr);
+
+            // аналогично операции NUM % 2
+            // т.е. является ли число нечётным
+            iterationIsOdd = currentIteration & 1;
+
+            iterations = this.iterations;
+
+            // исключение составляет специальное значение
+            if (iterations !== ITERATIONCOUNT_INFINITE) {
+
+                iterations = parseFloat(iterations);
+
+                if (!isFinite(iterations) || iterations < 0) {
+                    // установлено неприменимое значение для кол-ва итераций
+                    // откатываемся к значению по умолчанию
+                    iterations = DEFAULT_ITERATIONCOUNT;
+                }
+            }
+
+            if (iterations !== this.iterations) this.iterations = iterations;
+
+            integralIterations = Math.floor(iterations);
+
+            // превращаем прогресс относительно первого прохода
+            // в прогресс относительно текущего прохода
+            progr -= Math.min(currentIteration, integralIterations);
+
+            if (progr > 1) progr = 1;
+
+            if (progr === 1) {
+                // конец итерации, но не анимации
+                if (iterations - currentIteration > 0) {
+                    type.func(this.oniteration) && this.oniteration();
+                } else {
+                    // завершение анимации
+                    clearInterval(this.timeoutId);
+                    type.func(this.oncomplete) && this.oncomplete();
+                }
+            }
+
+            needsReverse = this.animationDirection === DIRECTION_REVERSE;
+            needsReverse |= this.animationDirection === DIRECTION_ALTERNATE && iterationIsOdd;
+            needsReverse |= this.animationDirection === DIRECTION_ALTERNATE_REVERSE && !iterationIsOdd;
+
+            if (needsReverse) {
+                progr = 1 - progr;
+            }
 
             keyframes = self.keyframes;
 
@@ -311,7 +395,7 @@
             i = 0;
             while (i < keyframes.length - 1) {
                 // КЛЮЧ_ПРЕДЫДУЩЕГО <= ПРОГРЕСС < КЛЮЧ_СЛЕДУЮЩЕГО
-                //TODO первое условие с циклом можно заменить бинарным поиском
+                //TODO первое условие вместе с циклом можно заменить бинарным поиском
                 if (keyframes[i].key <= progr && keyframes[i + 1].key > progr) {
                     if (keyframes[i].easing) {
                         timingFunction = keyframes[i].easing;
@@ -320,6 +404,8 @@
                 }
                 i += 1;
             }
+
+
 
             // высчитанные значения свойств
             fetchedProperties = {};
@@ -349,10 +435,12 @@
                 // относительно начала анимации
                 offset = firstKeyframe.key;
                 // масштаб для сплющивания прогресса
-                scale = 100 * 1.0 / (secondKeyframe.key - firstKeyframe.key);
+                scale = 1.0 / (secondKeyframe.key - firstKeyframe.key);
                 // приводим прогресс к долям и считаем смягчение
                 // относительно двух ключевых кадров
-                easing = timingFunction( (progr - offset) / 100 * scale );
+                easing = timingFunction( (progr - offset) * scale );
+
+                element = self.target;
 
                 from = normalize(element, property, firstKeyframe.properties[property]);
                 to = normalize(element, property, secondKeyframe.properties[property]);
@@ -374,16 +462,18 @@
                 name = getVendorPropName.cache[property] || getVendorPropName(property);
                 buffer += name + ":" + normalize(null, property, fetchedProperties[property], true) + ';';
             }
+            //TODO Rules vs style проверка производительности
             this.rule.style.cssText = buffer;
         },
 
         /**
          * Тик анимации
-         * просчитывание, определение завершения анимации и отрисовка
+         * просчитывание и отрисовка
          * @param {number=} timeStamp временная метка (или текущее время)
          * @private
          */
         tick: function (timeStamp) {
+
             var elapsedTime;
             var fetchedProperties;
 
@@ -395,14 +485,7 @@
 
             fetchedProperties = this.fetch(elapsedTime);
             this.render(fetchedProperties);
-
-            if (elapsedTime < this.animationTime) {
-                //this.timeoutId = requestAnimationFrame(this.tick, this);
-            } else {
-                clearInterval(this.timeoutId);
-                type.function(this.oncomplete) && this.oncomplete();
-            }
         }
     });
 
-    window.KeyframeAnimation = KeyframeAnimation;
+    window["KeyframeAnimation"] = KeyframeAnimation;
