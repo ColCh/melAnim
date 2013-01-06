@@ -182,43 +182,29 @@
     }));
 
     /**
-     * Сортировка массива методом быстрой сортировки
+     * Сортировка массива методом пузырька
      * @param {Array} array массив
      * @param {Function=} compare функция сравнения. если не указать, будут сравниваться, как числа
      * @param {number=} low нижняя граница (по умол. начало массива)
      * @param {number=} high верхняя граница (по умол. конец массива)
      */
-    function quickSort (array, compare, low, high) {
-        var bearing = array[ low + high >> 1 ];
-        var i, j;
-        var temp;
-        var callee = quickSort;
+    function bubbleSort (array, compare, low, high) {
 
-        if (array.length < 2) return;
+        var i, j, cache;
 
-        compare = type.function(compare) ? compare:compareNumbers;
+        if (!type.number(low)) low = 0;
+        if (!type.number(high)) high = array.length - 1;
+        if (!type.func(compare)) compare = compareNumbers;
 
-        if (low === undefined && high  === undefined) {
-            low = 0;
-            high = array.length - 1;
-        }
-
-        i = low;
-        j = high;
-
-        do {
-            while(i in array && compare(array[i], bearing, i, array) >= 0) ++i;
-            while(j in array && compare(array[j], bearing, j, array) >= 0) --j;
-            if (i <= j) {
-                temp = array[i];
-                array[i] = array[j];
-                array[j] = temp;
-                i++; j--;
+        for (j = low; j < high; j += 1) {
+            for (i = low; i < high - j; i += 1) {
+                if (compare(array[i], array[i + 1], i, array) > 0) {
+                    cache = array[i];
+                    array[i] = array[i + 1];
+                    array[i + 1] = cache;
+                }
             }
-        } while (i <= j);
-
-        if (low < j) callee(array, compare, low, j);
-        if (i < high) callee(array, compare, i, high);
+        }
     }
 
     /**
