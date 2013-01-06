@@ -1267,6 +1267,7 @@
          * @private
          */
         looper: function (timeStamp) {
+            this.timeoutID = requestAnimationFrame(this.looper);
             timeStamp = timeStamp || now();
             this.callback.call(this.context, timeStamp);
         }
