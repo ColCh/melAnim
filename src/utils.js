@@ -29,7 +29,7 @@
      * @param {Function=} x
      * @return {boolean}
      */
-    type.function = function (x) {
+    type.func = function (x) {
         return type(x) === "function";
     };
 
