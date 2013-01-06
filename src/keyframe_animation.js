@@ -8,6 +8,9 @@
     var DEFAULT_HANDLER = noop;
     var DEFAULT_PLAYINGSTATE = "paused";
 
+    // TODO animation-delay
+    // TODO animation-fill-mode
+    // TODO REFACTORING
 
     /**
      * Конструктор анимаций с ключевыми кадрами
@@ -29,6 +32,7 @@
         // их свойства наследуют вычисленные
         this.addKeyframe(0, createObject(this.intrinsic));
         this.addKeyframe(1, createObject(this.intrinsic));
+        this.tick = bind(this.tick, this);
     }
 
     merge(KeyframeAnimation.prototype, /** @lends {KeyframeAnimation.prototype} */{
@@ -234,13 +238,12 @@
         /**
          * Попытается найти в коллекции
          * ключевой кадр с указанным прогрессом
-         * @param {key} position
-         * @return {keyframe}
+         * @param {number} position
+         * @return {Object}
          * @private
          */
         lookupKeyframe:function (position) {
             var keyframe, index;
-            position = normalizeKey(position);
             index = binarySearch(this.keyframes, position, function (key, keyframe) {
                 return key - keyframe.key;
             });
@@ -256,6 +259,8 @@
 
             var prop;
 
+            this.timeoutId = setInterval(this.tick, 1e3 / FRAMES_PER_SECOND);
+
             if (!keepOn) {
                 this.started = now();
             }
@@ -264,15 +269,14 @@
                 this.intrinsic[prop] = normalize(this.target, prop);
             }
 
-            //this.tick(this.started);
-            this.timeoutId = setInterval(bind(this.tick, this), 1e3 / FRAMES_PER_SECOND);
+            this.tick(this.started);
         },
 
         /**
          * Остановка или пауза анимации
          * @param {boolean=} gotoEnd Установить ли конечные значения
          */
-        stop: function (gotoEnd) {
+        "stop": function (gotoEnd) {
 
             //cancelRequestAnimationFrame(this.timeoutId);
 
@@ -304,11 +308,11 @@
              */
             keyframes = this.keyframes;
 
+            if (type.undefined(position)) position = keyAliases["to"];
             position = normalizeKey(position);
             // в долях
             position /= 100;
 
-            if (type.undefined(position)) position = keyAliases["to"];
             if (!type.number(position)) return;
 
             keyframe = this.lookupKeyframe(position) || this.addKeyframe(position);
@@ -404,8 +408,6 @@
                 }
                 i += 1;
             }
-
-
 
             // высчитанные значения свойств
             fetchedProperties = {};
