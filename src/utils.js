@@ -208,6 +208,36 @@
     }
 
     /**
+     * Обычный линейный поиск значения в массиве
+     * @param {Array} arr массив
+     * @param {(Function|*)} val Значение (или функция сравнения; должна вернуть 0 при равенстве)
+     */
+    function LinearSearch (arr, val) {
+
+        var callable = type.func(val),
+            index, i, m, curr,
+            native = Array.prototype.indexOf,
+            EQUALS = 0, NOT_FOUND = -1;
+
+        index = NOT_FOUND;
+
+        if (!callable && native) {
+            index = native.call(arr, val);
+        } else {
+            for (i = 0, m = arr.length; i < m && index === NOT_FOUND; i++) {
+                curr = arr[i];
+                if (callable) {
+                    if (val(curr, i, arr) === EQUALS) index = i;
+                } else {
+                    if (val === curr) index = i;
+                }
+            }
+        }
+
+        return index;
+    }
+
+    /**
      * Вернёт 1, если число положительное
      * 0, если оно равно 0, и
      * -1, если оно отрицательное
