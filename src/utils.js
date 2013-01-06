@@ -257,7 +257,7 @@
         if (!type.number(lowBound)) lowBound = 0;
         if (!type.number(upperBound)) upperBound = array.length - 1;
 
-        compare = type.function(compare) ? compare:compareNumbers;
+        compare = type.func(compare) ? compare:compareNumbers;
 
         do {
 
@@ -289,7 +289,7 @@
      * @return {*}
      */
     function apply (func, args, ctx) {
-        return type.function(func) && func.apply(ctx, args);
+        return type.func(func) && func.apply(ctx, args);
     }
 
     /**
@@ -875,15 +875,10 @@
      * @return {key}
      */
     function normalizeKey (key) {
-
-        /** @typedef {string|number} */
-        key;
-
         if (type.string(key)) {
             key = !type.undefined(keyAliases[key]) ? keyAliases[key]:key;
             key = parseInt(key, 10);
         }
-
         return inRange(key, 0, 100, true) ? key:undefined;
     }
 
@@ -949,6 +944,9 @@
         var hookVal;
         var vendorizedPropertyName;
 
+        // нечему устанавливать\неоткуда получать
+        if (!element) return null;
+
         vendorizedPropertyName = getVendorPropName(propertyName);
 
         if (propertyName in hooks && action in hooks[propertyName]) {
@@ -992,7 +990,7 @@
      * Преобразует строкое представление значения в численное и наоборот
      * @param {Element} element элемент (для относительных значений)
      * @param {string} propertyName имя свойства
-     * @param {string} propertyValue значение свойства
+     * @param {string=} propertyValue значение свойства
      * @param {boolean=} toString к строке (true) или к числу (false)
      * @return {Array|number|undefined}
      */
@@ -1005,22 +1003,28 @@
 
         vendorizedPropertyName = getVendorPropName(propertyName);
 
-        if (propertyName in hooks) {
+         if (type.undefined(propertyValue)) {
+             propertyValue = css(element, propertyName);
+         }
+
+        if (hooks[propertyName]) {
             normalized = hooks[propertyName](element, vendorizedPropertyName, propertyValue, toString);
         }
 
         if (type.undefined(normalized)) {
 
             if (toString) {
-                if (type.number(propertyValue) && !(propertyName in normalize.nopx)) {
+                if (type.number(propertyValue) && !normalize.nopx[propertyName]) {
                     normalized = propertyValue + "px";
                 }
             } else if (!type.number(propertyValue)) {
                 unit = propertyValue.match(cssNumericValueReg)[2];
 
-                if (unit in units) {
+                if (units[unit]) {
                     normalized = units[unit](element, vendorizedPropertyName, propertyValue);
                 }
+            } else {
+                normalized = propertyValue;
             }
         }
 
@@ -1054,7 +1058,16 @@
      * при переводе из числа в строку.
      * @enum {undefined}
      */
-    normalize.nopx = apply(generateDictionary, "fill-opacity font-weight line-height opacity orphans widows z-index zoom".split(" "));
+    normalize.nopx = {
+        "fill-opacity": true,
+        "font-weight": true,
+        "line-height": true,
+        "opacity": true,
+        "orphans": true,
+        "widows": true,
+        "z-index": true,
+        "zoom": true
+    }
 
     /**
      * Вычисление значения между двумя точками
