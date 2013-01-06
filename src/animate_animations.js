@@ -1,2 +1,2 @@
     // TODO
-    function CssAnimation () {}
+    function animateCSSAnimation () {}

@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8"/>
+    <title> melAnim.js test </title>
+    <script type="text/javascript" src="../dist/mel-anim.compiled.js"></script>
+    <style>
+        @-webkit-keyframes tst {
+            /*
+            0% {
+                width: 50px;
+            }*/
+
+            30% {
+                width: 150px;
+                -webkit-animation-timing-function: linear;
+            }
+
+            50% {
+                width: 200px;
+                -webkit-animation-timing-function: ease-out;
+            }
+
+            100% {
+                width: 300px;
+            }
+        }
+
+        article, aside, figure, footer, header, hgroup, menu, nav, section {
+            display: block;
+        }
+
+        .css {
+            -webkit-animation-name: tst-;
+            -webkit-animation-duration: 3s;
+            -webkit-animation-iteration-count: 1;
+            -webkit-animation-timing-function: ease-in-out; /*cubic-bezier(1.000, 0.005, 1.000, 0)*/;
+            -webkit-animation-delay: 0s;
+            -webkit-animation-fill-mode: both;
+            -webkit-animation-direction: alternate;
+        }
+
+        .anim {
+            border: 1px black solid;
+            position: absolute;
+            width: 10px;
+        }
+
+        body {
+            background-color: gray;
+            padding: 0px;
+            position: relative;
+            height: 450px;
+            border: 1px #ff0000 dashed;
+            margin-top: 50px;
+        }
+    </style>
+</head>
+<body>
+<div style="top: 10%;" class="anim css">Anim me ONE!</div>
+<div style="top: 20%;" class="anim js">Anim me TWO!</div>
+<script type="text/javascript">
+    var anim = new KeyframeAnimation();
+
+    anim.element(/** @type {Element} */document.querySelector(".js"));
+
+    //anim.propAt("width", "100px", "50%");
+    //anim.propAt("width", "300px", "90%");
+    anim.propAt("width", "550px", "100%");
+
+    //anim.propAt("height", "100px", "30%");
+    //anim.propAt("height", "550px", "100%");
+
+    anim.easing(function (x) { return x });
+
+    anim.direction("alternate");
+
+    anim.duration(2 * 1e3);
+
+    anim.iterations = "infinite";
+
+    anim.onComplete(function () {
+        document.body.style.backgroundColor = 'green';
+        //console.profileEnd();
+    });
+
+    //console.profile();
+    anim.start();
+
+    /*
+    var myAnimation = Animation(document.querySelectorAll('.js'), {
+                "from": {
+                    "width": "50px"
+                },
+                "to": {
+                    "width": "300px"
+                }
+                /*width:{
+                    from:"50px",
+                    "50%":"200px",
+                    to:"300px"
+                }
+                /*
+                 "top" : {
+                 from: "300px",
+                 to: "-10px"
+                 },
+                 "left": {
+                 to: "400px",
+                 from: "200px"
+                 },
+                 "color": {
+                 from: "#FF0",
+                 to: "#BADA55"
+                 },
+                 "width": {
+                 "50%": "50px",
+                 "100%": "200px"
+                 },
+                 "height": {
+                 from: "5px",
+                 to: "100px"
+                 },
+                 "font-size": {
+                 from: "10px",
+                 to: "40px"
+                 },
+                 "background-color": {
+                 from: "#BADA55",
+                 to: "#000"
+                 },
+                 "transform": {
+                 from: "skewX(10deg)",
+                 to: "skewX(40deg)"
+                 /*skewX: {
+                 from: "10deg",
+                 to: "20deg"
+                 }/*,
+                 rotate: {
+                 from: "10deg",
+                 to: "90deg"
+                 },
+                 translateX: {
+                 from: "-5px",
+                 to: "5px"
+                 },
+                 translateY: {
+                 from: "-5px",
+                 to: "5px"
+                 }
+                 },
+                 "opacity": {
+                 from: "1.0",
+                 to: "0.5"
+                 }*//*
+            },
+            {
+                duration:"2s",
+
+                easing: function (x) {return x},//"ease-in", //"cubic-bezier(1.000, 0.005, 1.000, 0)",
+
+                complete:function animateComplete() {
+                    document.body.style.backgroundColor = "green";
+                },
+
+                fillMode:"both",
+
+                delay:"1s",
+
+                iterationCount:"2",
+
+                direction: "alternate",
+
+                classicMode:true
+            });
+
+    myAnimation.start();*/
+</script>
+</body>
+</html>

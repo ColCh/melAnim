@@ -1,16 +1,11 @@
     var
-    
+
         mel = "mel_animation_",
-    
+
         document = window.document,
 
-        parseInt = window.parseInt,
-
-        parseFloat = window.parseFloat,
-    
         undefined;
 
-    /** @define {boolean} */
     var ENABLE_DEBUG = true;
 
     var FRAMES_PER_SECOND = 60;

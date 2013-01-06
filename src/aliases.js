@@ -210,8 +210,9 @@
             else var s = p/(2*Math.PI) * Math.asin (c/a);
             if (t < 1) return -.5*(a*Math.pow(2,10*(t-=1)) * Math.sin( (t*d-s)*(2*Math.PI)/p )) + b;
             return a*Math.pow(2,-10*(t-=1)) * Math.sin( (t*d-s)*(2*Math.PI)/p )*.5 + c + b;
-        },
+        }
 
+        /*
         easeInBounce: function (x, t, b, c, d) {
             return c - jQuery.easing.easeOutBounce (x, d-t, 0, c, d) + b;
         },
@@ -230,4 +231,5 @@
             if (t < d/2) return jQuery.easing.easeInBounce (x, t*2, 0, c, d) * .5 + b;
             return jQuery.easing.easeOutBounce (x, t*2-d, 0, c, d) * .5 + c*.5 + b;
         }
+        */
     };
