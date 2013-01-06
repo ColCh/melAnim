@@ -351,7 +351,9 @@
             iterations = this.iterations;
 
             // исключение составляет специальное значение
-            if (iterations !== ITERATIONCOUNT_INFINITE) {
+            if (iterations == ITERATIONCOUNT_INFINITE) {
+                iterations = Number.POSITIVE_INFINITY;
+            } else {
 
                 iterations = parseFloat(iterations);
 
@@ -361,8 +363,6 @@
                     iterations = DEFAULT_ITERATIONCOUNT;
                 }
             }
-
-            if (iterations !== this.iterations) this.iterations = iterations;
 
             integralIterations = Math.floor(iterations);
 
