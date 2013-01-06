@@ -1,1275 +1,1319 @@
-    /**
-     * Р’РµСЂРЅС‘С‚ СЃС‚СЂРѕРєРѕРІРѕРµ РїСЂРµРґСЃС‚Р°РІР»РµРЅРёРµ С‚РёРїР° Р°СЂРіСѓРјРµРЅС‚Р°.
-     * РџСЂРё РЅРµРѕР±С…РѕРґРёРјРѕСЃС‚Рё РІРµСЂРЅС‘С‚ [[Class]] РІ РЅРёР¶РЅРµРј СЂРµРіРёСЃС‚СЂРµ.
-     *
-     * @param {?} x
-     * @return {string}
-     */
-    function type (x) {
-        var type = typeof(x);
-        if (type === "object") {
-            type = Object.prototype.toString.call(x).slice(8, -1).toLowerCase();
-        }
-        return type;
+/**
+ * Вернёт строковое представление типа аргумента.
+ * При необходимости вернёт [[Class]] в нижнем регистре.
+ *
+ * @param {?} x
+ * @return {string}
+ */
+function type(x) {
+    var type = typeof(x);
+    if (type === "object") {
+        type = Object.prototype.toString.call(x).slice(8, -1).toLowerCase();
     }
+    return type;
+}
 
-    /**
-     * РџСЂРѕРІРµСЂРёС‚, СЏРІР»СЏРµС‚СЃСЏ Р»Рё Р°СЂРіСѓРјРµРЅС‚ HTML СЌР»РµРјРµРЅС‚РѕРј.
-     *
-     * @param {?} x
-     * @return {boolean}
-     */
-    type.element = function (x) {
-        return "nodeType" in x;
-    };
+/**
+ * Проверит, является ли аргумент HTML элементом.
+ *
+ * @param {?} x
+ * @return {boolean}
+ */
+type.element = function (x) {
+    return "nodeType" in x;
+};
 
-    /**
-     * РџСЂРѕРІРµСЂРёС‚, СЏРІР»СЏРµС‚СЃСЏ Р»Рё Р°СЂРіСѓРјРµРЅС‚ С„СѓРЅРєС†РёРµР№.
-     *
-     * @param {Function=} x
-     * @return {boolean}
-     */
-    type.func = function (x) {
-        return type(x) === "function";
-    };
+/**
+ * Проверит, является ли аргумент функцией.
+ *
+ * @param {Function=} x
+ * @return {boolean}
+ */
+type.func = function (x) {
+    return type(x) === "function";
+};
 
-    /**
-     * РџСЂРѕРІРµСЂРёС‚, СЏРІР»СЏРµС‚СЃСЏ Р»Рё Р°СЂРіСѓРјРµРЅС‚ РјР°СЃСЃРёРІРѕРј
-     * @param x
-     * @return {boolean}
-     */
-    type.array = function (x) {
-        return type(x) === "array";
-    };
+/**
+ * Проверит, является ли аргумент массивом
+ * @param x
+ * @return {boolean}
+ */
+type.array = function (x) {
+    return type(x) === "array";
+};
 
-    /**
-     * РџСЂРѕРІРµСЂРёС‚, СЏРІР»СЏРµС‚СЃСЏ Р»Рё Р·РЅР°С‡РµРЅРёРµ Р°СЂРіСѓРјРµРЅС‚Р° undefined.
-     * @param x
-     * @return {boolean}
-     */
-    type.undefined = function (x) {
-        return type(x) === "undefined";
-    };
+/**
+ * Проверит, является ли значение аргумента undefined.
+ * @param x
+ * @return {boolean}
+ */
+type.undefined = function (x) {
+    return type(x) === "undefined";
+};
 
-    /**
-     * РџСЂРѕРІРµСЂРёС‚, СЏРІР»СЏРµС‚СЃСЏ Р»Рё Р°СЂРіСѓРјРµРЅС‚ С‡РёСЃР»РѕРј
-     * @param {*} x
-     * @return {Boolean}
-     */
-    type.number = function (x) {
-        return type(x) === "number";
-    };
+/**
+ * Проверит, является ли аргумент числом
+ * @param {*} x
+ * @return {Boolean}
+ */
+type.number = function (x) {
+    return type(x) === "number";
+};
 
-    /**
-     * РџСЂРѕРІРµСЂРёС‚, СЏРІР»СЏРµС‚СЃСЏ Р»Рё Р°СЂРіСѓРјРµРЅС‚ СЃС‚СЂРѕРєРѕРІС‹Рј Р·РЅР°С‡РµРЅРёРµРј
-     * @param x
-     * @return {Boolean}
-     */
-    type.string = function (x) {
-        return type(x) === "string";
-    };
+/**
+ * Проверит, является ли аргумент строковым значением
+ * @param x
+ * @return {Boolean}
+ */
+type.string = function (x) {
+    return type(x) === "string";
+};
 
-    /**
-     * РџСЂРѕРІРµСЂРёС‚, СЏРІР»СЏРµС‚СЃСЏ Р»Рё Р°СЂРіСѓРјРµРЅС‚ РѕР±СЉРµРєС‚РѕРј
-     * @param {*} x
-     * @return {Boolean}
-     */
-    type.object = function (x) {
-        return type(x) === "object";
-    };
+/**
+ * Проверит, является ли аргумент объектом
+ * @param {*} x
+ * @return {Boolean}
+ */
+type.object = function (x) {
+    return type(x) === "object";
+};
 
-    /**
-     * РџСЂРѕРІРµСЂРёС‚, РїСЂРёРЅР°РґР»РµР¶РёС‚ Р»Рё С‡РёСЃР»Рѕ РґРёР°РїР°Р·РѕРЅСѓ
-     * @param {number} num
-     * @param {number=} lowbound РЅРёР¶РЅСЏСЏ РіСЂР°РЅРёС†Р°
-     * @param {number=} highbound РІРµСЂС…РЅСЏСЏ РіСЂР°РЅРёС†Р°
-     * @param {boolean} including РІРєР»СЋС‡Р°СЏ Р»Рё РіСЂР°РЅРёС†С‹
-     * @return {boolean}
-     */
-    function inRange (num, lowbound, highbound, including) {
-        return including  ? (num >= lowbound && num <= highbound) : (num > lowbound && num < highbound);
-    }
+/**
+ * Проверит, принадлежит ли число диапазону
+ * @param {number} num
+ * @param {number=} lowbound нижняя граница
+ * @param {number=} highbound верхняя граница
+ * @param {boolean} including включая ли границы
+ * @return {boolean}
+ */
+function inRange(num, lowbound, highbound, including) {
+    return including ? (num >= lowbound && num <= highbound) : (num > lowbound && num < highbound);
+}
 
-    /**
-     * РџСЂРёРјРµРЅРёС‚ parseInt, Р° РїРѕС‚РѕРј toString Рє Р°СЂРіСѓРјРµРЅС‚Сѓ
-     * @param {number} number
-     * @param {number} fromRadix РІС‚РѕСЂРѕР№ Р°СЂРіСѓРјРµРЅС‚ РґР»СЏ parseInt
-     * @param {number} toRadix Р°СЂРіСѓРјРµРЅС‚ РґР»СЏ toString
-     */
-    function changeRadix (number, fromRadix, toRadix) {
-        return parseInt(number, fromRadix).toString(toRadix);
-    }
+/**
+ * Применит parseInt, а потом toString к аргументу
+ * @param {number} number
+ * @param {number} fromRadix второй аргумент для parseInt
+ * @param {number} toRadix аргумент для toString
+ */
+function changeRadix(number, fromRadix, toRadix) {
+    return parseInt(number, fromRadix).toString(toRadix);
+}
 
-    changeRadix.binToDec = function (num) {
-        return changeRadix(num, 2, 10);
-    };
+changeRadix.binToDec = function (num) {
+    return changeRadix(num, 2, 10);
+};
 
-    /**
-     * РЎРіРµРЅРµСЂРёСЂСѓРµС‚ СѓРЅРёРєР°Р»СЊРЅСѓСЋ СЃС‚СЂРѕРєСѓ.
-     * @return {string}
-     */
-    function generateId () {
-        return /** @type {string} */ mel + animCount++;
-    }
+/**
+ * Сгенерирует уникальную строку.
+ * @return {string}
+ */
+function generateId() {
+    return /** @type {string} */ mel + animCount++;
+}
 
-    /**
-     * РђРЅР°Р»РѕРі Object.keys
-     * @param {Object} obj
-     */
-    function getKeys (obj) {
-        return map(obj, function (value, index) {
-            return index;
-        });
-    }
-
-    /**
-     * РђРЅР°Р»РѕРі Object.create
-     * @param {Object} parent
-     * @return {Object}
-     */
-    function createObject (parent) {
-        var F = noop;
-        F.prototype = parent;
-        return new F;
-    }
-
-    /**
-     * РљР»Р°СЃСЃРёС‡РµСЃРєРёР№ С€Р°Р±Р»РѕРЅ РёС‚РµСЂР°С‚РѕСЂР°
-     * @param {Array} collection
-     * @constructor
-     */
-    function Iterator (collection) {
-        this.collection = collection;
-        this.length = collection.length;
-    }
-
-    merge(Iterator.prototype, /** @lends Iterator.prototype */({
-
-        /**
-         * РРЅРґРµРєСЃ С‚РµРєСѓС‰РµРіРѕ СЌР»РµРјРµРЅС‚Р° РІ РєРѕР»Р»РµРєС†РёРё
-         */
-        index: 0,
-        /**
-         * Р—Р°РїРѕРјРЅРµРЅРЅР°СЏ РґР»РёРЅР° РєРѕР»Р»РµРєС†РёРё
-         */
-        length: 0,
-        /**
-         * РљРѕР»Р»РµРєС†РёСЏ
-         */
-        collection: [],
-        /**
-         * Р’РѕР·РІСЂР°С‰Р°РµС‚СЃСЏ, РµСЃР»Рё Р·РЅР°С‡РµРЅРёСЏ РЅРµС‚
-         * @see Iterator.next Iterator.previous
-         */
-        none: null,
-
-        /**
-         * Р’РѕР·РІСЂР°С‚РёС‚ С‚РµРєСѓС‰РёР№ СЌР»РµРјРµРЅС‚ РєРѕР»Р»РµРєС†РёРё
-         * @return {*}
-         */
-        current: function () { return this.collection[this.index]; },
-        /**
-         * Р’РѕР·РІСЂР°С‚РёС‚ СЃР»РµРґСѓСЋС‰РёР№ СЌР»РµРјРµРЅС‚ РєРѕР»Р»РµРєС†РёРё РёР»Рё Р·РЅР°С‡РµРЅРёРµ РїРѕ-СѓРјРѕР»С‡Р°РЅРёСЋ
-         * @return {*}
-         */
-        next: function () { return this.index < this.length ? this.collection[this.index++]:this.none; },
-        /**
-         * Р’РѕР·РІСЂР°С‚РёС‚ РїСЂРµРґС‹РґСѓС‰РёР№ СЌР»РµРјРµРЅС‚ РєРѕР»Р»РµРєС†РёРё РёР»Рё Р·РЅР°С‡РµРЅРёРµ РїРѕ-СѓРјРѕР»С‡Р°РЅРёСЋ
-         * @return {*}
-         */
-        previous: function () { return this.index > 0 ? this.collection[this.index--]:this.none; }
-
-    }));
-
-    /**
-     * РЎРѕСЂС‚РёСЂРѕРІРєР° РјР°СЃСЃРёРІР° РјРµС‚РѕРґРѕРј РїСѓР·С‹СЂСЊРєР°
-     * @param {Array} array РјР°СЃСЃРёРІ
-     * @param {Function=} compare С„СѓРЅРєС†РёСЏ СЃСЂР°РІРЅРµРЅРёСЏ. РµСЃР»Рё РЅРµ СѓРєР°Р·Р°С‚СЊ, Р±СѓРґСѓС‚ СЃСЂР°РІРЅРёРІР°С‚СЊСЃСЏ, РєР°Рє С‡РёСЃР»Р°
-     * @param {number=} low РЅРёР¶РЅСЏСЏ РіСЂР°РЅРёС†Р° (РїРѕ СѓРјРѕР». РЅР°С‡Р°Р»Рѕ РјР°СЃСЃРёРІР°)
-     * @param {number=} high РІРµСЂС…РЅСЏСЏ РіСЂР°РЅРёС†Р° (РїРѕ СѓРјРѕР». РєРѕРЅРµС† РјР°СЃСЃРёРІР°)
-     */
-    function bubbleSort (array, compare, low, high) {
-
-        var i, j, cache;
-
-        if (!type.number(low)) low = 0;
-        if (!type.number(high)) high = array.length - 1;
-        if (!type.func(compare)) compare = compareNumbers;
-
-        for (j = low; j < high; j += 1) {
-            for (i = low; i < high - j; i += 1) {
-                if (compare(array[i], array[i + 1], i, array) > 0) {
-                    cache = array[i];
-                    array[i] = array[i + 1];
-                    array[i + 1] = cache;
-                }
-            }
-        }
-    }
-
-    /**
-     * РћР±С‹С‡РЅС‹Р№ Р»РёРЅРµР№РЅС‹Р№ РїРѕРёСЃРє Р·РЅР°С‡РµРЅРёСЏ РІ РјР°СЃСЃРёРІРµ
-     * @param {Array} arr РјР°СЃСЃРёРІ
-     * @param {(Function|*)} val Р—РЅР°С‡РµРЅРёРµ (РёР»Рё С„СѓРЅРєС†РёСЏ СЃСЂР°РІРЅРµРЅРёСЏ; РґРѕР»Р¶РЅР° РІРµСЂРЅСѓС‚СЊ 0 РїСЂРё СЂР°РІРµРЅСЃС‚РІРµ)
-     */
-    function LinearSearch (arr, val) {
-
-        var callable = type.func(val),
-            index, i, m, curr,
-            native = Array.prototype.indexOf,
-            EQUALS = 0, NOT_FOUND = -1;
-
-        index = NOT_FOUND;
-
-        if (!callable && native) {
-            index = native.call(arr, val);
-        } else {
-            for (i = 0, m = arr.length; i < m && index === NOT_FOUND; i++) {
-                curr = arr[i];
-                if (callable) {
-                    if (val(curr, i, arr) === EQUALS) index = i;
-                } else {
-                    if (val === curr) index = i;
-                }
-            }
-        }
-
+/**
+ * Аналог Object.keys
+ * @param {Object} obj
+ */
+function getKeys(obj) {
+    return map(obj, function (value, index) {
         return index;
-    }
+    });
+}
+
+/**
+ * Аналог Object.create
+ * @param {Object} parent
+ * @return {Object}
+ */
+function createObject(parent) {
+    var F = noop;
+    F.prototype = parent;
+    return new F;
+}
+
+/**
+ * Классический шаблон итератора
+ * @param {Array} collection
+ * @constructor
+ */
+function Iterator(collection) {
+    this.collection = collection;
+    this.length = collection.length;
+}
+
+merge(Iterator.prototype, /** @lends Iterator.prototype */({
 
     /**
-     * Р’РµСЂРЅС‘С‚ 1, РµСЃР»Рё С‡РёСЃР»Рѕ РїРѕР»РѕР¶РёС‚РµР»СЊРЅРѕРµ
-     * 0, РµСЃР»Рё РѕРЅРѕ СЂР°РІРЅРѕ 0, Рё
-     * -1, РµСЃР»Рё РѕРЅРѕ РѕС‚СЂРёС†Р°С‚РµР»СЊРЅРѕРµ
-     * @param {number} number
+     * Индекс текущего элемента в коллекции
      */
-    function sign (number) {
-        return number === 0 ? 0 : number > 0 ? 1 : -1;
-    }
-
+    index:0,
     /**
-     * Р¤СѓРЅРєС†РёСЏ РґР»СЏ СЃСЂР°РІРЅРµРЅРёСЏ 2 С‡РёСЃРµР».
-     * @param {number} a
-     * @param {number} b
-     * @return {number}
-     * @see Array.sort
+     * Запомненная длина коллекции
      */
-    function compareNumbers (a, b) {
-        return a - b;
-    }
-
+    length:0,
     /**
-     * РЎСЂР°РІРЅРёС‚ 2 РєР»СЋС‡РµРІС‹С… РєР°РґСЂР° РїРѕ РёС… РєР»СЋС‡Р°Рј
-     * @param {keyframe} a
-     * @param {keyframe} b
-     * @return {number} РѕС‚СЂРёС†Р°Р»СЊРЅРѕРµ С‡РёСЃР»Рѕ, РµСЃР»Рё a < b, РїРѕР»РѕР¶РёС‚РµР»СЊРЅРѕРµ С‡РёСЃР»Рѕ, РµСЃР»Рё a > b, Рё 0, РµСЃР»Рё РѕРЅРё СЂР°РІРЅС‹
-     * @see compareNumbers
+     * Коллекция
      */
-    function compareKeyframes (a, b) {
-        return compareNumbers(a.key, b.key);
-    }
-
+    collection:[],
     /**
-     * РђР»РіРѕСЂРёС‚Рј Р±РёРЅР°СЂРЅРѕРіРѕ РїРѕРёСЃРєР° РґР»СЏ РЅР°С…РѕР¶РґРµРЅРёСЏ
-     * РёСЃРєРѕРјРѕР№ РІРµР»РёС‡РёРЅС‹ РІ РѕС‚СЃРѕСЂС‚РёСЂРѕРІР°РЅРЅРѕРј РјР°СЃСЃРёРІРµ
-     * @param {Array} array РѕС‚СЃРѕСЂС‚РёСЂРѕРІР°РЅРЅС‹Р№ РјР°СЃСЃРёРІ
-     * @param {*} value РёСЃРєРѕРјР°СЏ РІРµР»РёС‡РёРЅР°
-     * @param {Function=} compare С„СѓРЅРєС†РёСЏ СЃСЂР°РІРЅРµРЅРёСЏ; РµСЃР»Рё РЅРµ СѓРєР°Р·Р°С‚СЊ, Р±СѓРґСѓС‚ СЃСЂР°РІРЅРёРІР°С‚СЊСЃСЏ, РєР°Рє С‡РёСЃР»Р°
-     * @param {number=} lowBound РЅРёР¶РЅСЏСЏ РіСЂР°РЅРёС†Р° (РїРѕ СѓРјРѕР». РЅР°С‡Р°Р»Рѕ РјР°СЃСЃРёРІР°)
-     * @param {number=} upperBound РІРµСЂС…РЅСЏСЏ РіСЂР°РЅРёС†Р° (РїРѕ СѓРјРѕР». РєРѕРЅРµС† РјР°СЃСЃРёРІР°)
-     * @return {number} РЅР°Р№РґРµРЅРЅС‹Р№ РёРЅРґРµРєСЃ РІРµР»РёС‡РёРЅС‹ РёР»Рё -1
-     * @see Array.sort
+     * Возвращается, если значения нет
+     * @see Iterator.next Iterator.previous
      */
-    function binarySearch (array, value, compare, lowBound, upperBound) {
-
-        var mid, comp;
-
-        if (!type.number(lowBound)) lowBound = 0;
-        if (!type.number(upperBound)) upperBound = array.length - 1;
-
-        compare = type.func(compare) ? compare:compareNumbers;
-
-        do {
-
-            if (lowBound > upperBound || !array.length) {
-                return -1;
-            }
-
-            mid = lowBound + upperBound >> 1;
-
-            comp = compare(value, array[mid], mid, array);
-
-            if (!comp) {
-                return mid;
-            } else if (comp < 0) {
-                upperBound = mid - 1;
-            } else {
-                lowBound = mid + 1;
-            }
-
-        } while (true);
-
-    }
+    none:null,
 
     /**
-     * РџСЂРѕСЃС‚Рѕ РІС‹Р·РѕРІРµС‚ С„СѓРЅРєС†РёСЋ СЃ Р°СЂРіСѓРјРµРЅС‚Р°РјРё
-     * @param {Function} func С„СѓРЅРєС†РёСЏ
-     * @param {Array=} args РјР°СЃСЃРёРІ Р°СЂРіСѓРјРµРЅС‚РѕРІ
-     * @param {Object=} ctx РєРѕРЅС‚РµРєСЃС‚
+     * Возвратит текущий элемент коллекции
      * @return {*}
      */
-    function apply (func, args, ctx) {
-        return type.func(func) && func.apply(ctx, args);
+    current:function () {
+        return this.collection[this.index];
+    },
+    /**
+     * Возвратит следующий элемент коллекции или значение по-умолчанию
+     * @return {*}
+     */
+    next:function () {
+        return this.index < this.length ? this.collection[this.index++] : this.none;
+    },
+    /**
+     * Возвратит предыдущий элемент коллекции или значение по-умолчанию
+     * @return {*}
+     */
+    previous:function () {
+        return this.index > 0 ? this.collection[this.index--] : this.none;
     }
 
-    /**
-     * Р’РµСЂРЅС‘С‚ С„СѓРЅРєС†РёСЋ, РєРѕС‚РѕСЂР°СЏ РїСЂРёРјРµРЅРёС‚ СЃРїРёСЃРѕРє С„СѓРЅРєС†РёР№,
-     * РґРѕ С‚РµС… РїРѕСЂ, РїРѕРєР° РѕРЅРё Р±СѓРґСѓС‚ РІРѕР·РІСЂР°С‰Р°С‚СЊ РёСЃС‚РёРЅРЅРѕРµ Р·РЅР°С‡РµРЅРёРµ
-     * РїСЂРё РїРµСЂРµРґР°РЅРЅС‹С… Р°СЂРіСѓРјРµРЅС‚Р°С…
-     *
-     * Р°Р»СЊС‚РµСЂРЅР°С‚РёРІР° : f(x) && g(x) && ...
-     *
-     * @param {...Function} functions СЃРїРёСЃРѕРє С„СѓРЅРєС†РёР№
-     * @return {Function}
-     */
-    function and (functions) {
+}));
 
-        functions = slice(arguments);
+/**
+ * Сортировка массива методом пузырька
+ * @param {Array} array массив
+ * @param {Function=} compare функция сравнения. если не указать, будут сравниваться, как числа
+ * @param {number=} low нижняя граница (по умол. начало массива)
+ * @param {number=} high верхняя граница (по умол. конец массива)
+ */
+function bubbleSort(array, compare, low, high) {
 
-        return function (/* args */) {
-            var args = arguments;
-            return each(functions, function (func) { return toBool(apply(func, args)); });
-        };
-    }
+    var i, j, cache;
 
-    /**
-     * Р§Р°СЃС‚РёС‡РЅРѕРµ РїСЂРёРјРµРЅРµРЅРёРµ С„СѓРЅРєС†РёРё
-     * РђСЂРіСѓРјРµРЅС‚С‹ РјРѕР¶РЅРѕ РїСЂРѕРїСѓСЃРєР°С‚СЊ, РїРµСЂРµРґР°РІ
-     * СЃРїРµС†РёР°Р»СЊРЅРѕРµ Р·РЅР°С‡РµРЅРёРµ "_"; РїСЂРё Р·Р°РїСѓСЃРєРµ
-     * РїСЂРѕРїСѓС‰РµРЅРЅС‹Рµ Р°СЂРіСѓРјРµРЅС‚С‹ Р·Р°РїРѕР»РЅСЏС‚СЃСЏ
-     * СЃР»РµРІР° РЅР°РїСЂР°РІРѕ.
-     *
-     * @param {Function} fn С„СѓРЅРєС†РёСЏ
-     * @param {Array} args Р°СЂРіСѓРјРµРЅС‚С‹
-     * @param {Object=} ctx РєРѕРЅС‚РµРєСЃС‚ РёСЃРїРѕР»РЅРµРЅРёСЏ С„СѓРЅРєС†РёРё
-     * @return {Function} С‡Р°СЃС‚РёС‡РЅРѕ РїСЂРёРјРµРЅС‘РЅРЅР°СЏ С„СѓРЅРєС†РёСЏ
-     *
-     * @example
-     * var line = function (k, x, b) { return k * x + b; };
-     * var id = partial(line, [ 1, _, 0 ]);
-     * id(0);   // 0
-     * id(2);   // 2
-     * id(777); // 777
-     */
-    function partial (fn, args, ctx) {
+    if (!type.number(low)) low = 0;
+    if (!type.number(high)) high = array.length - 1;
+    if (!type.func(compare)) compare = compareNumbers;
 
-        function isHole (x) { return x === partial.hole; }
-
-        return function () {
-
-            var fresh = new Iterator(arguments);
-            fresh.none = partial.defaultValue;
-
-            function filter (arg) { return isHole(arg) ? fresh.next():arg; }
-
-            return apply(fn, map(args, filter).concat(slice(fresh.collection, fresh.index)), ctx);
-        };
-    }
-
-    /**
-     * Р’РµСЂРЅС‘С‚ С„СѓРЅРєС†РёСЋ, РєРѕС‚РѕСЂР°СЏ РїРµСЂРµРґР°СЃС‚ РїРµСЂРІРѕР№ С„СѓРЅРєС†РёРё С‚РѕР»СЊРєРѕ
-     * СѓРєР°Р·Р°РЅРЅРѕРµ РєРѕР»РёС‡РµСЃС‚РІРѕ Р°СЂРіСѓРјРµРЅС‚РѕРІ
-     * @param {Function} fn
-     * @param {number} num
-     * @return {Function}
-     */
-    function aritilize (fn, num) {
-        return function() {
-            return fn.apply(this, slice(arguments, 0, num));
-        }
-    }
-
-    /**
-     * РћР±СЂР°С‚РёС‚ РїРѕСЂСЏРґРѕРє Р°СЂРіСѓРјРµРЅС‚РѕРІ Сѓ С„СѓРЅРєС†РёРё
-     * @param {Function} fn
-     * @param {Object=} ctx РљРѕРЅС‚РµРєСЃС‚ РёСЃРїРѕР»РЅРµРЅРёСЏ
-     * @return {Function}
-     */
-    function reverse (fn, ctx) {
-        return function () {
-            apply(fn, slice(arguments).reverse(), ctx);
-        };
-    }
-
-    /**
-     * РђРЅР°Р»РѕРі bind РёР· ES5.
-     * @inheritDoc
-     */
-    function bind (fn, ctx) {
-        return function () {
-            return fn.call(ctx);
-        };
-    }
-
-    /**
-     * Р—РЅР°С‡РµРЅРёРµ РґР»СЏ Р»СЋР±РѕРіРѕ Р°СЂРіСѓРјРµРЅС‚Р° РїРѕ-СѓРјРѕР»С‡Р°РЅРёСЋ
-     * @type {undefined}
-     * @private
-     */
-    partial.defaultValue = undefined;
-
-    /**
-     * РЎРїРµС†РёР°Р»СЊРЅРѕРµ Р·РЅР°С‡РµРЅРёРµ "РґС‹СЂРєР°", СѓРєР°Р·С‹РІР°СЋС‰РµРµ РЅР° С‚Рѕ,
-     * С‡С‚Рѕ Р°СЂРіСѓРјРµРЅС‚ РїСЂРѕРїСѓС‰РµРЅ
-     * @type {Object}
-     * @private
-     * @see partial
-     */
-    var _ = partial.hole = {};
-
-    /**
-     * Р’РµСЂРЅС‘С‚ С„СѓРЅРєС†РёСЋ, РєРѕС‚РѕСЂР°СЏ РїРѕСЃР»РµРґРѕРІР°С‚РµР»СЊРЅРѕ
-     * РїСЂРёРјРµРЅРёС‚ СЃРїРёСЃРѕРє С„СѓРЅРєС†РёР№ Рє Р°СЂРіСѓРјРµС‚Р°Рј
-     *
-     * РђР»СЊС‚РµСЂРЅР°С‚РёРІР°: f(g(x))
-     *
-     * @param {...Function} functions СЃРїРёСЃРѕРє С„СѓРЅРєС†РёР№
-     * @return {Function}
-     */
-    function compose (functions) {
-
-        functions = slice(arguments);
-
-        return function (/* args */) {
-            var args = slice(arguments);
-            each(functions, function (func) { args = [ apply(func, args) ]; });
-            return args;
-        };
-    }
-
-    /**
-     * РџСЂРёРјРµРЅРёС‚ Array.slice Р° Р°СЂРіСѓРјРµРЅС‚Сѓ
-     * @param {Object} arrayLike Р›СЋР±РѕР№ РѕР±СЉРµРєС‚, РїРѕС…РѕР¶РёР№ РЅР° РјР°СЃСЃРёРІ
-     * @param {number=} start РќР°С‡Р°Р»СЊРЅРѕРµ СЃРјРµС‰РµРЅРёРµ
-     * @param {number=} end РљРѕРЅРµС‡РЅРѕРµ СЃРјРµС‰РµРЅРёРµ
-     * @return {Array}
-     */
-    function slice (arrayLike, start, end) {
-        return Array.prototype.slice.call(arrayLike, type.number(start) ? start:0, type.number(end) ? end:undefined);
-    }
-
-    /**
-     * РљРѕРЅРІРµСЂС‚РёСЂСѓРµС‚ Р°СЂРіСѓРјРµРЅС‚ Рє Р±СѓР»РµРІСѓ С‚РёРїСѓ
-     * @param {*} arg
-     * @return {Boolean}
-     */
-    function toBool (arg) {
-        return !!arg;
-    }
-
-    /**
-     * РџСЂРѕР№РґС‘С‚СЃСЏ РїРѕ СЌР»РµРјРµРЅС‚Р°Рј РјР°СЃСЃРёРІР° РёР»Рё СЃРІРѕР№СЃС‚РІР°Рј РѕР±СЉРµРєС‚Р°.
-     * РС‚РµСЂРёСЂРѕРІР°РЅРёРµ РїСЂРµСЂРІС‘С‚СЃСЏ, РµСЃР»Рё callback РІРµСЂРЅС‘С‚ false.
-     * @param {Array|Object} arg
-     * @param {function} callback
-     */
-    function each (arg, callback) {
-        var i, b;
-        if (type.array(arg)) {
-            i = 0;
-            b = arg.length;
-            while (i < b) {
-                if (callback(arg[i], i, arg) === false) {
-                    break;
-                }
-                i += 1;
-            }
-        } else {
-            for (i in arg) if (arg.hasOwnProperty(i)) {
-                if (callback(arg[i], i, arg) === false) {
-                    break;
-                }
+    for (j = low; j < high; j += 1) {
+        for (i = low; i < high - j; i += 1) {
+            if (compare(array[i], array[i + 1], i, array) > 0) {
+                cache = array[i];
+                array[i] = array[i + 1];
+                array[i + 1] = cache;
             }
         }
     }
+}
 
-    /**
-     * РџСЂРѕР№РґС‘С‚СЃСЏ РїРѕ СЌР»РµРјРµРЅС‚Р°Рј РјР°СЃСЃРёРІР°\РѕР±СЉРµРєС‚Р°,
-     * РїСЂРёРјРµРЅРёС‚ С„СѓРЅРєС†РёСЋ Рє РєР°Р¶РґРѕРјСѓ; Р•СЃР»Рё С…РѕС‚СЏ Р±С‹
-     * РѕРґРЅР° С„СѓРЅРєС†РёСЏ РІРѕР·РІСЂР°С‚РёС‚ Р»РѕР¶РЅРѕРµ Р·РЅР°С‡РµРЅРёРµ,
-     * РїРµСЂРµР±РѕСЂ РїСЂРµСЂС‹РІР°РµС‚СЃСЏ, Рё С„СѓРЅРєС†РёСЏ РІРѕР·РІСЂР°С‰Р°РµС‚ false.
-     * @param {array|object} arg
-     * @param {function} callback
-     * @return {boolean}
-     */
-    function every (arg, callback) {
-        return toBool( each(arg, partial(toBool) ) );
-    }
+/**
+ * Обычный линейный поиск значения в массиве
+ * @param {Array} arr массив
+ * @param {(Function|*)} val Значение (или функция сравнения; должна вернуть 0 при равенстве)
+ */
+function LinearSearch(arr, val) {
 
-    /**
-     * РџСЂРѕР№РґС‘С‚СЃСЏ РїРѕ СЌР»РµРјРµРЅС‚Р°Рј РјР°СЃСЃРёРІР° \ РѕР±СЉРµРєС‚Р° Рё СЃРѕР±РµСЂС‘С‚ РЅРѕРІС‹Р№
-     * РёР· РІРѕР·РІСЂР°С‰С‘РЅРЅС‹С… Р·РЅР°С‡РµРЅРёР№ С„СѓРЅРєС†РёРё
-     * @param {Array|Object} arg
-     * @param {Function(?, number|string, Object|Array): ?} callback
-     * @return {Array|Object}
-     */
-    function map (arg, callback) {
-        var accum = [];
+    var callable = type.func(val),
+        index, i, m, curr,
+        native = Array.prototype.indexOf,
+        EQUALS = 0, NOT_FOUND = -1;
 
-        each(arg, function (value, index, object) {
-            accum.push(callback(value, index, object));
-        });
+    index = NOT_FOUND;
 
-        return accum;
-    }
-
-    /**
-     * РЎРѕР·РґР°СЃС‚ РѕР±СЉРµРєС‚, РіРґРµ РєР»СЋС‡Р°РјРё Р±СѓРґСѓС‚ РїРµСЂРµРґР°РЅРЅС‹Рµ Р°СЂРіСѓРјРµРЅС‚С‹, Р° Р·РЅР°С‡РµРЅРёСЏРјРё - undefined
-     * @type {function(...[?])}
-     * @return {Object.<string, undefined>}
-     */
-    function generateDictionary (/* arguments */) {
-        var obj = {};
-        each(arguments, function (key) {
-            obj[key] = undefined;
-        });
-        return obj;
-    }
-
-    /**
-     * РџСЂРѕР№РґС‘С‚СЃСЏ РїРѕ РѕР±СЉРµРєС‚Сѓ/РјР°СЃСЃРёРІСѓ СЃ РїРѕРјРѕС‰СЊСЋ each Рё Р·Р°РјРµРЅРёС‚
-     * Р·РЅР°С‡РµРЅРёСЏ РІ РЅС‘Рј РЅР° СЂРµР·СѓР»СЊС‚Р°С‚ С„СѓРЅРєС†РёРё
-     * @param {Array|Object} obj
-     * @param {function} callback
-     */
-    function eachReplace(obj, callback) {
-        each(obj, function (val, index, obj) {
-            obj[index] = callback(val, index, obj);
-        });
-    }
-
-    /**
-     * @param {*} x
-     * @return {string}
-     */
-    function toString (x) {
-        return x + "";
-    }
-
-    /**
-     * РџСЂРµРѕР±СЂР°Р·СѓРµС‚ СЃС‚СЂРѕРєСѓ РІ РІРµСЂС…РЅРёР№ СЂРµРіРёСЃС‚СЂ
-     * @param {string} str
-     * @return {string}
-     */
-    function toUpperCase (str) {
-        return String.prototype.toUpperCase.call(toString(str));
-    }
-    /**
-     * РџСЂРµРѕР±СЂР°Р·СѓРµС‚ СЃС‚СЂРѕРєСѓ РІ РЅРёР¶РЅРёР№ СЂРµРіРёСЃС‚СЂ
-     * @param {string} str
-     * @return {string}
-     */
-    function toLowerCase (str) {
-        return String.prototype.toLowerCase.call(toString(str));
-    }
-
-    /**
-     * РћР±СЂР°Р±РѕС‚Р°РµС‚ СЃС‚СЂРѕРєСѓ РІСЂРµРјРµРЅРё РІРёРґР° %РІСЂРµРјСЏ%+%СЂР°Р·РјРµСЂРЅРѕСЃС‚СЊ%
-     * @param {string|number} timeString
-     * @return {(number|undefined)} РѕР±СЂР°Р±РѕС‚Р°РЅРЅРѕРµ РІСЂРµРјСЏ РІ РјРёР»Р»РёСЃРµРєСѓРЅРґР°С… РёР»Рё undefined РІ СЃР»СѓС‡Р°Рµ РЅРµСѓРґР°С‡Рё
-     */
-    function parseTimeString (timeString) {
-
-        var matched = toString(timeString).match(cssNumericValueReg);
-        var numeric, coefficient;
-
-        if (timeString) {
-            numeric = parseFloat(matched[1]);
-            coefficient = parseTimeString.modificators[ matched[2] ] || 1;
-            return numeric * coefficient;
-        }
-
-        return undefined;
-    };
-
-    /**
-     * Р Р°Р·РјРµСЂРЅРѕСЃС‚Рё РґР»СЏ parseTimeString
-     * @type {Object}
-     */
-    parseTimeString.modificators = {
-        "ms": 1,
-        "s": 1e3
-    };
-
-    function camelCase (string) {
-        return toString(string).replace(camelCase.reg, camelCase.callback);
-    }
-
-    /**
-     * РџСЂРёРјРµРЅРёС‚ toUpperCase РєРѕ РІС‚РѕСЂРѕРјСѓ Р°СЂРіСѓРјРµРЅС‚Сѓ.
-     * @param {string} a РќРµ РёСЃРїРѕР»СЊР·СѓРµС‚СЃСЏ
-     * @param {string} letter
-     * @return {string}
-     */
-    camelCase.callback = function (a, letter) {
-        return letter.toUpperCase();
-    };
-
-    /**
-     * РЎР»РѕРІРёС‚ РґРµС„РёСЃ Рё Р·Р°РїРѕРјРЅРёС‚ СЃР»РµРґСѓСЋС‰РёР№ Р·Р° РЅРёРј СЃРёРјРІРѕР»
-     * @type {RegExp}
-     */
-    camelCase.reg = /-(.)/g;
-
-    /**
-     * РџРѕРїС‹С‚Р°РµС‚СЃСЏ РІРµСЂРЅСѓС‚СЊ РІРµСЂРЅРѕРµ РёРјСЏ СЃРІРѕР№СЃС‚РІР°, РїРѕРґРѕР±СЂР°РІ РїСЂРё РІРѕР·РјРѕР¶РЅРѕСЃС‚Рё РІРµРЅРґРѕСЂРЅС‹Р№ РїСЂРµС„РёРєСЃ.
-     * Р’РѕР·РІСЂР°С‰Р°РµС‚ undefined РІ СЃР»СѓС‡Р°Рµ РЅРµСѓРґР°С‡Рё.
-     *
-     * @param {string} property РРјСЏ СЃРІРѕР№СЃС‚РІР°.
-     * @param {boolean=|object=} target Р“РґРµ СЃРјРѕС‚СЂРµС‚СЊ РЅР°Р»РёС‡РёРµ СЃРІРѕР№СЃС‚РІ - РІ СЃС‚РёР»СЏС… РїСЂРё falsy (!), Рё РІ window РїСЂРё true, РёР»Рё РІ СѓРєР°Р·Р°РЅРЅРѕРј РѕР±СЉРµРєС‚Рµ.
-     *
-     * @return {string?}
-     * */
-    function getVendorPropName (property, target) {
-        var cache, result, camelCased;
-
-        target = !target ? dummy : (target === true ? window:target);
-        cache = getVendorPropName.cache;
-
-        if (property in target) {
-            return cache[property] = property;
-        }
-
-        if (cache[property] === undefined) {
-            camelCased = camelCase(property);
-            if (camelCased in target) {
-                return cache[property] = camelCased;
+    if (!callable && native) {
+        index = native.call(arr, val);
+    } else {
+        for (i = 0, m = arr.length; i < m && index === NOT_FOUND; i++) {
+            curr = arr[i];
+            if (callable) {
+                if (val(curr, i, arr) === EQUALS) index = i;
             } else {
-                camelCased = camelCased.charAt(0).toUpperCase() + camelCased.slice(1);
-                if (cache.prefix && cache.lowPrefix) {
-                    if (cache.prefix + camelCased in target) {
-                        cache[property] = cache.prefix + camelCased;
-                    } else if (cache.lowPrefix + camelCased in target) {
-                        cache[property] = cache.lowPrefix + camelCased;
+                if (val === curr) index = i;
+            }
+        }
+    }
+
+    return index;
+}
+
+/**
+ * Вернёт 1, если число положительное
+ * 0, если оно равно 0, и
+ * -1, если оно отрицательное
+ * @param {number} number
+ */
+function sign(number) {
+    return number === 0 ? 0 : number > 0 ? 1 : -1;
+}
+
+/**
+ * Функция для сравнения 2 чисел.
+ * @param {number} a
+ * @param {number} b
+ * @return {number}
+ * @see Array.sort
+ */
+function compareNumbers(a, b) {
+    return a - b;
+}
+
+/**
+ * Сравнит 2 ключевых кадра по их ключам
+ * @param {keyframe} a
+ * @param {keyframe} b
+ * @return {number} отрицальное число, если a < b, положительное число, если a > b, и 0, если они равны
+ * @see compareNumbers
+ */
+function compareKeyframes(a, b) {
+    return compareNumbers(a.key, b.key);
+}
+
+/**
+ * Алгоритм бинарного поиска для нахождения
+ * искомой величины в отсортированном массиве
+ * @param {Array} array отсортированный массив
+ * @param {*} value искомая величина
+ * @param {Function=} compare функция сравнения; если не указать, будут сравниваться, как числа
+ * @param {number=} lowBound нижняя граница (по умол. начало массива)
+ * @param {number=} upperBound верхняя граница (по умол. конец массива)
+ * @return {number} найденный индекс величины или -1
+ * @see Array.sort
+ */
+function binarySearch(array, value, compare, lowBound, upperBound) {
+
+    var mid, comp;
+
+    if (!type.number(lowBound)) lowBound = 0;
+    if (!type.number(upperBound)) upperBound = array.length - 1;
+
+    compare = type.func(compare) ? compare : compareNumbers;
+
+    do {
+
+        if (lowBound > upperBound || !array.length) {
+            return -1;
+        }
+
+        mid = lowBound + upperBound >> 1;
+
+        comp = compare(value, array[mid], mid, array);
+
+        if (!comp) {
+            return mid;
+        } else if (comp < 0) {
+            upperBound = mid - 1;
+        } else {
+            lowBound = mid + 1;
+        }
+
+    } while (true);
+
+}
+
+/**
+ * Просто вызовет функцию с аргументами
+ * @param {Function} func функция
+ * @param {Array=} args массив аргументов
+ * @param {Object=} ctx контекст
+ * @return {*}
+ */
+function apply(func, args, ctx) {
+    return type.func(func) && func.apply(ctx, args);
+}
+
+/**
+ * Вернёт функцию, которая применит список функций,
+ * до тех пор, пока они будут возвращать истинное значение
+ * при переданных аргументах
+ *
+ * альтернатива : f(x) && g(x) && ...
+ *
+ * @param {...Function} functions список функций
+ * @return {Function}
+ */
+function and(functions) {
+
+    functions = slice(arguments);
+
+    return function (/* args */) {
+        var args = arguments;
+        return each(functions, function (func) {
+            return toBool(apply(func, args));
+        });
+    };
+}
+
+/**
+ * Частичное применение функции
+ * Аргументы можно пропускать, передав
+ * специальное значение "_"; при запуске
+ * пропущенные аргументы заполнятся
+ * слева направо.
+ *
+ * @param {Function} fn функция
+ * @param {Array} args аргументы
+ * @param {Object=} ctx контекст исполнения функции
+ * @return {Function} частично применённая функция
+ *
+ * @example
+ * var line = function (k, x, b) { return k * x + b; };
+ * var id = partial(line, [ 1, _, 0 ]);
+ * id(0);   // 0
+ * id(2);   // 2
+ * id(777); // 777
+ */
+function partial(fn, args, ctx) {
+
+    function isHole(x) {
+        return x === partial.hole;
+    }
+
+    return function () {
+
+        var fresh = new Iterator(arguments);
+        fresh.none = partial.defaultValue;
+
+        function filter(arg) {
+            return isHole(arg) ? fresh.next() : arg;
+        }
+
+        return apply(fn, map(args, filter).concat(slice(fresh.collection, fresh.index)), ctx);
+    };
+}
+
+/**
+ * Вернёт функцию, которая передаст первой функции только
+ * указанное количество аргументов
+ * @param {Function} fn
+ * @param {number} num
+ * @return {Function}
+ */
+function aritilize(fn, num) {
+    return function () {
+        return fn.apply(this, slice(arguments, 0, num));
+    }
+}
+
+/**
+ * Обратит порядок аргументов у функции
+ * @param {Function} fn
+ * @param {Object=} ctx Контекст исполнения
+ * @return {Function}
+ */
+function reverse(fn, ctx) {
+    return function () {
+        apply(fn, slice(arguments).reverse(), ctx);
+    };
+}
+
+/**
+ * Аналог bind из ES5.
+ * @inheritDoc
+ */
+function bind(fn, ctx) {
+    return function () {
+        return fn.call(ctx);
+    };
+}
+
+/**
+ * Значение для любого аргумента по-умолчанию
+ * @type {undefined}
+ * @private
+ */
+partial.defaultValue = undefined;
+
+/**
+ * Специальное значение "дырка", указывающее на то,
+ * что аргумент пропущен
+ * @type {Object}
+ * @private
+ * @see partial
+ */
+var _ = partial.hole = {};
+
+/**
+ * Вернёт функцию, которая последовательно
+ * применит список функций к аргуметам
+ *
+ * Альтернатива: f(g(x))
+ *
+ * @param {...Function} functions список функций
+ * @return {Function}
+ */
+function compose(functions) {
+
+    functions = slice(arguments);
+
+    return function (/* args */) {
+        var args = slice(arguments);
+        each(functions, function (func) {
+            args = [ apply(func, args) ];
+        });
+        return args;
+    };
+}
+
+/**
+ * Применит Array.slice а аргументу
+ * @param {Object} arrayLike Любой объект, похожий на массив
+ * @param {number=} start Начальное смещение
+ * @param {number=} end Конечное смещение
+ * @return {Array}
+ */
+function slice(arrayLike, start, end) {
+    return Array.prototype.slice.call(arrayLike, type.number(start) ? start : 0, type.number(end) ? end : undefined);
+}
+
+/**
+ * Конвертирует аргумент к булеву типу
+ * @param {*} arg
+ * @return {Boolean}
+ */
+function toBool(arg) {
+    return !!arg;
+}
+
+/**
+ * Пройдётся по элементам массива или свойствам объекта.
+ * Итерирование прервётся, если callback вернёт false.
+ * @param {Array|Object} arg
+ * @param {function} callback
+ */
+function each(arg, callback) {
+    var i, b;
+    if (type.array(arg)) {
+        i = 0;
+        b = arg.length;
+        while (i < b) {
+            if (callback(arg[i], i, arg) === false) {
+                break;
+            }
+            i += 1;
+        }
+    } else {
+        for (i in arg) if (arg.hasOwnProperty(i)) {
+            if (callback(arg[i], i, arg) === false) {
+                break;
+            }
+        }
+    }
+}
+
+/**
+ * Пройдётся по элементам массива\объекта,
+ * применит функцию к каждому; Если хотя бы
+ * одна функция возвратит ложное значение,
+ * перебор прерывается, и функция возвращает false.
+ * @param {array|object} arg
+ * @param {function} callback
+ * @return {boolean}
+ */
+function every(arg, callback) {
+    return toBool(each(arg, partial(toBool)));
+}
+
+/**
+ * Пройдётся по элементам массива \ объекта и соберёт новый
+ * из возвращённых значений функции
+ * @param {Array|Object} arg
+ * @param {Function(?, number|string, Object|Array): ?} callback
+ * @return {Array|Object}
+ */
+function map(arg, callback) {
+    var accum = [];
+
+    each(arg, function (value, index, object) {
+        accum.push(callback(value, index, object));
+    });
+
+    return accum;
+}
+
+/**
+ * Создаст объект, где ключами будут переданные аргументы, а значениями - undefined
+ * @type {function(...[?])}
+ * @return {Object.<string, undefined>}
+ */
+function generateDictionary(/* arguments */) {
+    var obj = {};
+    each(arguments, function (key) {
+        obj[key] = undefined;
+    });
+    return obj;
+}
+
+/**
+ * Пройдётся по объекту/массиву с помощью each и заменит
+ * значения в нём на результат функции
+ * @param {Array|Object} obj
+ * @param {function} callback
+ */
+function eachReplace(obj, callback) {
+    each(obj, function (val, index, obj) {
+        obj[index] = callback(val, index, obj);
+    });
+}
+
+/**
+ * @param {*} x
+ * @return {string}
+ */
+function toString(x) {
+    return x + "";
+}
+
+/**
+ * Преобразует строку в верхний регистр
+ * @param {string} str
+ * @return {string}
+ */
+function toUpperCase(str) {
+    return String.prototype.toUpperCase.call(toString(str));
+}
+/**
+ * Преобразует строку в нижний регистр
+ * @param {string} str
+ * @return {string}
+ */
+function toLowerCase(str) {
+    return String.prototype.toLowerCase.call(toString(str));
+}
+
+/**
+ * Обработает строку времени вида %время%+%размерность%
+ * @param {string|number} timeString
+ * @return {(number|undefined)} обработанное время в миллисекундах или undefined в случае неудачи
+ */
+function parseTimeString(timeString) {
+
+    var matched = toString(timeString).match(cssNumericValueReg);
+    var numeric, coefficient;
+
+    if (timeString) {
+        numeric = parseFloat(matched[1]);
+        coefficient = parseTimeString.modificators[ matched[2] ] || 1;
+        return numeric * coefficient;
+    }
+
+    return undefined;
+}
+;
+
+/**
+ * Размерности для parseTimeString
+ * @type {Object}
+ */
+parseTimeString.modificators = {
+    "ms":1,
+    "s":1e3
+};
+
+function camelCase(string) {
+    return toString(string).replace(camelCase.reg, camelCase.callback);
+}
+
+/**
+ * Применит toUpperCase ко второму аргументу.
+ * @param {string} a Не используется
+ * @param {string} letter
+ * @return {string}
+ */
+camelCase.callback = function (a, letter) {
+    return letter.toUpperCase();
+};
+
+/**
+ * Словит дефис и запомнит следующий за ним символ
+ * @type {RegExp}
+ */
+camelCase.reg = /-(.)/g;
+
+/**
+ * Попытается вернуть верное имя свойства, подобрав при возможности вендорный префикс.
+ * Возвращает undefined в случае неудачи.
+ *
+ * @param {string} property Имя свойства.
+ * @param {boolean=|object=} target Где смотреть наличие свойств - в стилях при falsy (!), и в window при true, или в указанном объекте.
+ *
+ * @return {string?}
+ * */
+function getVendorPropName(property, target) {
+    var cache, result, camelCased;
+
+    target = !target ? dummy : (target === true ? window : target);
+    cache = getVendorPropName.cache;
+
+    if (property in target) {
+        return cache[property] = property;
+    }
+
+    if (cache[property] === undefined) {
+        camelCased = camelCase(property);
+        if (camelCased in target) {
+            return cache[property] = camelCased;
+        } else {
+            camelCased = camelCased.charAt(0).toUpperCase() + camelCased.slice(1);
+            if (cache.prefix && cache.lowPrefix) {
+                if (cache.prefix + camelCased in target) {
+                    cache[property] = cache.prefix + camelCased;
+                } else if (cache.lowPrefix + camelCased in target) {
+                    cache[property] = cache.lowPrefix + camelCased;
+                }
+            } else {
+                each(getVendorPropName.prefixes, function (prefix) {
+
+                    var lowPrefix = prefix.toLowerCase();
+
+                    if (prefix + camelCased in target) {
+                        cache.prefix = prefix;
+                        cache.lowPrefix = lowPrefix;
+                        cache[property] = prefix + camelCased;
+                    } else if (lowPrefix + camelCased in target) {
+                        cache.prefix = prefix;
+                        cache.lowPrefix = lowPrefix;
+                        cache[property] = lowPrefix + camelCased;
                     }
-                } else {
-                    each(getVendorPropName.prefixes, function (prefix) {
 
-                        var lowPrefix = prefix.toLowerCase();
-
-                        if (prefix + camelCased in target) {
-                            cache.prefix = prefix;
-                            cache.lowPrefix = lowPrefix;
-                            cache[property] = prefix + camelCased;
-                        } else if (lowPrefix + camelCased in target) {
-                            cache.prefix = prefix;
-                            cache.lowPrefix = lowPrefix;
-                            cache[property] = lowPrefix + camelCased;
-                        }
-
-                    });
-                }
+                });
             }
         }
-        return cache[property];
+    }
+    return cache[property];
+}
+
+/**
+ * Какие префиксы будет пробовать getVendorPropName
+ * @type {Array}
+ */
+getVendorPropName.prefixes = "ms O Moz webkit".split(" ");
+
+/**
+ * Где getVendorPropName запоминает результаты вычислений имени свойства
+ * @type {Object}
+ */
+getVendorPropName.cache = {};
+
+/**
+ * Вернёт кол-во миллисекунд с 1 Января 1970 00:00:00 UTC
+ * @return {number}
+ */
+var now = Date.now || function () {
+    return +new Date;
+};
+
+/**
+ * Замена для requestAnimationFrame.
+ * @param {function(number)} callback
+ * @return {number} ID таймаута
+ */
+function rAF_imitation(callback) {
+
+    var id = rAF_imitation.unique++,
+
+        info = {
+            id:id,
+            func:callback
+        };
+
+    if (!rAF_imitation.timerID) rAF_imitation.timerID = setInterval(rAF_imitation.looper, 1e3 / FRAMES_PER_SECOND);
+
+    rAF_imitation.queue.push(info);
+    return id;
+}
+
+/**
+ * Замена для cancelRequestAnimationFrame
+ * @param {number} id
+ */
+function rAF_imitation_dequeue(id) {
+
+    var index, queue, eq;
+
+    eq = function (/**@type {{id: number, func: Function}}*/val) {
+        return val.id === id;
+    };
+    queue = rAF_imitation.queue;
+    index = LinearSearch(/**@type {Array}*/(queue), eq);
+    if (index !== -1) {
+        // don't splice
+        queue[index] = null;
+    }
+}
+
+/**
+ * ID таймаута "перерисовки"
+ * @type {number}
+ * @private
+ */
+rAF_imitation.timerID = null;
+
+/**
+ * Для генерации ID таймаута.
+ * @type {Number}
+ */
+rAF_imitation.unique = 0;
+
+/**
+ * Очередь обработчиков и их контекстов
+ * @type {Array.<{func: Function, id: number}>}
+ * @const
+ */
+rAF_imitation.queue = [];
+
+/**
+ * Таймер "отрисовки" - пройдется по обработчикам и повызывает их,
+ * передав как первый аргумент временную метку "отрисовки"
+ * @private
+ */
+rAF_imitation.looper = function () {
+    var reflowTimeStamp = now(), queue = rAF_imitation.queue, info;
+    while (queue.length) {
+        info = queue.pop();
+        info && info.func.call(window, reflowTimeStamp);
+    }
+};
+
+/**
+ * Найдёт корень уравнения  вида f(x)=val с указанной точностью
+ * Используется метод хорд
+ * @param {function} equation уравнение
+ * @param {number=} epsilon минимальная разница между двумя приближениями
+ * @param {number=} equationValue значение функции в этой точке
+ * @return {number} приближённое значение корня уравнения
+ */
+function findEquationRoot(equation, epsilon, equationValue) {
+    var X0, X1, cache;
+
+    equationValue = type(equationValue) === "undefined" ? 0 : equationValue;
+    epsilon = type(epsilon) === "undefined" ? findEquationRoot.defaultEpsilon : epsilon;
+
+    X0 = 0.5 * equationValue;
+    X1 = 1.5 * equationValue;
+
+    while (Math.abs(X0 - X1) > epsilon) {
+        cache = X1;
+        X1 = findEquationRoot.contraction(equation, X0, X1, equationValue);
+        X0 = cache;
     }
 
-    /**
-     * РљР°РєРёРµ РїСЂРµС„РёРєСЃС‹ Р±СѓРґРµС‚ РїСЂРѕР±РѕРІР°С‚СЊ getVendorPropName
-     * @type {Array}
-     */
-    getVendorPropName.prefixes = "ms O Moz webkit".split(" ");
+    return X1;
+}
 
-    /**
-     * Р“РґРµ getVendorPropName Р·Р°РїРѕРјРёРЅР°РµС‚ СЂРµР·СѓР»СЊС‚Р°С‚С‹ РІС‹С‡РёСЃР»РµРЅРёР№ РёРјРµРЅРё СЃРІРѕР№СЃС‚РІР°
-     * @type {Object}
-     */
-    getVendorPropName.cache = {};
+/**
+ * Значение погрешности по-умолчанию
+ * @type {number}
+ * @see findEquationRoot
+ */
+findEquationRoot.defaultEpsilon = 1e-6;
 
-    /**
-     * Р’РµСЂРЅС‘С‚ РєРѕР»-РІРѕ РјРёР»Р»РёСЃРµРєСѓРЅРґ СЃ 1 РЇРЅРІР°СЂСЏ 1970 00:00:00 UTC
-     * @return {number}
-     */
-    var now = Date.now || function () { return +new Date; };
+/**
+ * Сжимающее отображение
+ * @param {function} equation
+ * @param {number} prev
+ * @param {number} curr
+ * @param {number} equationValue
+ * @return {number}
+ * @see findEquationRoot
+ */
+findEquationRoot.contraction = function (equation, prev, curr, equationValue) {
 
-    /**
-     * Р—Р°РјРµРЅР° РґР»СЏ requestAnimationFrame.
-     * @param {function(number)} callback
-     * @return {number} ID С‚Р°Р№РјР°СѓС‚Р°
-     */
-    function rAF_imitation (callback) {
+    var F_CURR = equation(curr) - equationValue;
+    var F_PREV = equation(prev) - equationValue;
 
-        var id = rAF_imitation.unique++,
+    var DELTA_CURR_PREV = curr - prev;
+    var DELTA_F = F_CURR - F_PREV;
 
-            info = {
-                id: id,
-                func: callback
-            };
+    return curr - F_CURR * DELTA_CURR_PREV / DELTA_F;
+};
 
-        if (!rAF_imitation.timerID) rAF_imitation.timerID = setInterval(rAF_imitation.looper, 1e3 / FRAMES_PER_SECOND);
+/**
+ * Представление аналога временной функции transition-timing-function
+ * Кубическая кривая Безье.
+ *
+ * @param {number} p1x
+ * @param {number} p1y
+ * @param {number} p2x
+ * @param {number} p2y
+ * @param {number} fractionalTime Вход. Это X.
+ * @param {number=} epsilon Погрешность
+ * @return {number} Выходное значение - easing - Y.
+ */
+function cubicBezier(p1x, p1y, p2x, p2y, fractionalTime, epsilon) {
 
-        rAF_imitation.queue.push(info);
-        return id;
+    // вернёт значение X при передаваемом времени.
+    var B_bindedToX = function (t) {
+        return cubicBezier.B(p1x, p2x, t);
+    };
+
+    // находим время t, при котором кубическая кривая принимает значение X.
+    var bezierTime = findEquationRoot(B_bindedToX, epsilon, fractionalTime);
+
+    // вычисляем по этому времени Y.
+    var bezierFunctionValue = cubicBezier.B(p1y, p2y, bezierTime);
+
+    return bezierFunctionValue;
+}
+
+/**
+ * Вычислит значение кубической кривой Безье при переданном t
+ * Считается, что P0 = (0;0) и P3 = (1;1)
+ * @param {number} coord1
+ * @param {number} coord2
+ * @param {number} t
+ * @return {number}
+ */
+cubicBezier.B = function (coord1, coord2, t) {
+    return cubicBezier.B1(t) * coord1 + cubicBezier.B2(t) * coord2 + cubicBezier.B3(t);
+};
+
+/**
+ * @param {number} t
+ * @return {number}
+ */
+cubicBezier.B1 = function (t) {
+    return 3 * t * (1 - t) * (1 - t);
+};
+
+/**
+ * @param {number} t
+ * @return {number}
+ */
+cubicBezier.B2 = function (t) {
+    return 3 * t * t * (1 - t);
+};
+
+/**
+ * @param {number} t
+ * @return {number}
+ */
+cubicBezier.B3 = function (t) {
+    return t * t * t;
+};
+
+/**
+ * Вычислит требуемую точность вычислений, исходя из длительности анимации
+ * @param {number} duration
+ * @return {number}
+ */
+cubicBezier.solveEpsilon = function (duration) {
+    return 1.0 / (200.0 * duration);
+};
+
+/**
+ * Ступенчатая функция, ограничивающая область выходных значений до определенного числа.
+ * Ступени отсчитываются с конца, или с начала.
+ * @param {number} stepsAmount Количество ступеней
+ * @param {boolean} countFromStart Отсчитывать с начала (true) или с конца (false).
+ * @param {number} fractionalTime
+ */
+function steps(stepsAmount, countFromStart, fractionalTime) {
+    // если отсчитываем с начала, просто реверсируем функцию
+    return countFromStart ? 1.0 - steps(stepsAmount, countFromStart, 1.0 - fractionalTime) : Math.floor(stepsAmount * fractionalTime) / stepsAmount;
+}
+
+/**
+ * Известная всем функция для прототипного наследования.
+ * @param {Object} child Кто наследует
+ * @param {Object} parent Что наследует
+ */
+function inherit(child, parent) {
+    var F = noop;
+    F.prototype = parent.prototype;
+    child.prototype = new F;
+    child.prototype.constructor = child;
+}
+
+/**
+ * Скопирует свойства одного объекта в другой.
+ * @param {Object|Function} target
+ * @param {Object} source
+ */
+function merge(target, source) {
+    each(source, function (propertyValue, property) {
+        target[property] = propertyValue;
+    });
+}
+
+/**
+ * Вернёт вычисленный стиль элемента
+ * @param {Element} element
+ * @return {CSSStyleDeclaration}
+ */
+function getComputedStyle(element) {
+    return window.getComputedStyle ? window.getComputedStyle(element) : element.currentStyle;
+}
+
+/**
+ * Окружит строку подстрокой в начале и в конце
+ * @param {string} str
+ * @param {string} substring
+ * @return {string}
+ */
+function surround(str, substring) {
+    return substring + str + substring;
+}
+
+/**
+ * Добавит пробел в начале и в конце строки
+ * @param {string} string
+ * @return {string}
+ */
+surround.bySpaces = function (string) {
+    return surround(string, " ");
+};
+
+/**
+ * Обрежет пробелы в начале строки и в конце
+ * @param {string} string
+ * @return {string}
+ */
+function trim(string) {
+    return string.replace(/^\s+|\s+$/g, "");
+}
+
+/**
+ * Пропустит ключ через все фильтры и вернёт его
+ * численное представление в процентах или undefined.
+ * @param {string|number} key
+ * @return {key}
+ */
+function normalizeKey(key) {
+    if (type.string(key)) {
+        key = !type.undefined(keyAliases[key]) ? keyAliases[key] : key;
+        key = parseInt(key, 10);
+    }
+    return inRange(key, 0, 100, true) ? key : undefined;
+}
+
+/**
+ * Добавит правило с указанным селектором и указанным текстом правила.
+ * @param {string} selector
+ * @param {string=} cssText
+ * @return {CSSRule} Добавленное правило
+ */
+function addRule(selector, cssText) {
+
+    /** @type {CSSRuleList} */
+    var rules = stylesheet.cssRules || stylesheet.rules;
+    var index = rules.length;
+
+    cssText = cssText || " ";
+
+    if (stylesheet.insertRule) {
+        stylesheet.insertRule(selector + " " + "{" + cssText + "}", index);
+    } else {
+        stylesheet.addRule(selector, cssText, rules.length);
     }
 
-    /**
-     * Р—Р°РјРµРЅР° РґР»СЏ cancelRequestAnimationFrame
-     * @param {number} id
-     */
-    function rAF_imitation_dequeue (id) {
+    return rules[index];
+}
 
-        var index, queue, eq;
+/**
+ * Добавит указанный класс элементу
+ * @param {Element} elem
+ * @param {string} value
+ */
+function addClass(elem, value) {
 
-        eq = function (/**@type {{id: number, func: Function}}*/val) { return val.id === id; };
-        queue = rAF_imitation.queue;
-        index = LinearSearch(/**@type {Array}*/(queue), eq);
-        if (index !== -1) {
-            // don't splice
-            queue[index] = null;
+    if (surround.bySpaces(elem.className).indexOf(surround.bySpaces(value)) === -1) {
+        elem.className += " " + value;
+    }
+
+}
+
+/**
+ * Удалит указанный класс у элемента
+ * @param {Element} elem
+ * @param {string} value
+ */
+function removeClass(elem, value) {
+    elem.className = trim(surround.bySpaces(elem.className).replace(surround.bySpaces(value), ""));
+}
+
+/**
+ * Установит значение стиля элементу, либо получит текущее
+ * значение свойства, при необходимости конвертируя вывод.
+ * @param {Element} element Элемент
+ * @param {string} propertyName Имя свойства
+ * @param {string=} propertyValue Значение свойства. Если пропустить (undefined) - функция
+ *
+ * @return {string=}
+ * */
+function css(element, propertyName, propertyValue) {
+
+    var getting = type.undefined(propertyValue);
+    var action = getting ? "get" : "set";
+    var hooks = css.hooks;
+    var hookVal;
+    var vendorizedPropertyName;
+
+    // нечему устанавливать\неоткуда получать
+    if (!element) return null;
+
+    vendorizedPropertyName = getVendorPropName(propertyName);
+
+    if (propertyName in hooks && action in hooks[propertyName]) {
+        hookVal = hooks[propertyName][action](element, vendorizedPropertyName, propertyValue);
+    }
+
+    if (getting) {
+
+        if (type.undefined(hookVal)) {
+            //TODO нормализацию значений \ конвертацию.
+            propertyValue = getComputedStyle(element)[vendorizedPropertyName];
+        } else {
+            propertyValue = hookVal;
+        }
+
+    } else {
+
+        if (!type.string(propertyValue)) {
+            propertyValue = normalize(element, propertyName, propertyValue, true);
+        }
+
+        if (type.element(element)) {
+            element.style[vendorizedPropertyName] = propertyValue;
+        } else {
+            // CSSStyleDeclaration
+            element[vendorizedPropertyName] = propertyValue;
+        }
+
+    }
+
+    return propertyValue;
+}
+;
+
+/**
+ * Хуки для получения\установки значения свойства.
+ * @type {Object.<string, Object.<string, function>>}
+ */
+css.hooks = {};
+
+/**
+ * Преобразует строкое представление значения в численное и наоборот
+ * @param {Element} element элемент (для относительных значений)
+ * @param {string} propertyName имя свойства
+ * @param {string=} propertyValue значение свойства
+ * @param {boolean=} toString к строке (true) или к числу (false)
+ * @return {Array|number|undefined}
+ */
+function normalize(element, propertyName, propertyValue, toString) {
+    var hooks = normalize.hooks;
+    var units = normalize.units;
+    var normalized;
+    var unit;
+    var vendorizedPropertyName;
+
+    vendorizedPropertyName = getVendorPropName(propertyName);
+
+    if (type.undefined(propertyValue)) {
+        propertyValue = css(element, propertyName);
+    }
+
+    if (hooks[propertyName]) {
+        normalized = hooks[propertyName](element, vendorizedPropertyName, propertyValue, toString);
+    }
+
+    if (type.undefined(normalized)) {
+
+        if (toString) {
+            if (type.number(propertyValue) && !normalize.nopx[propertyName]) {
+                normalized = propertyValue + "px";
+            }
+        } else if (!type.number(propertyValue)) {
+            unit = propertyValue.match(cssNumericValueReg)[2];
+
+            if (units[unit]) {
+                normalized = units[unit](element, vendorizedPropertyName, propertyValue);
+            }
+        } else {
+            normalized = propertyValue;
         }
     }
 
+    return normalized;
+}
+
+/**
+ * Хуки для преобразования значения
+ * Первый аргумент - элемент
+ * Второй - имя свойства
+ * Третий - значение
+ * Червёртый - приводим к строке (true) или к числу (false)
+ * @type {Object.<string, function>}
+ */
+normalize.hooks = {};
+
+/**
+ * Хуки для преобразования из исходных единиц измерения к абсолютным
+ * @type {Object.<string, function>}
+ */
+normalize.units = {
+    // это и есть абсолютное значение
+    "px":function (element, propName, propVal) {
+        // просто возвращаем число без "px"
+        return parseFloat(propVal);
+    }
+};
+
+/**
+ * Список свойств, к которым не надо добавлять "PX"
+ * при переводе из числа в строку.
+ * @enum {undefined}
+ */
+normalize.nopx = {
+    "fill-opacity":true,
+    "font-weight":true,
+    "line-height":true,
+    "opacity":true,
+    "orphans":true,
+    "widows":true,
+    "z-index":true,
+    "zoom":true
+}
+
+/**
+ * Вычисление значения между двумя точками
+ * для анимируемого свойства
+ * @param {string} propertyName Имя свойства
+ * @param {number} from Имя меньшей точки
+ * @param {number} to Имя большей точки
+ * @param {number} timingFunctionValue Значение прогресса между ними
+ * @return {number|Array} Вычисленное значение
+ */
+function blend(propertyName, from, to, timingFunctionValue) {
+
+    if (propertyName in blend.hooks) {
+        return blend.hooks[propertyName](from, to, timingFunctionValue);
+    }
+
+    return (to - from) * timingFunctionValue + from;
+}
+
+/**
+ * Для вычисления значения экзотических свойств
+ * transform или crop, к примеру
+ * @type {Object}
+ * @private
+ * @static
+ */
+blend.hooks = {};
+
+/**
+ * Исполнит функцию перед отрисовкой,
+ * передав её текущую отметку времени
+ * Оригинальная функция
+ * @type {Function}
+ * @param {Function}
+    * @return {number} номер таймера
+ */
+var rAF = window[getVendorPropName("requestAnimationFrame", window)];
+
+/**
+ * Исполнит функцию перед отрисовкой, передав ей отметку времени
+ * (обёртка)
+ * @type {Function}
+ * @param {Function} callback
+ * @return {number} ID таймера для его отмены
+ */
+var requestAnimationFrame = rAF ? rAF : rAF_imitation;
+
+/**
+ * Отменит исполнение функции перед отрисовкой
+ * @type {Function}
+ * @param {number} id ID таймаута
+ */
+var cancelRequestAnimationFrame = rAF ? window[getVendorPropName("cancelRequestAnimationFrame", window)] : rAF_imitation_dequeue;
+
+/**
+ * Таймер для анимации
+ * @param {Function} callback
+ * @param {Object=} context контекст исполнения функции
+ * @constructor
+ */
+function ReflowLooper(callback, context) {
+    this.callback = callback;
+    this.context = context;
+    this.looper = bind(this.looper, this);
+}
+
+merge(ReflowLooper.prototype, /** @lends ReflowLooper.prototype */ ({
+
     /**
-     * ID С‚Р°Р№РјР°СѓС‚Р° "РїРµСЂРµСЂРёСЃРѕРІРєРё"
+     * Функция будет исполняться циклически по таймеру
+     * @type {Function}
+     * @private
+     */
+    callback:null,
+
+    /**
+     * Контекст функции
+     * @type {Object}
+     * @private
+     */
+    context:null,
+
+    /**
+     * ID таймаута
      * @type {number}
      * @private
      */
-    rAF_imitation.timerID = null;
+    timeoutID:null,
 
     /**
-     * Р”Р»СЏ РіРµРЅРµСЂР°С†РёРё ID С‚Р°Р№РјР°СѓС‚Р°.
-     * @type {Number}
+     * Запуск таймера
      */
-    rAF_imitation.unique = 0;
+    start:function () {
+        this.timeoutID = requestAnimationFrame(this.looper);
+    },
 
     /**
-     * РћС‡РµСЂРµРґСЊ РѕР±СЂР°Р±РѕС‚С‡РёРєРѕРІ Рё РёС… РєРѕРЅС‚РµРєСЃС‚РѕРІ
-     * @type {Array.<{func: Function, id: number}>}
-     * @const
+     * Остановка таймера
      */
-    rAF_imitation.queue = [];
+    stop:function () {
+        cancelRequestAnimationFrame(this.timeoutID);
+        this.timeoutID = null;
+    },
 
     /**
-     * РўР°Р№РјРµСЂ "РѕС‚СЂРёСЃРѕРІРєРё" - РїСЂРѕР№РґРµС‚СЃСЏ РїРѕ РѕР±СЂР°Р±РѕС‚С‡РёРєР°Рј Рё РїРѕРІС‹Р·С‹РІР°РµС‚ РёС…,
-     * РїРµСЂРµРґР°РІ РєР°Рє РїРµСЂРІС‹Р№ Р°СЂРіСѓРјРµРЅС‚ РІСЂРµРјРµРЅРЅСѓСЋ РјРµС‚РєСѓ "РѕС‚СЂРёСЃРѕРІРєРё"
+     * Враппер вызова функции с контекстом
      * @private
      */
-    rAF_imitation.looper = function () {
-        var reflowTimeStamp = now(), queue = rAF_imitation.queue, info;
-        while (queue.length) {
-            info = queue.pop();
-            info && info.func.call(window, reflowTimeStamp);
-        }
-    };
-
-    /**
-     * РќР°Р№РґС‘С‚ РєРѕСЂРµРЅСЊ СѓСЂР°РІРЅРµРЅРёСЏ  РІРёРґР° f(x)=val СЃ СѓРєР°Р·Р°РЅРЅРѕР№ С‚РѕС‡РЅРѕСЃС‚СЊСЋ
-     * РСЃРїРѕР»СЊР·СѓРµС‚СЃСЏ РјРµС‚РѕРґ С…РѕСЂРґ
-     * @param {function} equation СѓСЂР°РІРЅРµРЅРёРµ
-     * @param {number=} epsilon РјРёРЅРёРјР°Р»СЊРЅР°СЏ СЂР°Р·РЅРёС†Р° РјРµР¶РґСѓ РґРІСѓРјСЏ РїСЂРёР±Р»РёР¶РµРЅРёСЏРјРё
-     * @param {number=} equationValue Р·РЅР°С‡РµРЅРёРµ С„СѓРЅРєС†РёРё РІ СЌС‚РѕР№ С‚РѕС‡РєРµ
-     * @return {number} РїСЂРёР±Р»РёР¶С‘РЅРЅРѕРµ Р·РЅР°С‡РµРЅРёРµ РєРѕСЂРЅСЏ СѓСЂР°РІРЅРµРЅРёСЏ
-     */
-    function findEquationRoot (equation, epsilon, equationValue) {
-        var X0, X1, cache;
-
-        equationValue = type(equationValue) === "undefined" ? 0:equationValue;
-        epsilon = type(epsilon) === "undefined" ? findEquationRoot.defaultEpsilon:epsilon;
-
-        X0 = 0.5 * equationValue;
-        X1 = 1.5 * equationValue;
-
-        while (Math.abs(X0 - X1) > epsilon) {
-            cache = X1;
-            X1 = findEquationRoot.contraction(equation, X0, X1, equationValue);
-            X0 = cache;
-        }
-
-        return X1;
+    looper:function (timeStamp) {
+        this.timeoutID = requestAnimationFrame(this.looper);
+        timeStamp = timeStamp || now();
+        this.callback.call(this.context, timeStamp);
     }
 
-    /**
-     * Р—РЅР°С‡РµРЅРёРµ РїРѕРіСЂРµС€РЅРѕСЃС‚Рё РїРѕ-СѓРјРѕР»С‡Р°РЅРёСЋ
-     * @type {number}
-     * @see findEquationRoot
-     */
-    findEquationRoot.defaultEpsilon = 1e-6;
-
-    /**
-     * РЎР¶РёРјР°СЋС‰РµРµ РѕС‚РѕР±СЂР°Р¶РµРЅРёРµ
-     * @param {function} equation
-     * @param {number} prev
-     * @param {number} curr
-     * @param {number} equationValue
-     * @return {number}
-     * @see findEquationRoot
-     */
-    findEquationRoot.contraction = function (equation, prev, curr, equationValue) {
-
-        var F_CURR = equation(curr) - equationValue;
-        var F_PREV = equation(prev) - equationValue;
-
-        var DELTA_CURR_PREV = curr - prev;
-        var DELTA_F = F_CURR - F_PREV;
-
-        return curr - F_CURR * DELTA_CURR_PREV / DELTA_F;
-    };
-
-    /**
-     * РџСЂРµРґСЃС‚Р°РІР»РµРЅРёРµ Р°РЅР°Р»РѕРіР° РІСЂРµРјРµРЅРЅРѕР№ С„СѓРЅРєС†РёРё transition-timing-function
-     * РљСѓР±РёС‡РµСЃРєР°СЏ РєСЂРёРІР°СЏ Р‘РµР·СЊРµ.
-     *
-     * @param {number} p1x
-     * @param {number} p1y
-     * @param {number} p2x
-     * @param {number} p2y
-     * @param {number} fractionalTime Р’С…РѕРґ. Р­С‚Рѕ X.
-     * @param {number=} epsilon РџРѕРіСЂРµС€РЅРѕСЃС‚СЊ
-     * @return {number} Р’С‹С…РѕРґРЅРѕРµ Р·РЅР°С‡РµРЅРёРµ - easing - Y.
-     */
-    function cubicBezier (p1x, p1y, p2x, p2y, fractionalTime, epsilon) {
-
-        // РІРµСЂРЅС‘С‚ Р·РЅР°С‡РµРЅРёРµ X РїСЂРё РїРµСЂРµРґР°РІР°РµРјРѕРј РІСЂРµРјРµРЅРё.
-        var B_bindedToX = function (t) { return cubicBezier.B(p1x, p2x, t); };
-
-        // РЅР°С…РѕРґРёРј РІСЂРµРјСЏ t, РїСЂРё РєРѕС‚РѕСЂРѕРј РєСѓР±РёС‡РµСЃРєР°СЏ РєСЂРёРІР°СЏ РїСЂРёРЅРёРјР°РµС‚ Р·РЅР°С‡РµРЅРёРµ X.
-        var bezierTime = findEquationRoot(B_bindedToX, epsilon, fractionalTime);
-
-        // РІС‹С‡РёСЃР»СЏРµРј РїРѕ СЌС‚РѕРјСѓ РІСЂРµРјРµРЅРё Y.
-        var bezierFunctionValue = cubicBezier.B(p1y, p2y, bezierTime);
-
-        return bezierFunctionValue;
-    }
-
-    /**
-     * Р’С‹С‡РёСЃР»РёС‚ Р·РЅР°С‡РµРЅРёРµ РєСѓР±РёС‡РµСЃРєРѕР№ РєСЂРёРІРѕР№ Р‘РµР·СЊРµ РїСЂРё РїРµСЂРµРґР°РЅРЅРѕРј t
-     * РЎС‡РёС‚Р°РµС‚СЃСЏ, С‡С‚Рѕ P0 = (0;0) Рё P3 = (1;1)
-     * @param {number} coord1
-     * @param {number} coord2
-     * @param {number} t
-     * @return {number}
-     */
-    cubicBezier.B = function (coord1, coord2, t) {
-        return cubicBezier.B1(t) * coord1 + cubicBezier.B2(t) * coord2 + cubicBezier.B3(t);
-    };
-
-    /**
-     * @param {number} t
-     * @return {number}
-     */
-    cubicBezier.B1 = function (t) {
-        return 3 * t * (1 - t) * (1 - t);
-    };
-
-    /**
-     * @param {number} t
-     * @return {number}
-     */
-    cubicBezier.B2 = function (t) {
-        return 3 * t * t * (1 - t);
-    };
-
-    /**
-     * @param {number} t
-     * @return {number}
-     */
-    cubicBezier.B3 = function (t) {
-        return t * t * t;
-    };
-
-    /**
-     * Р’С‹С‡РёСЃР»РёС‚ С‚СЂРµР±СѓРµРјСѓСЋ С‚РѕС‡РЅРѕСЃС‚СЊ РІС‹С‡РёСЃР»РµРЅРёР№, РёСЃС…РѕРґСЏ РёР· РґР»РёС‚РµР»СЊРЅРѕСЃС‚Рё Р°РЅРёРјР°С†РёРё
-     * @param {number} duration
-     * @return {number}
-     */
-    cubicBezier.solveEpsilon = function (duration) {
-        return 1.0 / (200.0 * duration);
-    };
-
-    /**
-     * РЎС‚СѓРїРµРЅС‡Р°С‚Р°СЏ С„СѓРЅРєС†РёСЏ, РѕРіСЂР°РЅРёС‡РёРІР°СЋС‰Р°СЏ РѕР±Р»Р°СЃС‚СЊ РІС‹С…РѕРґРЅС‹С… Р·РЅР°С‡РµРЅРёР№ РґРѕ РѕРїСЂРµРґРµР»РµРЅРЅРѕРіРѕ С‡РёСЃР»Р°.
-     * РЎС‚СѓРїРµРЅРё РѕС‚СЃС‡РёС‚С‹РІР°СЋС‚СЃСЏ СЃ РєРѕРЅС†Р°, РёР»Рё СЃ РЅР°С‡Р°Р»Р°.
-     * @param {number} stepsAmount РљРѕР»РёС‡РµСЃС‚РІРѕ СЃС‚СѓРїРµРЅРµР№
-     * @param {boolean} countFromStart РћС‚СЃС‡РёС‚С‹РІР°С‚СЊ СЃ РЅР°С‡Р°Р»Р° (true) РёР»Рё СЃ РєРѕРЅС†Р° (false).
-     * @param {number} fractionalTime
-     */
-    function steps (stepsAmount, countFromStart, fractionalTime) {
-        // РµСЃР»Рё РѕС‚СЃС‡РёС‚С‹РІР°РµРј СЃ РЅР°С‡Р°Р»Р°, РїСЂРѕСЃС‚Рѕ СЂРµРІРµСЂСЃРёСЂСѓРµРј С„СѓРЅРєС†РёСЋ
-        return countFromStart ? 1.0 - steps(stepsAmount, countFromStart, 1.0 - fractionalTime) : Math.floor(stepsAmount * fractionalTime) / stepsAmount;
-    }
-
-    /**
-     * РР·РІРµСЃС‚РЅР°СЏ РІСЃРµРј С„СѓРЅРєС†РёСЏ РґР»СЏ РїСЂРѕС‚РѕС‚РёРїРЅРѕРіРѕ РЅР°СЃР»РµРґРѕРІР°РЅРёСЏ.
-     * @param {Object} child РљС‚Рѕ РЅР°СЃР»РµРґСѓРµС‚
-     * @param {Object} parent Р§С‚Рѕ РЅР°СЃР»РµРґСѓРµС‚
-     */
-    function inherit (child, parent) {
-        var F = noop;
-        F.prototype = parent.prototype;
-        child.prototype = new F;
-        child.prototype.constructor = child;
-    }
-
-    /**
-     * РЎРєРѕРїРёСЂСѓРµС‚ СЃРІРѕР№СЃС‚РІР° РѕРґРЅРѕРіРѕ РѕР±СЉРµРєС‚Р° РІ РґСЂСѓРіРѕР№.
-     * @param {Object|Function} target
-     * @param {Object} source
-     */
-    function merge (target, source) {
-        each(source, function (propertyValue, property) {
-            target[property] = propertyValue;
-        });
-    }
-
-    /**
-     * Р’РµСЂРЅС‘С‚ РІС‹С‡РёСЃР»РµРЅРЅС‹Р№ СЃС‚РёР»СЊ СЌР»РµРјРµРЅС‚Р°
-     * @param {Element} element
-     * @return {CSSStyleDeclaration}
-     */
-    function getComputedStyle (element) {
-        return window.getComputedStyle ? window.getComputedStyle(element) : element.currentStyle;
-    }
-
-    /**
-     * РћРєСЂСѓР¶РёС‚ СЃС‚СЂРѕРєСѓ РїРѕРґСЃС‚СЂРѕРєРѕР№ РІ РЅР°С‡Р°Р»Рµ Рё РІ РєРѕРЅС†Рµ
-     * @param {string} str
-     * @param {string} substring
-     * @return {string}
-     */
-    function surround (str, substring) {
-        return substring + str + substring;
-    }
-
-    /**
-     * Р”РѕР±Р°РІРёС‚ РїСЂРѕР±РµР» РІ РЅР°С‡Р°Р»Рµ Рё РІ РєРѕРЅС†Рµ СЃС‚СЂРѕРєРё
-     * @param {string} string
-     * @return {string}
-     */
-    surround.bySpaces = function (string) {
-        return surround(string, " ");
-    };
-
-    /**
-     * РћР±СЂРµР¶РµС‚ РїСЂРѕР±РµР»С‹ РІ РЅР°С‡Р°Р»Рµ СЃС‚СЂРѕРєРё Рё РІ РєРѕРЅС†Рµ
-     * @param {string} string
-     * @return {string}
-     */
-    function trim (string) {
-        return string.replace(/^\s+|\s+$/g, "");
-    }
-
-    /**
-     * РџСЂРѕРїСѓСЃС‚РёС‚ РєР»СЋС‡ С‡РµСЂРµР· РІСЃРµ С„РёР»СЊС‚СЂС‹ Рё РІРµСЂРЅС‘С‚ РµРіРѕ
-     * С‡РёСЃР»РµРЅРЅРѕРµ РїСЂРµРґСЃС‚Р°РІР»РµРЅРёРµ РІ РїСЂРѕС†РµРЅС‚Р°С… РёР»Рё undefined.
-     * @param {string|number} key
-     * @return {key}
-     */
-    function normalizeKey (key) {
-        if (type.string(key)) {
-            key = !type.undefined(keyAliases[key]) ? keyAliases[key]:key;
-            key = parseInt(key, 10);
-        }
-        return inRange(key, 0, 100, true) ? key:undefined;
-    }
-
-    /**
-     * Р”РѕР±Р°РІРёС‚ РїСЂР°РІРёР»Рѕ СЃ СѓРєР°Р·Р°РЅРЅС‹Рј СЃРµР»РµРєС‚РѕСЂРѕРј Рё СѓРєР°Р·Р°РЅРЅС‹Рј С‚РµРєСЃС‚РѕРј РїСЂР°РІРёР»Р°.
-     * @param {string} selector
-     * @param {string=} cssText
-     * @return {CSSRule} Р”РѕР±Р°РІР»РµРЅРЅРѕРµ РїСЂР°РІРёР»Рѕ
-     */
-    function addRule (selector, cssText) {
-
-        /** @type {CSSRuleList} */
-        var rules = stylesheet.cssRules || stylesheet.rules;
-        var index = rules.length;
-
-        cssText = cssText || " ";
-
-        if (stylesheet.insertRule) {
-            stylesheet.insertRule(selector + " " + "{" + cssText + "}", index);
-        } else {
-            stylesheet.addRule(selector, cssText, rules.length);
-        }
-
-        return rules[index];
-    }
-
-    /**
-     * Р”РѕР±Р°РІРёС‚ СѓРєР°Р·Р°РЅРЅС‹Р№ РєР»Р°СЃСЃ СЌР»РµРјРµРЅС‚Сѓ
-     * @param {Element} elem
-     * @param {string} value
-     */
-    function addClass (elem, value) {
-
-        if (surround.bySpaces(elem.className).indexOf(surround.bySpaces(value)) === -1) {
-            elem.className += " " + value;
-        }
-
-    }
-
-    /**
-     * РЈРґР°Р»РёС‚ СѓРєР°Р·Р°РЅРЅС‹Р№ РєР»Р°СЃСЃ Сѓ СЌР»РµРјРµРЅС‚Р°
-     * @param {Element} elem
-     * @param {string} value
-     */
-    function removeClass (elem, value) {
-        elem.className = trim(surround.bySpaces(elem.className).replace(surround.bySpaces(value), ""));
-    }
-
-    /**
-     * РЈСЃС‚Р°РЅРѕРІРёС‚ Р·РЅР°С‡РµРЅРёРµ СЃС‚РёР»СЏ СЌР»РµРјРµРЅС‚Сѓ, Р»РёР±Рѕ РїРѕР»СѓС‡РёС‚ С‚РµРєСѓС‰РµРµ
-     * Р·РЅР°С‡РµРЅРёРµ СЃРІРѕР№СЃС‚РІР°, РїСЂРё РЅРµРѕР±С…РѕРґРёРјРѕСЃС‚Рё РєРѕРЅРІРµСЂС‚РёСЂСѓСЏ РІС‹РІРѕРґ.
-     * @param {Element} element Р­Р»РµРјРµРЅС‚
-     * @param {string} propertyName РРјСЏ СЃРІРѕР№СЃС‚РІР°
-     * @param {string=} propertyValue Р—РЅР°С‡РµРЅРёРµ СЃРІРѕР№СЃС‚РІР°. Р•СЃР»Рё РїСЂРѕРїСѓСЃС‚РёС‚СЊ (undefined) - С„СѓРЅРєС†РёСЏ
-     *
-     * @return {string=}
-     * */
-    function css (element, propertyName, propertyValue) {
-
-        var getting = type.undefined(propertyValue);
-        var action = getting ? "get":"set";
-        var hooks = css.hooks;
-        var hookVal;
-        var vendorizedPropertyName;
-
-        // РЅРµС‡РµРјСѓ СѓСЃС‚Р°РЅР°РІР»РёРІР°С‚СЊ\РЅРµРѕС‚РєСѓРґР° РїРѕР»СѓС‡Р°С‚СЊ
-        if (!element) return null;
-
-        vendorizedPropertyName = getVendorPropName(propertyName);
-
-        if (propertyName in hooks && action in hooks[propertyName]) {
-            hookVal = hooks[propertyName][action](element, vendorizedPropertyName, propertyValue);
-        }
-
-        if (getting) {
-
-            if (type.undefined(hookVal)) {
-                //TODO РЅРѕСЂРјР°Р»РёР·Р°С†РёСЋ Р·РЅР°С‡РµРЅРёР№ \ РєРѕРЅРІРµСЂС‚Р°С†РёСЋ.
-                propertyValue = getComputedStyle(element)[vendorizedPropertyName];
-            } else {
-                propertyValue = hookVal;
-            }
-
-        } else {
-
-            if (!type.string(propertyValue)) {
-                propertyValue = normalize(element, propertyName, propertyValue, true);
-            }
-
-            if (type.element(element)) {
-                element.style[vendorizedPropertyName] = propertyValue;
-            } else {
-                // CSSStyleDeclaration
-                element[vendorizedPropertyName] = propertyValue;
-            }
-
-        }
-
-        return propertyValue;
-    };
-
-    /**
-     * РҐСѓРєРё РґР»СЏ РїРѕР»СѓС‡РµРЅРёСЏ\СѓСЃС‚Р°РЅРѕРІРєРё Р·РЅР°С‡РµРЅРёСЏ СЃРІРѕР№СЃС‚РІР°.
-     * @type {Object.<string, Object.<string, function>>}
-     */
-    css.hooks = {};
-
-    /**
-     * РџСЂРµРѕР±СЂР°Р·СѓРµС‚ СЃС‚СЂРѕРєРѕРµ РїСЂРµРґСЃС‚Р°РІР»РµРЅРёРµ Р·РЅР°С‡РµРЅРёСЏ РІ С‡РёСЃР»РµРЅРЅРѕРµ Рё РЅР°РѕР±РѕСЂРѕС‚
-     * @param {Element} element СЌР»РµРјРµРЅС‚ (РґР»СЏ РѕС‚РЅРѕСЃРёС‚РµР»СЊРЅС‹С… Р·РЅР°С‡РµРЅРёР№)
-     * @param {string} propertyName РёРјСЏ СЃРІРѕР№СЃС‚РІР°
-     * @param {string=} propertyValue Р·РЅР°С‡РµРЅРёРµ СЃРІРѕР№СЃС‚РІР°
-     * @param {boolean=} toString Рє СЃС‚СЂРѕРєРµ (true) РёР»Рё Рє С‡РёСЃР»Сѓ (false)
-     * @return {Array|number|undefined}
-     */
-    function normalize (element, propertyName, propertyValue, toString) {
-        var hooks = normalize.hooks;
-        var units = normalize.units;
-        var normalized;
-        var unit;
-        var vendorizedPropertyName;
-
-        vendorizedPropertyName = getVendorPropName(propertyName);
-
-         if (type.undefined(propertyValue)) {
-             propertyValue = css(element, propertyName);
-         }
-
-        if (hooks[propertyName]) {
-            normalized = hooks[propertyName](element, vendorizedPropertyName, propertyValue, toString);
-        }
-
-        if (type.undefined(normalized)) {
-
-            if (toString) {
-                if (type.number(propertyValue) && !normalize.nopx[propertyName]) {
-                    normalized = propertyValue + "px";
-                }
-            } else if (!type.number(propertyValue)) {
-                unit = propertyValue.match(cssNumericValueReg)[2];
-
-                if (units[unit]) {
-                    normalized = units[unit](element, vendorizedPropertyName, propertyValue);
-                }
-            } else {
-                normalized = propertyValue;
-            }
-        }
-
-        return normalized;
-    }
-
-    /**
-     * РҐСѓРєРё РґР»СЏ РїСЂРµРѕР±СЂР°Р·РѕРІР°РЅРёСЏ Р·РЅР°С‡РµРЅРёСЏ
-     * РџРµСЂРІС‹Р№ Р°СЂРіСѓРјРµРЅС‚ - СЌР»РµРјРµРЅС‚
-     * Р’С‚РѕСЂРѕР№ - РёРјСЏ СЃРІРѕР№СЃС‚РІР°
-     * РўСЂРµС‚РёР№ - Р·РЅР°С‡РµРЅРёРµ
-     * Р§РµСЂРІС‘СЂС‚С‹Р№ - РїСЂРёРІРѕРґРёРј Рє СЃС‚СЂРѕРєРµ (true) РёР»Рё Рє С‡РёСЃР»Сѓ (false)
-     * @type {Object.<string, function>}
-     */
-    normalize.hooks = {};
-
-    /**
-     * РҐСѓРєРё РґР»СЏ РїСЂРµРѕР±СЂР°Р·РѕРІР°РЅРёСЏ РёР· РёСЃС…РѕРґРЅС‹С… РµРґРёРЅРёС† РёР·РјРµСЂРµРЅРёСЏ Рє Р°Р±СЃРѕР»СЋС‚РЅС‹Рј
-     * @type {Object.<string, function>}
-     */
-    normalize.units = {
-        // СЌС‚Рѕ Рё РµСЃС‚СЊ Р°Р±СЃРѕР»СЋС‚РЅРѕРµ Р·РЅР°С‡РµРЅРёРµ
-        "px": function (element, propName, propVal) {
-            // РїСЂРѕСЃС‚Рѕ РІРѕР·РІСЂР°С‰Р°РµРј С‡РёСЃР»Рѕ Р±РµР· "px"
-            return parseFloat(propVal);
-        }
-    };
-
-    /**
-     * РЎРїРёСЃРѕРє СЃРІРѕР№СЃС‚РІ, Рє РєРѕС‚РѕСЂС‹Рј РЅРµ РЅР°РґРѕ РґРѕР±Р°РІР»СЏС‚СЊ "PX"
-     * РїСЂРё РїРµСЂРµРІРѕРґРµ РёР· С‡РёСЃР»Р° РІ СЃС‚СЂРѕРєСѓ.
-     * @enum {undefined}
-     */
-    normalize.nopx = {
-        "fill-opacity": true,
-        "font-weight": true,
-        "line-height": true,
-        "opacity": true,
-        "orphans": true,
-        "widows": true,
-        "z-index": true,
-        "zoom": true
-    }
-
-    /**
-     * Р’С‹С‡РёСЃР»РµРЅРёРµ Р·РЅР°С‡РµРЅРёСЏ РјРµР¶РґСѓ РґРІСѓРјСЏ С‚РѕС‡РєР°РјРё
-     * РґР»СЏ Р°РЅРёРјРёСЂСѓРµРјРѕРіРѕ СЃРІРѕР№СЃС‚РІР°
-     * @param {string} propertyName РРјСЏ СЃРІРѕР№СЃС‚РІР°
-     * @param {number} from РРјСЏ РјРµРЅСЊС€РµР№ С‚РѕС‡РєРё
-     * @param {number} to РРјСЏ Р±РѕР»СЊС€РµР№ С‚РѕС‡РєРё
-     * @param {number} timingFunctionValue Р—РЅР°С‡РµРЅРёРµ РїСЂРѕРіСЂРµСЃСЃР° РјРµР¶РґСѓ РЅРёРјРё
-     * @return {number|Array} Р’С‹С‡РёСЃР»РµРЅРЅРѕРµ Р·РЅР°С‡РµРЅРёРµ
-     */
-    function blend (propertyName, from, to, timingFunctionValue) {
-
-        if (propertyName in blend.hooks) {
-            return blend.hooks[propertyName](from, to, timingFunctionValue);
-        }
-
-        return (to - from) * timingFunctionValue + from;
-    }
-
-    /**
-     * Р”Р»СЏ РІС‹С‡РёСЃР»РµРЅРёСЏ Р·РЅР°С‡РµРЅРёСЏ СЌРєР·РѕС‚РёС‡РµСЃРєРёС… СЃРІРѕР№СЃС‚РІ
-     * transform РёР»Рё crop, Рє РїСЂРёРјРµСЂСѓ
-     * @type {Object}
-     * @private
-     * @static
-     */
-    blend.hooks = {};
-
-    /**
-     * РСЃРїРѕР»РЅРёС‚ С„СѓРЅРєС†РёСЋ РїРµСЂРµРґ РѕС‚СЂРёСЃРѕРІРєРѕР№,
-     * РїРµСЂРµРґР°РІ РµС‘ С‚РµРєСѓС‰СѓСЋ РѕС‚РјРµС‚РєСѓ РІСЂРµРјРµРЅРё
-     * РћСЂРёРіРёРЅР°Р»СЊРЅР°СЏ С„СѓРЅРєС†РёСЏ
-     * @type {Function}
-     * @param {Function}
-     * @return {number} РЅРѕРјРµСЂ С‚Р°Р№РјРµСЂР°
-     */
-    var rAF = window[getVendorPropName("requestAnimationFrame", window)];
-
-    /**
-     * РСЃРїРѕР»РЅРёС‚ С„СѓРЅРєС†РёСЋ РїРµСЂРµРґ РѕС‚СЂРёСЃРѕРІРєРѕР№, РїРµСЂРµРґР°РІ РµР№ РѕС‚РјРµС‚РєСѓ РІСЂРµРјРµРЅРё
-     * (РѕР±С‘СЂС‚РєР°)
-     * @type {Function}
-     * @param {Function} callback
-     * @return {number} ID С‚Р°Р№РјРµСЂР° РґР»СЏ РµРіРѕ РѕС‚РјРµРЅС‹
-     */
-    var requestAnimationFrame = rAF ? rAF : rAF_imitation;
-
-    /**
-     * РћС‚РјРµРЅРёС‚ РёСЃРїРѕР»РЅРµРЅРёРµ С„СѓРЅРєС†РёРё РїРµСЂРµРґ РѕС‚СЂРёСЃРѕРІРєРѕР№
-     * @type {Function}
-     * @param {number} id ID С‚Р°Р№РјР°СѓС‚Р°
-     */
-    var cancelRequestAnimationFrame = rAF ? window[getVendorPropName("cancelRequestAnimationFrame", window)] : rAF_imitation_dequeue;
-
-    /**
-     * РўР°Р№РјРµСЂ РґР»СЏ Р°РЅРёРјР°С†РёРё
-     * @param {Function} callback
-     * @param {Object=} context РєРѕРЅС‚РµРєСЃС‚ РёСЃРїРѕР»РЅРµРЅРёСЏ С„СѓРЅРєС†РёРё
-     * @constructor
-     */
-    function ReflowLooper (callback, context) {
-        this.callback = callback;
-        this.context = context;
-        this.looper = bind(this.looper, this);
-    }
-
-    merge(ReflowLooper.prototype, /** @lends ReflowLooper.prototype */ ({
-
-        /**
-         * Р¤СѓРЅРєС†РёСЏ Р±СѓРґРµС‚ РёСЃРїРѕР»РЅСЏС‚СЊСЃСЏ С†РёРєР»РёС‡РµСЃРєРё РїРѕ С‚Р°Р№РјРµСЂСѓ
-         * @type {Function}
-         * @private
-         */
-        callback: null,
-
-        /**
-         * РљРѕРЅС‚РµРєСЃС‚ С„СѓРЅРєС†РёРё
-         * @type {Object}
-         * @private
-         */
-        context: null,
-
-        /**
-         * ID С‚Р°Р№РјР°СѓС‚Р°
-         * @type {number}
-         * @private
-         */
-        timeoutID: null,
-
-        /**
-         * Р—Р°РїСѓСЃРє С‚Р°Р№РјРµСЂР°
-         */
-        start: function () {
-            this.timeoutID = requestAnimationFrame(this.looper);
-        },
-
-        /**
-         * РћСЃС‚Р°РЅРѕРІРєР° С‚Р°Р№РјРµСЂР°
-         */
-        stop: function () {
-            cancelRequestAnimationFrame(this.timeoutID);
-            this.timeoutID = null;
-        },
-
-        /**
-         * Р’СЂР°РїРїРµСЂ РІС‹Р·РѕРІР° С„СѓРЅРєС†РёРё СЃ РєРѕРЅС‚РµРєСЃС‚РѕРј
-         * @private
-         */
-        looper: function (timeStamp) {
-            this.timeoutID = requestAnimationFrame(this.looper);
-            timeStamp = timeStamp || now();
-            this.callback.call(this.context, timeStamp);
-        }
-
-    }));
+}));
+
+/**
+ * Нужно ли обратить прогресс анимации,
+ * в зависимости от направления и номера текущей итерации
+ * @param {string} direction
+ * @param {number} iterationNumber
+ * @return {Boolean}
+ */
+function needsReverse(direction, iterationNumber) {
+
+    var needsReverse, iterationIsOdd;
+
+    // аналогично операции NUM % 2
+    // т.е. является ли число нечётным
+    iterationIsOdd = iterationNumber & 1;
+
+    needsReverse = direction === DIRECTION_REVERSE;
+    needsReverse |= direction === DIRECTION_ALTERNATE && iterationIsOdd;
+    needsReverse |= direction === DIRECTION_ALTERNATE_REVERSE && !iterationIsOdd;
+
+    return needsReverse;
+}

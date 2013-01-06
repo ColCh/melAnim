@@ -10,6 +10,7 @@ var DEFAULT_PLAYINGSTATE = "paused";
 
 // TODO animation-delay
 // TODO animation-fill-mode
+// TODO float iteration-count values
 // TODO REFACTORING
 
 /**
@@ -323,98 +324,32 @@ merge(KeyframeAnimation.prototype, /** @lends {KeyframeAnimation.prototype} */{
     },
 
     /**
-     * Высчитает значения свойств, вызовет обработчиков итерации\завершения
-     * и завершит анимацию, если нужно. (семантическая ошибка, надо пофиксить)
-     * @param {number} elapsedTime прошеднее со старта время
+     * Высчитает значения свойств при указанном прогрессе
+     * @param {number} fractionalTime прогресс по итерации
      * @return {Object}
      * @private
      */
-    fetch:function (elapsedTime) {
+    fetch:function (fractionalTime) {
 
         var i;
-        var self = this;
-        var keyframes, fetchedProperties, firstKeyframe, secondKeyframe, from, to, property;
+        var keyframes, fetchedProperties, firstKeyframe, secondKeyframe, from, to, propertyName;
         var element;
-        var progr, offset, scale;
-        var iterations, integralIterations, currentIteration, needsReverse, iterationIsOdd;
+        var fractionalTime, offset, scale;
         var easing, timingFunction;
 
-        /*
-         * Нахождение прогресса по итерации
-         */
-
-        //прогресс анимации без учёта итераций
-        progr = elapsedTime / self.animationTime;
-
-        currentIteration = Math.floor(progr);
-
-        // аналогично операции NUM % 2
-        // т.е. является ли число нечётным
-        iterationIsOdd = currentIteration & 1;
-
-        iterations = this.iterations;
-
-        // исключение составляет специальное значение
-        if (iterations == ITERATIONCOUNT_INFINITE) {
-            iterations = Number.POSITIVE_INFINITY;
-        } else {
-
-            iterations = parseFloat(iterations);
-
-            if (!isFinite(iterations) || iterations < 0) {
-                // установлено неприменимое значение для кол-ва итераций
-                // откатываемся к значению по умолчанию
-                iterations = DEFAULT_ITERATIONCOUNT;
-            }
-        }
-
-        integralIterations = Math.floor(iterations);
-
-        // превращаем прогресс относительно первого прохода
-        // в прогресс относительно текущего прохода
-        progr -= Math.min(currentIteration, integralIterations);
-
-        if (progr > 1) progr = 1;
-
-        /*
-         * Условие завершения анимации или итерации
-         */
-
-        if (progr === 1) {
-            // конец итерации, но не анимации
-            if (iterations - currentIteration > 0) {
-                type.func(this.oniteration) && this.oniteration();
-            } else {
-                // завершение анимации
-                this.stop(false);
-                type.func(this.oncomplete) && this.oncomplete();
-            }
-        }
-
-        /*
-         * Ревёрсинг прогресса при условии
-         */
-
-        needsReverse = this.animationDirection === DIRECTION_REVERSE;
-        needsReverse |= this.animationDirection === DIRECTION_ALTERNATE && iterationIsOdd;
-        needsReverse |= this.animationDirection === DIRECTION_ALTERNATE_REVERSE && !iterationIsOdd;
-
-        if (needsReverse) {
-            progr = 1 - progr;
-        }
-
-        keyframes = self.keyframes;
+        element = this.target;
+        keyframes = this.keyframes;
 
         /*
          * Поиск функции смягчения для текущего ключевого кадра
          */
-        timingFunction = self.smoothing || cubicBezierApproximations[ DEFAULT_EASING ];
+        timingFunction = this.smoothing || cubicBezierApproximations[ DEFAULT_EASING ];
 
         i = 0;
         while (i < keyframes.length - 1) {
             // КЛЮЧ_ПРЕДЫДУЩЕГО <= ПРОГРЕСС < КЛЮЧ_СЛЕДУЮЩЕГО
             //TODO первое условие вместе с циклом можно заменить бинарным поиском
-            if (keyframes[i].key <= progr && keyframes[i + 1].key > progr) {
+            if (keyframes[i].key <= fractionalTime && keyframes[i + 1].key > fractionalTime) {
                 if (keyframes[i].easing) {
                     timingFunction = keyframes[i].easing;
                     break;
@@ -423,17 +358,10 @@ merge(KeyframeAnimation.prototype, /** @lends {KeyframeAnimation.prototype} */{
             i += 1;
         }
 
-        /*
-         * Просчитывание значений свойств (fetching!)
-         */
-
-        // высчитанные значения свойств
         fetchedProperties = {};
 
-        // в intrinsic находятся начальные значения
-        // всех анимируемых свойств
-        // высчитываем значение каждого свойства
-        for (property in this.intrinsic) {
+        // в intrinsic находятся начальные значения всех анимируемых свойств
+        for (propertyName in this.intrinsic) {
 
             /*
              * Поиск двух ближайших ключевых кадров
@@ -442,10 +370,10 @@ merge(KeyframeAnimation.prototype, /** @lends {KeyframeAnimation.prototype} */{
             firstKeyframe = keyframes[0];
             secondKeyframe = keyframes[keyframes.length - 1];
 
-            //TODO было бы неплохо тоже заменить линейный поиск на бинарный
+            //TODO было бы неплохо заменить линейный поиск на бинарный
             for (i = 1; i < keyframes.length - 1; i++) {
-                if (property in keyframes[i].properties) {
-                    if (progr <= keyframes[i].key) {
+                if (propertyName in keyframes[i].properties) {
+                    if (fractionalTime <= keyframes[i].key) {
                         secondKeyframe = keyframes[i];
                         break;
                     }
@@ -453,21 +381,17 @@ merge(KeyframeAnimation.prototype, /** @lends {KeyframeAnimation.prototype} */{
                 }
             }
 
-            // смещение первого ключевого кадра
-            // относительно начала анимации
+            // смещение первого ключевого кадра относительно начала анимации
             offset = firstKeyframe.key;
             // масштаб для сплющивания прогресса
             scale = 1.0 / (secondKeyframe.key - firstKeyframe.key);
-            // приводим прогресс к долям и считаем смягчение
-            // относительно двух ключевых кадров
-            easing = timingFunction((progr - offset) * scale);
 
-            element = self.target;
+            easing = timingFunction((fractionalTime - offset) * scale);
 
-            from = normalize(element, property, firstKeyframe.properties[property]);
-            to = normalize(element, property, secondKeyframe.properties[property]);
+            from = normalize(element, propertyName, firstKeyframe.properties[propertyName]);
+            to = normalize(element, propertyName, secondKeyframe.properties[propertyName]);
 
-            fetchedProperties[property] = blend(property, from, to, easing);
+            fetchedProperties[propertyName] = blend(propertyName, from, to, easing);
         }
 
         return fetchedProperties;
@@ -496,16 +420,70 @@ merge(KeyframeAnimation.prototype, /** @lends {KeyframeAnimation.prototype} */{
      */
     tick:function (timeStamp) {
 
-        var elapsedTime;
+        var elapsedTime, progr, fractionalTime;
+        var iterations, integralIterations, currentIteration, iterationIsOdd, MAX_PROGR;
         var fetchedProperties;
 
+        MAX_PROGR = 1;
+
+        /*
+         * Вычисление прогресса по итерации
+         * */
         elapsedTime = timeStamp - this.started;
 
         if (elapsedTime < 0) elapsedTime = 0;
 
-        fetchedProperties = this.fetch(elapsedTime);
+        // прогресс относительно первой итерации
+        progr = elapsedTime / this.animationTime;
+
+        currentIteration = Math.floor(progr);
+
+        iterations = this.iterations;
+
+        // исключение составляет специальное значение
+        if (iterations === ITERATIONCOUNT_INFINITE) {
+            iterations = Number.POSITIVE_INFINITY;
+        } else {
+
+            iterations = parseFloat(iterations);
+
+            if (!isFinite(iterations) || iterations < 0) {
+                // установлено неприемлимое значение для кол-ва итераций
+                // откатываемся к значению по умолчанию
+                iterations = DEFAULT_ITERATIONCOUNT;
+            }
+        }
+
+        integralIterations = Math.floor(iterations);
+
+        // прогресс относительно текущего прохода
+        fractionalTime = progr - Math.min(currentIteration, integralIterations);
+
+        if (fractionalTime > MAX_PROGR) fractionalTime = MAX_PROGR;
+
+        /*
+         * Условие завершения анимации или итерации
+         */
+        if (fractionalTime === MAX_PROGR) {
+            if (currentIteration < iterations) {
+                type.func(this.oniteration) && this.oniteration();
+            } else {
+                this.stop(false);
+                type.func(this.oncomplete) && this.oncomplete();
+            }
+        }
+
+        // аналогично операции NUM % 2, т.е. является ли число нечётным
+        iterationIsOdd = currentIteration & 1;
+
+        if (needsReverse(this.animationDirection, currentIteration)) {
+            fractionalTime = MAX_PROGR - fractionalTime;
+        }
+
+        fetchedProperties = this.fetch(fractionalTime);
         this.render(fetchedProperties);
     }
+
 });
 
 window["KeyframeAnimation"] = KeyframeAnimation;
