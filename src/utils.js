@@ -695,14 +695,72 @@
     /**
      * Замена для requestAnimationFrame.
      * @param {function(number)} callback
-     * @param {Object=} context контекст исполнения
      * @return {number} ID таймаута
      */
-    function rAF_imitation (callback, context) {
-        return setTimeout(function () {
-            callback.call(context, now());
-        }, 1e3 / FRAMES_PER_SECOND);
+    function rAF_imitation (callback) {
+
+        var id = rAF_imitation.unique++,
+
+            info = {
+                id: id,
+                func: callback
+            };
+
+        if (!rAF_imitation.timerID) rAF_imitation.timerID = setInterval(rAF_imitation.looper, 1e3 / FRAMES_PER_SECOND);
+
+        rAF_imitation.queue.push(info);
+        return id;
     }
+
+    /**
+     * Замена для cancelRequestAnimationFrame
+     * @param {number} id
+     */
+    function rAF_imitation_dequeue (id) {
+
+        var index, queue, eq;
+
+        eq = function (/**@type {{id: number, func: Function}}*/val) { return val.id === id; };
+        queue = rAF_imitation.queue;
+        index = LinearSearch(/**@type {Array}*/(queue), eq);
+        if (index !== -1) {
+            // don't splice
+            queue[index] = null;
+        }
+    }
+
+    /**
+     * ID таймаута "перерисовки"
+     * @type {number}
+     * @private
+     */
+    rAF_imitation.timerID = null;
+
+    /**
+     * Для генерации ID таймаута.
+     * @type {Number}
+     */
+    rAF_imitation.unique = 0;
+
+    /**
+     * Очередь обработчиков и их контекстов
+     * @type {Array.<{func: Function, id: number}>}
+     * @const
+     */
+    rAF_imitation.queue = [];
+
+    /**
+     * Таймер "отрисовки" - пройдется по обработчикам и повызывает их,
+     * передав как первый аргумент временную метку "отрисовки"
+     * @private
+     */
+    rAF_imitation.looper = function () {
+        var reflowTimeStamp = now(), queue = rAF_imitation.queue, info;
+        while (queue.length) {
+            info = queue.pop();
+            info && info.func.call(window, reflowTimeStamp);
+        }
+    };
 
     /**
      * Найдёт корень уравнения  вида f(x)=val с указанной точностью
@@ -1139,24 +1197,78 @@
     var rAF = window[getVendorPropName("requestAnimationFrame", window)];
 
     /**
-     * Исполнит функцию перед отрисовкой,
-     * передав её текущую отметку времени
-     * и контекст исполнения
+     * Исполнит функцию перед отрисовкой, передав ей отметку времени
      * (обёртка)
      * @type {Function}
      * @param {Function} callback
-     * @param {Object} context
-     * @return {number} номер таймера
+     * @return {number} ID таймера для его отмены
      */
-    var requestAnimationFrame = !rAF ? rAF_imitation : function (callback, context) {
-        return rAF(function (now) {
-            callback.call(context, now);
-        });
-    };
+    var requestAnimationFrame = rAF ? rAF : rAF_imitation;
 
     /**
      * Отменит исполнение функции перед отрисовкой
      * @type {Function}
-     * @param {number} номер таймера
+     * @param {number} id ID таймаута
      */
-    var cancelRequestAnimationFrame = window[getVendorPropName("cancelRequestAnimationFrame", window)] || clearTimeout;
+    var cancelRequestAnimationFrame = rAF ? window[getVendorPropName("cancelRequestAnimationFrame", window)] : rAF_imitation_dequeue;
+
+    /**
+     * Таймер для анимации
+     * @param {Function} callback
+     * @param {Object=} context контекст исполнения функции
+     * @constructor
+     */
+    function ReflowLooper (callback, context) {
+        this.callback = callback;
+        this.context = context;
+        this.looper = bind(this.looper, this);
+    }
+
+    merge(ReflowLooper.prototype, /** @lends ReflowLooper.prototype */ ({
+
+        /**
+         * Функция будет исполняться циклически по таймеру
+         * @type {Function}
+         * @private
+         */
+        callback: null,
+
+        /**
+         * Контекст функции
+         * @type {Object}
+         * @private
+         */
+        context: null,
+
+        /**
+         * ID таймаута
+         * @type {number}
+         * @private
+         */
+        timeoutID: null,
+
+        /**
+         * Запуск таймера
+         */
+        start: function () {
+            this.timeoutID = requestAnimationFrame(this.looper);
+        },
+
+        /**
+         * Остановка таймера
+         */
+        stop: function () {
+            cancelRequestAnimationFrame(this.timeoutID);
+            this.timeoutID = null;
+        },
+
+        /**
+         * Враппер вызова функции с контекстом
+         * @private
+         */
+        looper: function (timeStamp) {
+            timeStamp = timeStamp || now();
+            this.callback.call(this.context, timeStamp);
+        }
+
+    }));
