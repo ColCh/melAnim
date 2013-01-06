@@ -372,12 +372,14 @@
     }
 
     /**
-     * Аналог bind из ES5. Формат
-     * аргументов, как в partial
+     * Аналог bind из ES5.
      * @inheritDoc
-     * @see partial
      */
-    function bind (fn, ctx, args) { return partial(fn, args || [], ctx); }
+    function bind (fn, ctx) {
+        return function () {
+            return fn.call(ctx);
+        };
+    }
 
     /**
      * Значение для любого аргумента по-умолчанию
