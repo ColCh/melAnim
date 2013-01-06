@@ -32,7 +32,7 @@
         // их свойства наследуют вычисленные
         this.addKeyframe(0, createObject(this.intrinsic));
         this.addKeyframe(1, createObject(this.intrinsic));
-        this.tick = bind(this.tick, this);
+        this.timer = new ReflowLooper(this.tick, this);
     }
 
     merge(KeyframeAnimation.prototype, /** @lends {KeyframeAnimation.prototype} */{
@@ -130,11 +130,11 @@
         smoothing: undefined,
 
         /**
-         * Идентификацинный номер таймаута
-         * @type {number}
+         * Таймер отрисовки
+         * @type {ReflowLooper}
          * @private
          */
-        timeoutId: undefined,
+        timer: undefined,
 
         /**
          * Установит анимируемый элемент
@@ -259,7 +259,7 @@
 
             var prop;
 
-            this.timeoutId = setInterval(this.tick, 1e3 / FRAMES_PER_SECOND);
+            this.timer.start();
 
             if (!keepOn) {
                 this.started = now();
@@ -278,7 +278,7 @@
          */
         "stop": function (gotoEnd) {
 
-            //cancelRequestAnimationFrame(this.timeoutId);
+            this.timer.stop();
 
             if (gotoEnd) {
                 this.tick(this.animationTime);
@@ -378,7 +378,7 @@
                     type.func(this.oniteration) && this.oniteration();
                 } else {
                     // завершение анимации
-                    clearInterval(this.timeoutId);
+                    this.stop(false);
                     type.func(this.oncomplete) && this.oncomplete();
                 }
             }
@@ -478,8 +478,6 @@
 
             var elapsedTime;
             var fetchedProperties;
-
-            timeStamp = timeStamp || now();
 
             elapsedTime = timeStamp - this.started;
 
