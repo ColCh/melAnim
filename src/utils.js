@@ -123,6 +123,17 @@
     }
 
     /**
+     * Аналог Object.create
+     * @param {Object} parent
+     * @return {Object}
+     */
+    function createObject (parent) {
+        var F = noop;
+        F.prototype = parent;
+        return new F;
+    }
+
+    /**
      * Классический шаблон итератора
      * @param {Array} collection
      * @constructor
