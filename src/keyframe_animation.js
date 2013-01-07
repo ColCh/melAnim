@@ -137,6 +137,14 @@
         timer:undefined,
 
         /**
+         * Время отложенного запуска (временная строка)
+         * @see parseTimeString
+         * @private
+         * @type {number}
+         */
+        delayTime: undefined,
+
+        /**
          * Установит анимируемый элемент
          * @param {Element} elem Элемент
          */
@@ -194,6 +202,11 @@
          */
         "direction":function (animationDirection) {
             this.animationDirection = animationDirection;
+        },
+
+        "delay": function (delay) {
+            delay = parseTimeString(delay);
+            this.delayTime = delay;
         },
 
         /**

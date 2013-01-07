@@ -605,7 +605,6 @@
 
         return undefined;
     }
-    ;
 
     /**
      * Размерности для parseTimeString
