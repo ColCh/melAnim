@@ -145,6 +145,13 @@
         delayTime: undefined,
 
         /**
+         * Режим заливки свойств
+         * @type {string}
+         * @private
+         */
+        fillingMode: undefined,
+
+        /**
          * Установит анимируемый элемент
          * @param {Element} elem Элемент
          */
@@ -209,6 +216,10 @@
             this.delayTime = delay;
         },
 
+        "fillMode": function (fillMode) {
+            this.fillingMode = fillMode;
+        },
+
         /**
          * Добавит ключевой кадр на указанном прогрессе
          * и вернёт его
@@ -270,7 +281,14 @@
          */
         "start":function (keepOn) {
 
-            var prop, delay, numericDefaultDelay = parseTimeString(DEFAULT_DELAY);
+            var prop, delay, numericDefaultDelay, fillsBackwards, fillMode;
+
+            numericDefaultDelay = parseTimeString(DEFAULT_DELAY);
+
+            fillMode = this.fillingMode || DEFAULT_FILLMODE;
+            fillsBackwards = fillMode === FILLMODE_BACKWARDS;
+            fillsBackwards |= fillMode === FILLMODE_BOTH;
+
 
             if (!keepOn) {
                 this.started = now();
@@ -285,7 +303,9 @@
                 this.intrinsic[prop] = normalize(this.target, prop);
             }
 
-            this.tick(this.started);
+            if ((fillsBackwards && delay > 0) || delay <= 0) {
+                this.tick(this.started);
+            }
         },
 
         /**
@@ -448,12 +468,13 @@
              * */
             elapsedTime = timeStamp - this.started;
 
-            if (elapsedTime < 0) elapsedTime = 0;
 
             delay = parseTimeString(this.delayTime);
             delay = type.number(delay) ? delay : numericDefaultDelay;
 
             elapsedTime += -1 * delay;
+
+            if (elapsedTime < 0) elapsedTime = 0;
 
             // прогресс относительно первой итерации
             progr = elapsedTime / this.animationTime;
