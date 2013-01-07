@@ -9,7 +9,7 @@
             /*
             0% {
                 width: 50px;
-            }*/
+            }
 
             30% {
                 width: 150px;
@@ -19,10 +19,10 @@
             50% {
                 width: 200px;
                 -webkit-animation-timing-function: ease-out;
-            }
+            }*/
 
             100% {
-                width: 300px;
+                width: 550px;
             }
         }
 
@@ -31,10 +31,10 @@
         }
 
         .css {
-            -webkit-animation-name: tst-;
+            -webkit-animation-name: tst;
             -webkit-animation-duration: 3s;
-            -webkit-animation-iteration-count: 1;
-            -webkit-animation-timing-function: ease-in-out; /*cubic-bezier(1.000, 0.005, 1.000, 0)*/;
+            -webkit-animation-iteration-count: 1.5;
+            -webkit-animation-timing-function: linear; /*cubic-bezier(1.000, 0.005, 1.000, 0)*/;
             -webkit-animation-delay: 0s;
             -webkit-animation-fill-mode: both;
             -webkit-animation-direction: alternate;
@@ -77,20 +77,22 @@
 
     anim.direction("alternate");
 
-    anim.duration("1000ms");
+    anim.duration("3s");
 
-    anim.iterationCount("1");
+    anim.iterationCount("1.5");
 
     anim.delay("0s");
 
     anim.fillMode("both")
 
+    var PROFILE = false;
+
     anim.onComplete(function () {
         document.body.style.backgroundColor = 'green';
-        //console.profileEnd();
+        PROFILE && console.profileEnd();
     });
 
-    //console.profile();
+    PROFILE && console.profile();
     anim.start();
 
     /*

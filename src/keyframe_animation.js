@@ -162,7 +162,7 @@
 
         /**
          * Установка продолжительности анимации
-         * @param {number} duration
+         * @param duration
          */
         "duration":function (duration) {
             this.animationTime = duration;
@@ -308,21 +308,28 @@
             }
 
             if ((fillsBackwards && delay > 0) || delay <= 0) {
-                this.tick(this.started);
+                this.render(this.fetch(0));
             }
         },
 
         /**
-         * Остановка или пауза анимации
-         * @param {boolean=} gotoEnd Установить ли конечные значения
+         * Остановка анимации
          */
-        "stop":function (gotoEnd) {
+        "stop":function () {
+
+            var fillsForwards, fillMode;
 
             this.timer.stop();
 
-            if (gotoEnd) {
-                this.tick(this.animationTime);
+            fillMode = this.fillingMode || DEFAULT_FILLMODE;
+            fillsForwards = fillMode === FILLMODE_FORWARDS;
+            fillsForwards |= fillMode === FILLMODE_BOTH;
+
+            if (fillsForwards) {
+                this.render(this.fetch(1), true);
             }
+
+            type.func(this.oncomplete) && this.oncomplete();
 
         },
 
@@ -439,16 +446,47 @@
         /**
          * Отрисует высчитанные значения свойств
          * @param {Object} fetchedProperties
+         * @param {boolean=} direct отрисовывать ли напрямую в стили элементов
          * @private
          */
-        render:function (fetchedProperties) {
-            var buffer = '', property, name;
-            for (property in fetchedProperties) {
-                name = getVendorPropName.cache[property] || getVendorPropName(property);
-                buffer += name + ":" + normalize(null, property, fetchedProperties[property], true) + ';';
+        render:function (fetchedProperties, direct) {
+            var buffer, property, name, value, element;
+
+            var index, NOT_FOUND, colonIndex, semiIndex;
+
+            NOT_FOUND = -1;
+
+            element = this.target;
+
+            if (direct) {
+                buffer = element.style.cssText + ';';
+            } else {
+                buffer = this.rule.style.cssText + ';';
             }
+
+            for (property in fetchedProperties) {
+
+                name = getVendorPropName.cache[property] || getVendorPropName(property);
+                value = normalize(element, property, fetchedProperties[property], true);
+
+                index = buffer.indexOf(name, 0);
+                index = index === NOT_FOUND ? buffer.indexOf(property, 0) : index;
+
+                if (index === NOT_FOUND) {
+                    buffer += name + ":" + value + ";";
+                } else {
+                    colonIndex = buffer.indexOf(":", index);
+                    semiIndex = buffer.indexOf(";", colonIndex);
+                    buffer = buffer.slice(0, colonIndex + 1) + value + buffer.slice(semiIndex);
+                }
+            }
+
             //TODO Rules vs style проверка производительности
-            this.rule.style.cssText = buffer;
+            if (direct) {
+                element.style.cssText = buffer;
+            } else {
+                this.rule.style.cssText = buffer;
+            }
         },
 
         /**
@@ -520,8 +558,7 @@
              * Условие завершения анимации
              */
             if (progr > iterations) {
-                this.stop(false);
-                type.func(this.oncomplete) && this.oncomplete();
+                this.stop();
             }
 
             // аналогично операции NUM % 2, т.е. является ли число нечётным
