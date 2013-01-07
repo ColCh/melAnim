@@ -270,13 +270,16 @@
          */
         "start":function (keepOn) {
 
-            var prop;
-
-            this.timer.start();
+            var prop, delay, numericDefaultDelay = parseTimeString(DEFAULT_DELAY);
 
             if (!keepOn) {
                 this.started = now();
             }
+
+            delay = parseTimeString(this.delayTime);
+            delay = type.number(delay) ? delay : numericDefaultDelay;
+
+            setTimeout(bind(this.timer.start, this.timer), delay);
 
             for (prop in this.intrinsic) {
                 this.intrinsic[prop] = normalize(this.target, prop);
@@ -435,8 +438,10 @@
             var elapsedTime, progr, fractionalTime;
             var iterations, integralIterations, currentIteration, iterationIsOdd, MAX_PROGR;
             var fetchedProperties;
+            var delay, numericDefaultDelay;
 
             MAX_PROGR = 1;
+            numericDefaultDelay = parseTimeString(DEFAULT_DELAY);
 
             /*
              * Вычисление прогресса по итерации
@@ -444,6 +449,11 @@
             elapsedTime = timeStamp - this.started;
 
             if (elapsedTime < 0) elapsedTime = 0;
+
+            delay = parseTimeString(this.delayTime);
+            delay = type.number(delay) ? delay : numericDefaultDelay;
+
+            elapsedTime += -1 * delay;
 
             // прогресс относительно первой итерации
             progr = elapsedTime / this.animationTime;
