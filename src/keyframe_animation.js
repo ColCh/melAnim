@@ -85,7 +85,7 @@
          * @type {string}
          * @private
          */
-        animationDirection:DIRECTION_NORMAL,
+        animationDirection: undefined,
 
         /**
          * Объект с особыми смягчениями для свойств
@@ -181,12 +181,14 @@
          * Установка смягчения анимации при прогрессе (в долях)
          * возможно установить особое смягчение для свойства
          * При установке смягчения для свойства параметр прогресса игнорируется
-         * @param {Function} easing функция смягчения
+         * @param {(Function|string)} easing временная функция CSS, функция или алиас смягчения
          * @param {number=} position прогресс в долях (по умол. для всей анимации)
          * @param {string=} property для какого свойства устанавливается (по умол. для всех)
+         * @see cubicBezierApproximations
          */
         "easing":function (easing, position, property) {
             var keyframe;
+
             if (type.string(property)) {
                 this.specialEasing[property] = easing;
             } else {
@@ -377,6 +379,12 @@
          */
         fetch:function (fractionalTime) {
 
+            var camelCased;
+            var countFromStart;
+            var stepsAmount;
+            var leftBracketIndex;
+            var rightBracketIndex;
+            var points;
             var i;
             var keyframes, fetchedProperties, firstKeyframe, secondKeyframe, from, to, propertyName;
             var element;
@@ -389,7 +397,7 @@
             /*
              * Поиск функции смягчения для текущего ключевого кадра
              */
-            timingFunction = this.smoothing || cubicBezierApproximations[ DEFAULT_EASING ];
+            timingFunction = this.smoothing;
 
             index = binarySearch(keyframes, fractionalTime, function (fractionalTime, firstKeyframe, index, keyframes) {
                 var secondKeyframe = keyframes[ index + 1];
@@ -402,7 +410,45 @@
                 return STOP;
             });
 
-            timingFunction = type.func(keyframes[index].easing) ? keyframes[index].easing : timingFunction;
+            timingFunction = keyframes[index].easing ? keyframes[index].easing : timingFunction;
+
+            if (type.string(timingFunction)) {
+                // alias или CSS timing-function
+
+                timingFunction = trim(timingFunction);
+                camelCased = camelCase(timingFunction);
+                easing = cubicBezierApproximations[camelCased] || cubicBezierAliases[camelCased] || easing;
+
+                if (type.func(easing)) {
+                    timingFunction = easing;
+                } else if (type.array(easing)) {
+                    points = easing;
+                } else if (cubicBezierReg.test(easing)) {
+                    leftBracketIndex = easing.indexOf("(");
+                    rightBracketIndex = easing.indexOf(")", leftBracketIndex);
+                    points = easing.slice(leftBracketIndex, rightBracketIndex);
+                    points = map(points.split(","), parseFloat);
+                } else if (stepsReg.test(easing)) {
+                    leftBracketIndex = easing.indexOf("(");
+                    rightBracketIndex = easing.indexOf(")", leftBracketIndex);
+                    points = easing.slice(leftBracketIndex, rightBracketIndex);
+                    points = points.split(",");
+                }
+
+                if (points.length === 4) {
+                    timingFunction = function (fractionalTime) {
+                        return cubicBezier(points[0], points[1], points[2], points[3], fractionalTime);
+                    };
+                } else if (points.length === 2) {
+                    stepsAmount = parseInt(points[0], 10);
+                    countFromStart = trim(points[1]) === "start";
+                    timingFunction = function (fractionalTime) {
+                        return steps(stepsAmount, countFromStart, fractionalTime);
+                    };
+                }
+            }
+
+            timingFunction = type.func(timingFunction) ? timingFunction : cubicBezierApproximations[ DEFAULT_EASING ];
 
             fetchedProperties = {};
 
