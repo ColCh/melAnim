@@ -787,18 +787,16 @@
      * Найдёт корень уравнения  вида f(x)=val с указанной точностью
      * Используется метод хорд
      * @param {function} equation уравнение
+     * @param {number} equationValue значение функции в этой точке
+     * @param {number} X0 первая начальная точка
+     * @param {number} X1 вторая начальная точка
      * @param {number=} epsilon минимальная разница между двумя приближениями
-     * @param {number=} equationValue значение функции в этой точке
      * @return {number} приближённое значение корня уравнения
      */
-    function findEquationRoot(equation, epsilon, equationValue) {
-        var X0, X1, cache;
+    function findEquationRoot(equation, equationValue, X0, X1, epsilon) {
+        var cache;
 
-        equationValue = type(equationValue) === "undefined" ? 0 : equationValue;
-        epsilon = type(epsilon) === "undefined" ? findEquationRoot.defaultEpsilon : epsilon;
-
-        X0 = 0.5 * equationValue;
-        X1 = 1.5 * equationValue;
+        epsilon = type.undefined(epsilon) ? findEquationRoot.defaultEpsilon : epsilon;
 
         while (Math.abs(X0 - X1) > epsilon) {
             cache = X1;
@@ -855,8 +853,10 @@
             return cubicBezier.B(p1x, p2x, t);
         };
 
+        var X0 = 0, X1 = 1;
+
         // находим время t, при котором кубическая кривая принимает значение X.
-        var bezierTime = findEquationRoot(B_bindedToX, epsilon, fractionalTime);
+        var bezierTime = findEquationRoot(B_bindedToX, fractionalTime, X0, X1, epsilon);
 
         // вычисляем по этому времени Y.
         var bezierFunctionValue = cubicBezier.B(p1y, p2y, bezierTime);
