@@ -6,20 +6,10 @@
     <script type="text/javascript" src="../dist/mel-anim.compiled.js"></script>
     <style>
         @-webkit-keyframes tst {
-            /*
-            0% {
-                width: 50px;
-            }
 
             30% {
-                width: 150px;
-                -webkit-animation-timing-function: linear;
-            }
-
-            50% {
-                width: 200px;
                 -webkit-animation-timing-function: ease-out;
-            }*/
+            }
 
             100% {
                 width: 550px;
@@ -34,7 +24,7 @@
             -webkit-animation-name: tst;
             -webkit-animation-duration: 3s;
             -webkit-animation-iteration-count: 1.5;
-            -webkit-animation-timing-function: linear; /*cubic-bezier(1.000, 0.005, 1.000, 0)*/;
+            -webkit-animation-timing-function: ease-in; /*cubic-bezier(1.000, 0.005, 1.000, 0)*/;
             -webkit-animation-delay: 0s;
             -webkit-animation-fill-mode: both;
             -webkit-animation-direction: alternate;
@@ -71,9 +61,8 @@
     //anim.propAt("height", "100px", "30%");
     //anim.propAt("height", "550px", "100%");
 
-    anim.easing(function (x) {
-        return x
-    });
+    anim.easing("ease-in");
+    anim.easing("ease-out", "30%");
 
     anim.direction("alternate");
 

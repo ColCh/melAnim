@@ -784,54 +784,89 @@
     };
 
     /**
-     * Найдёт корень уравнения  вида f(x)=val с указанной точностью
-     * Используется метод хорд
-     * @param {function} equation уравнение
-     * @param {number} equationValue значение функции в этой точке
-     * @param {number} X0 первая начальная точка
-     * @param {number} X1 вторая начальная точка
-     * @param {number=} epsilon минимальная разница между двумя приближениями
+     * Найдёт корень уравнения вида f(x)=val с указанной точностью итерационным способом
+     * Если не указать сжимающее отображение, то будет использован метод хорд
+     * @param {function} F уравнение
+     * @param {number} Y значение уравнения в искомой точке
+     * @param {number=} X0 начальное приближение (или значение уравнения)
+     * @param {number=} epsilon минимальная разница между двумя приближениями (или 10^-6)
+     * @param {Function=} contraction сжимающее отображение метода (по умол. метод хорд)
+     * @param {Function=} derivative производная функции F (для метода касательных)
      * @return {number} приближённое значение корня уравнения
      */
-    function findEquationRoot(equation, equationValue, X0, X1, epsilon) {
-        var cache;
+    function findEquationRoot(F, Y, X0, epsilon, contraction, derivative) {
 
-        epsilon = type.undefined(epsilon) ? findEquationRoot.defaultEpsilon : epsilon;
+        /**
+         * Значение погрешности по умолчанию
+         * @type {number}
+         * @const
+         */
+        var DEFAULT_EPSILON = 1e-6;
 
-        while (Math.abs(X0 - X1) > epsilon) {
-            cache = X1;
-            X1 = findEquationRoot.contraction(equation, X0, X1, equationValue);
-            X0 = cache;
+        // TODO ДОДЕЛАТЬ!
+        throw "TODO!!!"
+        debugger
+
+        var X1, cache, stopCondition;
+
+        X1 = type.number(X1) ? X1 : Y;
+        epsilon = type.number(epsilon) ? epsilon : DEFAULT_EPSILON;
+        contraction = type.func(contraction) ? contraction : findEquationRoot.contractionSecant;
+        stopCondition = findEquationRoot.stopCondition;
+
+        while (!stopCondition(X1, X0, epsilon)) {
+            cache = X0;
+            X0 = X0 - contraction(F, X1, X0, Y, derivative);
+            X1 = cache;
         }
 
-        return X1;
+        return X0;
     }
 
     /**
-     * Значение погрешности по-умолчанию
-     * @type {number}
-     * @see findEquationRoot
+     * Условие остановки итерационного метода
+     * @param {number} X0 начальное приближение
+     * @param {number} X1 следующее приближение
+     * @param {number} epsilon точность
+     * @return {boolean}
      */
-    findEquationRoot.defaultEpsilon = 1e-6;
+    findEquationRoot.stopCondition = function (X0, X1, epsilon) {
+        return Math.abs(X0 - X1) <= epsilon;
+    };
 
     /**
-     * Сжимающее отображение
-     * @param {function} equation
-     * @param {number} prev
-     * @param {number} curr
-     * @param {number} equationValue
+     * Сжимающее отображение метода хорд
+     * @param {function} F функция
+     * @param {number} X0 предыдущее приближение
+     * @param {number} X1 текущее приближение
+     * @param {number} Y значение функции в искомой точке
+     * @param {Function} derivative производная функции F
      * @return {number}
      * @see findEquationRoot
      */
-    findEquationRoot.contraction = function (equation, prev, curr, equationValue) {
+    findEquationRoot.contractionSecant = function (F, X0, X1, Y, derivative) {
 
-        var F_CURR = equation(curr) - equationValue;
-        var F_PREV = equation(prev) - equationValue;
+        var F1 = F(X1) - Y;
+        var F0 = F(X0) - Y;
 
-        var DELTA_CURR_PREV = curr - prev;
-        var DELTA_F = F_CURR - F_PREV;
+        var DELTA_X = X1 - X0;
+        var DELTA_F = F1 - F0;
 
-        return curr - F_CURR * DELTA_CURR_PREV / DELTA_F;
+        return F1 * DELTA_X / DELTA_F;
+    };
+
+    /**
+     * Сжимающее отображение метода Ньютона (метода касательных)
+     * @param {function} F функция
+     * @param {number} X0 предыдущее приближение
+     * @param {number} X1 текущее приближение
+     * @param {number} Y значение функции в искомой точке
+     * @param {Function} derivative производная функции F
+     * @return {number}
+     * @see findEquationRoot
+     */
+    findEquationRoot.contractionNewton = function (F, X0, X1, Y, derivative) {
+        return F(X1) / derivative(X1);
     };
 
     /**
@@ -852,11 +887,12 @@
         var B_bindedToX = function (t) {
             return cubicBezier.B(p1x, p2x, t);
         };
+        var derivative_X = function (t) { return cubicBezier.derivative(p1x, p2x, t); };
 
         var X0 = 0, X1 = 1;
 
         // находим время t, при котором кубическая кривая принимает значение X.
-        var bezierTime = findEquationRoot(B_bindedToX, fractionalTime, X0, X1, epsilon);
+        var bezierTime = findEquationRoot(B_bindedToX, fractionalTime, (1 + fractionalTime) * 0.5, epsilon, findEquationRoot.contractionNewton, derivative_X);
 
         // вычисляем по этому времени Y.
         var bezierFunctionValue = cubicBezier.B(p1y, p2y, bezierTime);
@@ -873,31 +909,26 @@
      * @return {number}
      */
     cubicBezier.B = function (coord1, coord2, t) {
-        return cubicBezier.B1(t) * coord1 + cubicBezier.B2(t) * coord2 + cubicBezier.B3(t);
+
+        var B1 = function (t) { return 3 * t * (1 - t) * (1 - t); };
+        var B2 = function (t) { return 3 * t * t * (1 - t); };
+        var B3 = function (t) { return t * t * t; };
+
+        return B1(t) * coord1 + B2(t) * coord2 + B3(t);
     };
 
     /**
-     * @param {number} t
-     * @return {number}
+     * Посчитает значение производной кубической кривой Безье
+     * при прогрессе t
+     * Считается, что P0 = (0;0) и P3 = (1;1)
+     * @param t
      */
-    cubicBezier.B1 = function (t) {
-        return 3 * t * (1 - t) * (1 - t);
-    };
+    cubicBezier.derivative = function (coord1, coord2, t) {
+        var B1d = function (t) { return 3 * ( (1 - t) * (1 - t) + t * 2 * (- 1) * (1 - t) ) };
+        var B2d = function (t) { return 3 * ( 2 * t * (1 - t) + t * t * (- 1) ) };
+        var B3d = function (t) { return 3 * t * t; };
 
-    /**
-     * @param {number} t
-     * @return {number}
-     */
-    cubicBezier.B2 = function (t) {
-        return 3 * t * t * (1 - t);
-    };
-
-    /**
-     * @param {number} t
-     * @return {number}
-     */
-    cubicBezier.B3 = function (t) {
-        return t * t * t;
+        return B1d(t) * coord1 + B2d(t) * coord2 + B3d(t);
     };
 
     /**
