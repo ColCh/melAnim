@@ -90,6 +90,8 @@
      */
     var cubicBezierApproximations = cubicBezierAliases["approximations"] = {
 
+        linear: function (x) { return x; },
+
         // взято с jQuery
         swing: function (p) {
             return 0.5 - Math.cos( p * Math.PI ) / 2;
