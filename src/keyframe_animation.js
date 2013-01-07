@@ -381,7 +381,7 @@
             var keyframes, fetchedProperties, firstKeyframe, secondKeyframe, from, to, propertyName;
             var element;
             var fractionalTime, offset, scale;
-            var easing, timingFunction;
+            var easing, timingFunction, index;
 
             element = this.target;
             keyframes = this.keyframes;
@@ -391,18 +391,18 @@
              */
             timingFunction = this.smoothing || cubicBezierApproximations[ DEFAULT_EASING ];
 
-            i = 0;
-            while (i < keyframes.length - 1) {
-                // КЛЮЧ_ПРЕДЫДУЩЕГО <= ПРОГРЕСС < КЛЮЧ_СЛЕДУЮЩЕГО
-                //TODO первое условие вместе с циклом можно заменить бинарным поиском
-                if (keyframes[i].key <= fractionalTime && keyframes[i + 1].key > fractionalTime) {
-                    if (keyframes[i].easing) {
-                        timingFunction = keyframes[i].easing;
-                        break;
-                    }
-                }
-                i += 1;
-            }
+            index = binarySearch(keyframes, fractionalTime, function (fractionalTime, firstKeyframe, index, keyframes) {
+                var secondKeyframe = keyframes[ index + 1];
+                var MOVE_RIGHT = 1, MOVE_LEFT = -1, STOP = 0;
+
+                if (!secondKeyframe) return MOVE_LEFT;
+                if (firstKeyframe.key > fractionalTime) return MOVE_LEFT;
+                if (secondKeyframe <= fractionalTime) return MOVE_RIGHT;
+
+                return STOP;
+            });
+
+            timingFunction = type.func(keyframes[index].easing) ? keyframes[index].easing : timingFunction;
 
             fetchedProperties = {};
 

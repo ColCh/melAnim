@@ -306,10 +306,13 @@
             comp = compare(value, array[mid], mid, array);
 
             if (!comp) {
+            // comp === 0
                 return mid;
             } else if (comp < 0) {
+            // comp === -1
                 upperBound = mid - 1;
             } else {
+            // comp === 1
                 lowBound = mid + 1;
             }
 
