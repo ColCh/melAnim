@@ -8,8 +8,8 @@
     var DEFAULT_HANDLER = noop;
     var DEFAULT_PLAYINGSTATE = "paused";
 
-    // TODO animation-delay
     // TODO animation-fill-mode
+    // TODO multiply elements
     // TODO REFACTORING
 
     /**
@@ -218,6 +218,10 @@
 
         "fillMode": function (fillMode) {
             this.fillingMode = fillMode;
+        },
+
+        "iterationCount": function (iterations) {
+            this.iterations = iterations;
         },
 
         /**
@@ -455,7 +459,7 @@
          */
         tick:function (timeStamp) {
 
-            var elapsedTime, progr, fractionalTime;
+            var duration, elapsedTime, progr, fractionalTime;
             var iterations, integralIterations, currentIteration, iterationIsOdd, MAX_PROGR;
             var fetchedProperties;
             var delay, numericDefaultDelay;
@@ -476,8 +480,11 @@
 
             if (elapsedTime < 0) elapsedTime = 0;
 
+            duration = parseTimeString(this.animationTime);
+            duration = type.number(duration) ? duration : parseTimeString(DEFAULT_DURATION);
+
             // прогресс относительно первой итерации
-            progr = elapsedTime / this.animationTime;
+            progr = elapsedTime / duration;
 
             currentIteration = Math.floor(progr);
 
@@ -487,9 +494,7 @@
             if (iterations === ITERATIONCOUNT_INFINITE) {
                 iterations = Number.POSITIVE_INFINITY;
             } else {
-
                 iterations = parseFloat(iterations);
-
                 if (!isFinite(iterations) || iterations < 0) {
                     // установлено неприемлимое значение для кол-ва итераций
                     // откатываемся к значению по умолчанию

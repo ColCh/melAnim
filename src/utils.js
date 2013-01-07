@@ -597,7 +597,7 @@
         var matched = toString(timeString).match(cssNumericValueReg);
         var numeric, coefficient;
 
-        if (!type.undefined(timeString)) {
+        if (matched) {
             numeric = parseFloat(matched[1]);
             coefficient = parseTimeString.modificators[ matched[2] ] || 1;
             return numeric * coefficient;
