@@ -789,85 +789,70 @@
      * @param {function} F уравнение
      * @param {number} Y значение уравнения в искомой точке
      * @param {number=} X0 начальное приближение (или значение уравнения)
+     * @param {number=} X1 след. приближение
      * @param {number=} epsilon минимальная разница между двумя приближениями (или 10^-6)
      * @param {Function=} contraction сжимающее отображение метода (по умол. метод хорд)
      * @param {Function=} derivative производная функции F (для метода касательных)
      * @return {number} приближённое значение корня уравнения
      */
-    function findEquationRoot(F, Y, X0, epsilon, contraction, derivative) {
+    function findEquationRoot(F, Y, X0, X1, epsilon, derivative) {
 
+        var F1, F0, DELTA_X, DELTA_F, X0d;
         /**
          * Значение погрешности по умолчанию
          * @type {number}
          * @const
          */
         var DEFAULT_EPSILON = 1e-6;
+        var i, stopCondition, contraction, X1, cache;
+        var savedX0, savedX1, deriv;
 
-        // TODO ДОДЕЛАТЬ!
-        throw "TODO!!!"
-        debugger
-
-        var X1, cache, stopCondition;
-
-        X1 = type.number(X1) ? X1 : Y;
         epsilon = type.number(epsilon) ? epsilon : DEFAULT_EPSILON;
-        contraction = type.func(contraction) ? contraction : findEquationRoot.contractionSecant;
-        stopCondition = findEquationRoot.stopCondition;
+        stopCondition = function (X0, X1) { return Math.abs(X0 - X1) <= epsilon; };
 
-        while (!stopCondition(X1, X0, epsilon)) {
-            cache = X0;
-            X0 = X0 - contraction(F, X1, X0, Y, derivative);
-            X1 = cache;
+        // сохраним для метода хорд
+        savedX0 = X0;
+        savedX1 = X1;
+
+        // для начала пробуем метод касательных (метод Ньютона), у которого
+        // больше скорость сходимости, чем у метода хорд
+        X0 = Y;
+        // используем метод одной касательной
+        X0d = derivative(X0);
+
+        // ограничим количество итераций метода касательных
+        i = 8;
+
+        while (i-->0) {
+
+            X1 = X0 - ( (F(X0) - Y ) / X0d );
+
+            if (stopCondition(F(X1), Y)) {
+                return X1;
+            }
+
+            X0 = X1;
         }
 
-        return X0;
+        // теперь пробуем метод хорд
+        // без ограничений по количеству итераций
+        X0 = savedX0;
+        X1 = savedX1;
+
+        while (!stopCondition(X0, X1)) {
+            F1 = F(X1) - Y;
+            F0 = F(X0) - Y;
+
+            DELTA_X = X1 - X0;
+            DELTA_F = F1 - F0;
+
+            cache = X1;
+            X1 = X1 - F1 * DELTA_X / DELTA_F;
+            X0 = cache;
+        }
+
+        return X1;
     }
-
-    /**
-     * Условие остановки итерационного метода
-     * @param {number} X0 начальное приближение
-     * @param {number} X1 следующее приближение
-     * @param {number} epsilon точность
-     * @return {boolean}
-     */
-    findEquationRoot.stopCondition = function (X0, X1, epsilon) {
-        return Math.abs(X0 - X1) <= epsilon;
-    };
-
-    /**
-     * Сжимающее отображение метода хорд
-     * @param {function} F функция
-     * @param {number} X0 предыдущее приближение
-     * @param {number} X1 текущее приближение
-     * @param {number} Y значение функции в искомой точке
-     * @param {Function} derivative производная функции F
-     * @return {number}
-     * @see findEquationRoot
-     */
-    findEquationRoot.contractionSecant = function (F, X0, X1, Y, derivative) {
-
-        var F1 = F(X1) - Y;
-        var F0 = F(X0) - Y;
-
-        var DELTA_X = X1 - X0;
-        var DELTA_F = F1 - F0;
-
-        return F1 * DELTA_X / DELTA_F;
-    };
-
-    /**
-     * Сжимающее отображение метода Ньютона (метода касательных)
-     * @param {function} F функция
-     * @param {number} X0 предыдущее приближение
-     * @param {number} X1 текущее приближение
-     * @param {number} Y значение функции в искомой точке
-     * @param {Function} derivative производная функции F
-     * @return {number}
-     * @see findEquationRoot
-     */
-    findEquationRoot.contractionNewton = function (F, X0, X1, Y, derivative) {
-        return F(X1) / derivative(X1);
-    };
 
     /**
      * Представление аналога временной функции transition-timing-function
@@ -892,7 +877,7 @@
         var X0 = 0, X1 = 1;
 
         // находим время t, при котором кубическая кривая принимает значение X.
-        var bezierTime = findEquationRoot(B_bindedToX, fractionalTime, (1 + fractionalTime) * 0.5, epsilon, findEquationRoot.contractionNewton, derivative_X);
+        var bezierTime = findEquationRoot(B_bindedToX, fractionalTime, 0, 1, epsilon, derivative_X);
 
         // вычисляем по этому времени Y.
         var bezierFunctionValue = cubicBezier.B(p1y, p2y, bezierTime);
