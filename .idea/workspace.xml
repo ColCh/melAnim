@@ -1,8 +1,28 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="d355cb2f-f688-404f-bac5-5daf70f9396d" name="Default" comment="">
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
+    <list default="true" id="d355cb2f-f688-404f-bac5-5daf70f9396d" name="Default" comment="animation-delay работа в прогрессе">
+      <change type="DELETED" beforePath="$PROJECT_DIR$/.idea/.name" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/.idea/Anim.iml" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/.idea/codeStyleSettings.xml" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/.idea/dictionaries/melky.xml" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/.idea/encodings.xml" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/.idea/frameworkRootSettings.xml" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/.idea/inspectionProfiles/profiles_settings.xml" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/.idea/jsLibraryMappings.xml" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/.idea/jsLinters/jshint.xml" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/.idea/jsLinters/jslint.xml" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/.idea/libraries/CSS_Animations.xml" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/.idea/libraries/sass_stdlib.xml" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/.idea/misc.xml" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/.idea/modules.xml" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/.idea/scopes/scope_settings.xml" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/.idea/vcs.xml" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/.idea/webResources.xml" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/dist/mel-anim.compiled.js" afterPath="$PROJECT_DIR$/dist/mel-anim.compiled.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/end.js" afterPath="$PROJECT_DIR$/src/end.js" />
     </list>
     <ignored path="Anim.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -33,7 +53,7 @@
       <file leaf-file-name="index.htm" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/examples/index.htm">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="79" column="31" selection-start="2128" selection-end="2128" vertical-scroll-proportion="0.0">
+            <state line="76" column="24" selection-start="1989" selection-end="1989" vertical-scroll-proportion="-1.25">
               <folding />
             </state>
           </provider>
@@ -42,16 +62,16 @@
       <file leaf-file-name="constants.js" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/constants.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="93" column="67" selection-start="2678" selection-end="2678" vertical-scroll-proportion="0.0">
+            <state line="92" column="7" selection-start="2610" selection-end="2610" vertical-scroll-proportion="0.0">
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="begin.js" pinned="false" current="false" current-in-tab="false">
+      <file leaf-file-name="begin.js" pinned="false" current="true" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/src/begin.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="4" column="35" selection-start="77" selection-end="77" vertical-scroll-proportion="0.0">
+            <state line="4" column="35" selection-start="77" selection-end="77" vertical-scroll-proportion="0.03797468">
               <folding />
             </state>
           </provider>
@@ -60,19 +80,41 @@
       <file leaf-file-name="utils.js" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/utils.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="1268" column="0" selection-start="35587" selection-end="35587" vertical-scroll-proportion="0.0">
+            <state line="626" column="0" selection-start="16392" selection-end="16392" vertical-scroll-proportion="0.0">
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="keyframe_animation.js" pinned="false" current="true" current-in-tab="true">
+      <file leaf-file-name="keyframe_animation.js" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/keyframe_animation.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="391" column="13" selection-start="11917" selection-end="11917" vertical-scroll-proportion="0.40586796">
+            <state line="386" column="5" selection-start="11154" selection-end="11154" vertical-scroll-proportion="0.0">
               <folding>
+                <marker date="1357825839680" expanded="true" signature="351:369" placeholder="//..." />
                 <element signature="n#!!block;n#KeyframeAnimation#0" expanded="true" />
-                <element signature="e#1297#1340#0" expanded="true" />
+                <element signature="e#765#815#0" expanded="true" />
+                <element signature="e#1298#1341#0" expanded="true" />
+                <marker date="1357825839680" expanded="false" signature="3714:3809" placeholder="/** Время отложенного запуска (временная строка) ...*/" />
+                <marker date="1357825839680" expanded="false" signature="4566:5036" placeholder="/** Установка смягчения анимации при прогрессе (в долях) ...*/" />
+                <marker date="1357825839680" expanded="false" signature="5652:6072" placeholder="/** Установка направления анимации ...*/" />
+                <element signature="e#6756#6780#0" expanded="true" />
+                <element signature="e#6821#6862#0" expanded="true" />
+                <element signature="e#6918#6944#0" expanded="true" />
+                <element signature="e#6995#7063#0" expanded="true" />
+                <element signature="e#7087#7196#0" expanded="true" />
+                <element signature="e#7211#7242#0" expanded="true" />
+                <element signature="e#7774#7832#0" expanded="true" />
+                <marker date="1357825839680" expanded="true" signature="8830:8885" placeholder="{...}" />
+                <marker date="1357825839680" expanded="true" signature="9098:9236" placeholder="/** Остановка или пауза анимации ...*/" />
+                <marker date="1357825839680" expanded="false" signature="9451:9454" placeholder="{...}" />
+                <element signature="e#10988#15719#0" expanded="true" />
+                <marker date="1357825839680" expanded="true" signature="13482:14021" placeholder="{...}" />
+                <marker date="1357825839680" expanded="true" signature="13835:14010" placeholder="{...}" />
+                <marker date="1357825839680" expanded="true" signature="13849:13996" placeholder="{...}" />
+                <marker date="1357825839680" expanded="true" signature="16583:17065" placeholder="/** Отрисует высчитанные значения свойств ...*/" />
+                <marker date="1357825839680" expanded="true" signature="17135:17236" placeholder="{...}" />
+                <marker date="1357825839680" expanded="true" signature="18136:18181" placeholder="/*...*/" />
               </folding>
             </state>
           </provider>
@@ -92,11 +134,11 @@
     <option name="changedFiles">
       <list>
         <option value="$PROJECT_DIR$/src/begin.js" />
-        <option value="$PROJECT_DIR$/src/end.js" />
         <option value="$PROJECT_DIR$/src/constants.js" />
-        <option value="$PROJECT_DIR$/src/utils.js" />
         <option value="$PROJECT_DIR$/examples/index.htm" />
+        <option value="$PROJECT_DIR$/src/utils.js" />
         <option value="$PROJECT_DIR$/src/keyframe_animation.js" />
+        <option value="$PROJECT_DIR$/src/end.js" />
       </list>
     </option>
   </component>
@@ -167,7 +209,7 @@
     <option name="STATE" value="0" />
   </component>
   <component name="ProjectView">
-    <navigator proportions="" version="1" splitterProportion="0.5">
+    <navigator currentView="ProjectPane" proportions="" version="1" splitterProportion="0.5">
       <flattenPackages />
       <showMembers ProjectPane="true" />
       <showModules />
@@ -178,22 +220,27 @@
       <autoscrollFromSource />
       <sortByType />
     </navigator>
-    <panes />
+    <panes>
+      <pane id="ProjectPane">
+        <subPane />
+      </pane>
+      <pane id="Scope" />
+    </panes>
   </component>
   <component name="PropertiesComponent">
     <property name="FileHistory.git4idea.history.GitHistoryProvider_flatWidth0" value="96" />
     <property name="FileHistory.git4idea.history.GitHistoryProvider_flatWidth1" value="98" />
-    <property name="JavaScriptWeakerCompletionTypeGuess" value="true" />
     <property name="options.splitter.main.proportions" value="0.3" />
+    <property name="JavaScriptWeakerCompletionTypeGuess" value="true" />
     <property name="WebServerToolWindowPanel.toolwindow.show.permissions" value="false" />
-    <property name="recentsLimit" value="5" />
-    <property name="FileHistory.git4idea.history.GitHistoryProvider_flatOrder1" value="1" />
     <property name="FileHistory.git4idea.history.GitHistoryProvider_treeWidth0" value="96" />
+    <property name="FileHistory.git4idea.history.GitHistoryProvider_flatOrder1" value="1" />
+    <property name="recentsLimit" value="5" />
     <property name="FileHistory.git4idea.history.GitHistoryProvider_flatOrder0" value="0" />
     <property name="last_opened_file_path" value="$PROJECT_DIR$" />
     <property name="FileHistory.git4idea.history.GitHistoryProvider_flatWidth2" value="101" />
-    <property name="FileHistory.git4idea.history.GitHistoryProvider_treeWidth3" value="896" />
     <property name="FileHistory.git4idea.history.GitHistoryProvider_flatWidth3" value="896" />
+    <property name="FileHistory.git4idea.history.GitHistoryProvider_treeWidth3" value="896" />
     <property name="JavaScriptPreferStrict" value="false" />
     <property name="FileHistory.git4idea.history.GitHistoryProvider_treeWidth2" value="101" />
     <property name="WebServerToolWindowPanel.toolwindow.highlight.mappings" value="true" />
@@ -206,9 +253,9 @@
     <property name="FileHistory.git4idea.history.GitHistoryProvider_treeOrder3" value="3" />
     <property name="FileHistory.git4idea.history.GitHistoryProvider_treeOrder1" value="1" />
     <property name="FileHistory.git4idea.history.GitHistoryProvider_treeOrder2" value="2" />
-    <property name="options.lastSelected" value="reference.settingsdialog.IDE.editor.colors.Font" />
-    <property name="JavaScriptLanguageLevel" value="JS_1_5" />
+    <property name="options.lastSelected" value="editor.preferences.completion" />
     <property name="WebServerToolWindowPanel.toolwindow.show.size" value="false" />
+    <property name="JavaScriptLanguageLevel" value="JS_1_5" />
     <property name="WebServerToolWindowPanel.toolwindow.show.date" value="false" />
     <property name="restartRequiresConfirmation" value="true" />
     <property name="WebServerToolWindowPanel.toolwindow.highlight.symlinks" value="true" />
@@ -273,6 +320,15 @@
       <created>1347048680201</created>
       <updated>1347048680201</updated>
     </task>
+    <task id="LOCAL-00001" summary="Добавил комментов перед резрезанием супер-метода">
+      <created>1357493259719</created>
+      <updated>1357493259719</updated>
+    </task>
+    <task id="LOCAL-00002" summary="animation-delay работа в прогрессе">
+      <created>1357554971700</created>
+      <updated>1357554971700</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
   </component>
   <component name="TodoView" selected-index="0">
@@ -296,25 +352,26 @@
     </todo-panel>
   </component>
   <component name="ToolWindowManager">
-    <frame x="-10" y="15" width="1300" height="1019" extended-state="7" />
+    <frame x="-10" y="15" width="1300" height="1019" extended-state="6" />
     <editor active="true" />
     <layout>
       <window_info id="Changes" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32821724" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32821724" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
-      <window_info id="Structure" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.28745928" sideWeight="0.9752066" order="5" side_tool="true" content_ui="combo" x="61" y="397" width="639" height="529" />
+      <window_info id="Structure" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.28745928" sideWeight="0.96694213" order="5" side_tool="true" content_ui="combo" x="61" y="397" width="639" height="529" />
       <window_info id="Remote Host" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32980457" sideWeight="0.9704841" order="3" side_tool="true" content_ui="tabs" />
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.26140064" sideWeight="0.9752066" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.26140064" sideWeight="0.96694213" order="0" side_tool="false" content_ui="combo" />
       <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.39787486" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.14820847" sideWeight="0.9693034" order="1" side_tool="true" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.031877212" sideWeight="0.5008143" order="10" side_tool="true" content_ui="tabs" />
-      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.024793388" sideWeight="0.99499583" order="2" side_tool="false" content_ui="tabs" />
-      <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32978722" sideWeight="0.5" order="11" side_tool="false" content_ui="tabs" />
-      <window_info id="Documentation" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.23208469" sideWeight="0.8783943" order="4" side_tool="false" content_ui="tabs" x="70" y="99" width="1080" height="801" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.03305785" sideWeight="0.99499583" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.3293979" sideWeight="0.5" order="11" side_tool="false" content_ui="tabs" />
+      <window_info id="Documentation" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.23208469" sideWeight="0.9752066" order="4" side_tool="false" content_ui="tabs" x="70" y="99" width="1080" height="801" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Database" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32980457" sideWeight="0.96662694" order="9" side_tool="true" content_ui="tabs" />
       <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.3293979" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
       <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.39834514" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
@@ -325,9 +382,9 @@
     <option name="myLimit" value="2678400000" />
   </component>
   <component name="VcsManagerConfiguration">
-    <option name="OFFER_MOVE_TO_ANOTHER_CHANGELIST_ON_PARTIAL_COMMIT" value="true" />
-    <option name="CHECK_CODE_SMELLS_BEFORE_PROJECT_COMMIT" value="true" />
-    <option name="CHECK_NEW_TODO" value="true" />
+    <option name="OFFER_MOVE_TO_ANOTHER_CHANGELIST_ON_PARTIAL_COMMIT" value="false" />
+    <option name="CHECK_CODE_SMELLS_BEFORE_PROJECT_COMMIT" value="false" />
+    <option name="CHECK_NEW_TODO" value="false" />
     <option name="myTodoPanelSettings">
       <value>
         <are-packages-shown value="false" />
@@ -356,7 +413,7 @@
     <option name="SHOW_VCS_ERROR_NOTIFICATIONS" value="true" />
     <option name="FORCE_NON_EMPTY_COMMENT" value="false" />
     <option name="CLEAR_INITIAL_COMMIT_MESSAGE" value="false" />
-    <option name="LAST_COMMIT_MESSAGE" />
+    <option name="LAST_COMMIT_MESSAGE" value="animation-delay работа в прогрессе" />
     <option name="MAKE_NEW_CHANGELIST_ACTIVE" value="false" />
     <option name="OPTIMIZE_IMPORTS_BEFORE_PROJECT_COMMIT" value="false" />
     <option name="CHECK_FILES_UP_TO_DATE_BEFORE_COMMIT" value="false" />
@@ -369,6 +426,8 @@
     <option name="UPDATE_GROUP_BY_CHANGELIST" value="false" />
     <option name="SHOW_FILE_HISTORY_AS_TREE" value="false" />
     <option name="FILE_HISTORY_SPLITTER_PROPORTION" value="0.6" />
+    <MESSAGE value="Добавил комментов перед резрезанием супер-метода" />
+    <MESSAGE value="animation-delay работа в прогрессе" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -402,46 +461,70 @@
     </PATH>
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/grunt.js">
+    <entry file="file://$PROJECT_DIR$/examples/index.htm">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="18" column="0" selection-start="560" selection-end="560" vertical-scroll-proportion="0.0" />
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/constants.js">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="93" column="67" selection-start="2678" selection-end="2678" vertical-scroll-proportion="0.0">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/begin.js">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="4" column="35" selection-start="77" selection-end="77" vertical-scroll-proportion="0.0">
+        <state line="76" column="24" selection-start="1989" selection-end="1989" vertical-scroll-proportion="-1.25">
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/src/utils.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="1268" column="0" selection-start="35587" selection-end="35587" vertical-scroll-proportion="0.0">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/examples/index.htm">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="79" column="31" selection-start="2128" selection-end="2128" vertical-scroll-proportion="0.0">
+        <state line="626" column="0" selection-start="16392" selection-end="16392" vertical-scroll-proportion="0.0">
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/src/keyframe_animation.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="391" column="13" selection-start="11917" selection-end="11917" vertical-scroll-proportion="0.40586796">
+        <state line="386" column="5" selection-start="11154" selection-end="11154" vertical-scroll-proportion="0.0">
           <folding>
+            <marker date="1357825839680" expanded="true" signature="351:369" placeholder="//..." />
             <element signature="n#!!block;n#KeyframeAnimation#0" expanded="true" />
-            <element signature="e#1297#1340#0" expanded="true" />
+            <element signature="e#765#815#0" expanded="true" />
+            <element signature="e#1298#1341#0" expanded="true" />
+            <marker date="1357825839680" expanded="false" signature="3714:3809" placeholder="/** Время отложенного запуска (временная строка) ...*/" />
+            <marker date="1357825839680" expanded="false" signature="4566:5036" placeholder="/** Установка смягчения анимации при прогрессе (в долях) ...*/" />
+            <marker date="1357825839680" expanded="false" signature="5652:6072" placeholder="/** Установка направления анимации ...*/" />
+            <element signature="e#6756#6780#0" expanded="true" />
+            <element signature="e#6821#6862#0" expanded="true" />
+            <element signature="e#6918#6944#0" expanded="true" />
+            <element signature="e#6995#7063#0" expanded="true" />
+            <element signature="e#7087#7196#0" expanded="true" />
+            <element signature="e#7211#7242#0" expanded="true" />
+            <element signature="e#7774#7832#0" expanded="true" />
+            <marker date="1357825839680" expanded="true" signature="8830:8885" placeholder="{...}" />
+            <marker date="1357825839680" expanded="true" signature="9098:9236" placeholder="/** Остановка или пауза анимации ...*/" />
+            <marker date="1357825839680" expanded="false" signature="9451:9454" placeholder="{...}" />
+            <element signature="e#10988#15719#0" expanded="true" />
+            <marker date="1357825839680" expanded="true" signature="13482:14021" placeholder="{...}" />
+            <marker date="1357825839680" expanded="true" signature="13835:14010" placeholder="{...}" />
+            <marker date="1357825839680" expanded="true" signature="13849:13996" placeholder="{...}" />
+            <marker date="1357825839680" expanded="true" signature="16583:17065" placeholder="/** Отрисует высчитанные значения свойств ...*/" />
+            <marker date="1357825839680" expanded="true" signature="17135:17236" placeholder="{...}" />
+            <marker date="1357825839680" expanded="true" signature="18136:18181" placeholder="/*...*/" />
           </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/constants.js">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="92" column="7" selection-start="2610" selection-end="2610" vertical-scroll-proportion="0.0">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/end.js">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="1" column="27" selection-start="28" selection-end="28" vertical-scroll-proportion="0.03797468">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/begin.js">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="4" column="35" selection-start="77" selection-end="77" vertical-scroll-proportion="0.03797468">
+          <folding />
         </state>
       </provider>
     </entry>
