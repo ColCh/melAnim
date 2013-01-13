@@ -21,17 +21,18 @@
      * @constructor
      */
     function KeyframeAnimation() {
+        this.targets = [];
         this.name = generateId();
         /** @type KeyframeAnimation.prototype.keyframes */
         this.keyframes = [];
         this.specialEasing = {};
         this.iterations = 1;
         this.rule = addRule("." + this.name, "");
-        this.intrinsic = {};
+        this.animatedProperties = {};
         // начальный и конечный ключевые кадры
         // их свойства наследуют вычисленные
-        this.addKeyframe(0, createObject(this.intrinsic));
-        this.addKeyframe(1, createObject(this.intrinsic));
+        this.addKeyframe(0, createObject(this.animatedProperties));
+        this.addKeyframe(1, createObject(this.animatedProperties));
         this.timer = new ReflowLooper(this.tick, this);
     }
 
@@ -45,11 +46,11 @@
         name:undefined,
 
         /**
-         * Анимируемый элемент
+         * Анимируемые элементы
          * @private
-         * @type {Element}
+         * @type {Array.<Element>}
          */
-        target:undefined,
+        targets:undefined,
 
         /**
          * CSS-правило, в котором анимация будет отрисовываться
@@ -71,7 +72,7 @@
          * @type {Object}
          * @private
          */
-        intrinsic:undefined,
+        animatedProperties:undefined,
 
         /**
          * Число проходов (по умол. 1)
@@ -156,8 +157,10 @@
          * @param {Element} elem Элемент
          */
         element:function (elem) {
-            addClass(elem, this.name);
-            this.target = elem;
+            if (type.element(elem)) {
+                addClass(elem, this.name);
+                this.targets.push(elem);
+            }
         },
 
         /**
@@ -305,10 +308,6 @@
 
             setTimeout(bind(this.timer.start, this.timer), delay);
 
-            for (prop in this.intrinsic) {
-                this.intrinsic[prop] = normalize(this.target, prop);
-            }
-
             if ((fillsBackwards && delay > 0) || delay <= 0) {
                 this.render(this.fetch(0));
             }
@@ -365,9 +364,7 @@
             if (!type.number(position)) return;
 
             keyframe = this.lookupKeyframe(position) || this.addKeyframe(position);
-
-            this.intrinsic[name] = css(this.target, name);
-
+            this.animatedProperties[name] = undefined;
             keyframe.properties[name] = value;
         },
 
@@ -385,13 +382,12 @@
             var leftBracketIndex;
             var rightBracketIndex;
             var points;
-            var i;
-            var keyframes, fetchedProperties, firstKeyframe, secondKeyframe, from, to, propertyName;
+            var i, j;
+            var keyframes, globalFetch, fetchedProperties, firstKeyframe, secondKeyframe, from, to, propertyName;
             var element;
             var fractionalTime, offset, scale;
             var easing, timingFunction, index;
 
-            element = this.target;
             keyframes = this.keyframes;
 
             /*
@@ -435,103 +431,113 @@
                     points = points.split(",");
                 }
 
-                if (points.length === 4) {
-                    timingFunction = function (fractionalTime) {
-                        return cubicBezier(points[0], points[1], points[2], points[3], fractionalTime);
-                    };
-                } else if (points.length === 2) {
-                    stepsAmount = parseInt(points[0], 10);
-                    countFromStart = trim(points[1]) === "start";
-                    timingFunction = function (fractionalTime) {
-                        return steps(stepsAmount, countFromStart, fractionalTime);
-                    };
+                if (!timingFunction) {
+                    if (points.length === 4) {
+                        timingFunction = function (fractionalTime) {
+                            return cubicBezier(points[0], points[1], points[2], points[3], fractionalTime);
+                        };
+                    } else if (points.length === 2) {
+                        stepsAmount = parseInt(points[0], 10);
+                        countFromStart = trim(points[1]) === "start";
+                        timingFunction = function (fractionalTime) {
+                            return steps(stepsAmount, countFromStart, fractionalTime);
+                        };
+                    }
                 }
             }
 
             timingFunction = type.func(timingFunction) ? timingFunction : cubicBezierApproximations[ DEFAULT_EASING ];
 
-            fetchedProperties = {};
+            /**
+             *  информация о вычисленных значениях
+             *  для каждого элемента
+             *  */
+            globalFetch = [];
 
-            // в intrinsic находятся начальные значения всех анимируемых свойств
-            for (propertyName in this.intrinsic) {
+            for (j = 0; j < this.targets.length; j++) {
 
-                /*
-                 * Поиск двух ближайших ключевых кадров
-                 * для которых задано значение свойства
-                 */
-                firstKeyframe = keyframes[0];
-                secondKeyframe = keyframes[keyframes.length - 1];
+                element = this.targets[j];
+                fetchedProperties = {};
+                globalFetch.push(fetchedProperties);
 
-                //TODO было бы неплохо заменить линейный поиск на бинарный
-                for (i = 1; i < keyframes.length - 1; i++) {
-                    if (propertyName in keyframes[i].properties) {
-                        if (fractionalTime <= keyframes[i].key) {
-                            secondKeyframe = keyframes[i];
-                            break;
+                for (propertyName in this.animatedProperties) {
+
+                    /*
+                     * Поиск двух ближайших ключевых кадров
+                     * для которых задано значение свойства
+                     */
+                    firstKeyframe = keyframes[0];
+                    secondKeyframe = keyframes[keyframes.length - 1];
+
+                    //TODO было бы неплохо заменить линейный поиск на бинарный
+                    for (i = 1; i < keyframes.length - 1; i++) {
+                        if (propertyName in keyframes[i].properties) {
+                            if (fractionalTime <= keyframes[i].key) {
+                                secondKeyframe = keyframes[i];
+                                break;
+                            }
+                            firstKeyframe = keyframes[i];
                         }
-                        firstKeyframe = keyframes[i];
                     }
+
+                    // смещение первого ключевого кадра относительно начала анимации
+                    offset = firstKeyframe.key;
+                    // масштаб для сплющивания прогресса
+                    scale = 1.0 / (secondKeyframe.key - firstKeyframe.key);
+
+                    easing = timingFunction((fractionalTime - offset) * scale);
+
+                    from = normalize(element, propertyName, firstKeyframe.properties[propertyName]);
+                    to = normalize(element, propertyName, secondKeyframe.properties[propertyName]);
+
+                    fetchedProperties[propertyName] = blend(propertyName, from, to, easing);
+
+                    console.assert(type.number(fetchedProperties[propertyName]), "fetched prop must be a number");
                 }
-
-                // смещение первого ключевого кадра относительно начала анимации
-                offset = firstKeyframe.key;
-                // масштаб для сплющивания прогресса
-                scale = 1.0 / (secondKeyframe.key - firstKeyframe.key);
-
-                easing = timingFunction((fractionalTime - offset) * scale);
-
-                from = normalize(element, propertyName, firstKeyframe.properties[propertyName]);
-                to = normalize(element, propertyName, secondKeyframe.properties[propertyName]);
-
-                fetchedProperties[propertyName] = blend(propertyName, from, to, easing);
             }
 
-            return fetchedProperties;
+            return globalFetch;
         },
 
         /**
          * Отрисует высчитанные значения свойств
-         * @param {Object} fetchedProperties
+         * @param {Object} fetchedInfo
          * @param {boolean=} direct отрисовывать ли напрямую в стили элементов
          * @private
          */
-        render:function (fetchedProperties, direct) {
-            var buffer, property, name, value, element;
+        render:function (fetchedInfo, direct) {
 
+            var buffer, property, propertyName, propertyValue, element;
+            var i, fetchedProperties;
             var index, NOT_FOUND, colonIndex, semiIndex;
 
             NOT_FOUND = -1;
 
-            element = this.target;
+            for (i = 0; i < this.targets.length; i++) {
 
-            if (direct) {
+                element = this.targets[i];
+                fetchedProperties = fetchedInfo[i];
                 buffer = element.style.cssText + ';';
-            } else {
-                buffer = this.rule.style.cssText + ';';
-            }
 
-            for (property in fetchedProperties) {
+                for (property in fetchedProperties) {
 
-                name = getVendorPropName.cache[property] || getVendorPropName(property);
-                value = normalize(element, property, fetchedProperties[property], true);
+                    propertyName = getVendorPropName.cache[property] || getVendorPropName(property);
+                    propertyValue = normalize(element, property, fetchedProperties[property], true);
 
-                index = buffer.indexOf(name, 0);
-                index = index === NOT_FOUND ? buffer.indexOf(property, 0) : index;
+                    index = buffer.indexOf(propertyName, 0);
+                    index = index === NOT_FOUND ? buffer.indexOf(property, 0) : index;
 
-                if (index === NOT_FOUND) {
-                    buffer += name + ":" + value + ";";
-                } else {
-                    colonIndex = buffer.indexOf(":", index);
-                    semiIndex = buffer.indexOf(";", colonIndex);
-                    buffer = buffer.slice(0, colonIndex + 1) + value + buffer.slice(semiIndex);
+                    if (index === NOT_FOUND) {
+                        buffer += propertyName + ":" + propertyValue + ";";
+                    } else {
+                        colonIndex = buffer.indexOf(":", index);
+                        semiIndex = buffer.indexOf(";", colonIndex);
+                        buffer = buffer.slice(0, colonIndex + 1) + propertyValue + buffer.slice(semiIndex);
+                    }
+
+                    // TODO Rules vs style проверка производительности
+                    element.style.cssText = buffer;
                 }
-            }
-
-            //TODO Rules vs style проверка производительности
-            if (direct) {
-                element.style.cssText = buffer;
-            } else {
-                this.rule.style.cssText = buffer;
             }
         },
 
