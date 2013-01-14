@@ -5,7 +5,7 @@ BUILD=/home/melky/workspace/BuildJS/nodejs/build.js
 EXTERNS=externs.js
 COMPILER_PATH=/home/melky/workspace/compiler-latest/compiler.jar
 
-COMPILER_FLAGS=--summary_detail_level 3 --language_in ECMASCRIPT5_STRICT --warning_level VERBOSE --js $(TARGET) --externs $(EXTERNS) --js_output_file $(MIN)
+COMPILER_FLAGS=--formatting PRETTY_PRINT --summary_detail_level 3 --language_in ECMASCRIPT5_STRICT --warning_level VERBOSE --js $(TARGET) --externs $(EXTERNS) --js_output_file $(MIN)
 
 DATE = $(shell /bin/date '+%d.%m.%Y %H:%M:%S')
 TAG = $(shell /usr/bin/git describe --tags --abbrev=0)
