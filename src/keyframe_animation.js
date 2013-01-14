@@ -8,6 +8,9 @@
     var DEFAULT_HANDLER = noop;
     var DEFAULT_PLAYINGSTATE = "paused";
 
+    var DATA_ATTR_NAME = mel + "-data-id";
+    var SPECIAL_VALUE = null;
+
     // TODO animation-fill-mode
     // TODO multiply elements
     // TODO REFACTORING
@@ -22,6 +25,7 @@
      */
     function KeyframeAnimation() {
         this.targets = [];
+        this.cache = {};
         this.name = generateId();
         /** @type KeyframeAnimation.prototype.keyframes */
         this.keyframes = [];
@@ -35,6 +39,14 @@
         this.addKeyframe(1, createObject(this.animatedProperties));
         this.timer = new ReflowLooper(this.tick, this);
     }
+
+    /**
+     * Объект с временными данными, вроде кешей
+     * или же запомненных индивидуальных значений свойств.
+     * @type {Object}
+     * @private
+     */
+    KeyframeAnimation.prototype.cache = undefined;
 
     /**
      * Имя анимации
@@ -155,9 +167,16 @@
      * @param {Element} elem Элемент
      */
     KeyframeAnimation.prototype.element = function (elem) {
+        var id;
         if (type.element(elem)) {
             addClass(elem, this.name);
+            id = generateId()
+            elem.setAttribute(DATA_ATTR_NAME, id);
+            this.cache[id] = {};
             this.targets.push(elem);
+        } else {
+            elem = slice(elem);
+            each(elem, this.element, this);
         }
     };
 
@@ -289,6 +308,7 @@
     KeyframeAnimation.prototype.start = function (keepOn) {
 
         var prop, delay, numericDefaultDelay, fillsBackwards, fillMode;
+        var i;
 
         numericDefaultDelay = parseTimeString(DEFAULT_DELAY);
 
@@ -305,6 +325,15 @@
         delay = type.number(delay) ? delay : numericDefaultDelay;
 
         setTimeout(bind(this.timer.start, this.timer), delay);
+
+        // запоминаем текущие значения анимируемых свойств для каждого элемента
+        each(this.targets, function (element) {
+            var id = element.getAttribute(DATA_ATTR_NAME);
+            var elementData = this.cache[id];
+            each(this.animatedProperties, function (special_value, propertyName) {
+                elementData[propertyName] = normalize(element, propertyName);
+            }, this);
+        }, this);
 
         if ((fillsBackwards && delay > 0) || delay <= 0) {
             this.render(this.fetch(0));
@@ -362,7 +391,7 @@
         if (!type.number(position)) return;
 
         keyframe = this.lookupKeyframe(position) || this.addKeyframe(position);
-        this.animatedProperties[name] = undefined;
+        this.animatedProperties[name] = SPECIAL_VALUE;
         keyframe.properties[name] = value;
     };
 
@@ -374,6 +403,8 @@
      */
     KeyframeAnimation.prototype.fetch = function (fractionalTime) {
 
+        var elementData;
+        var id;
         var camelCased;
         var countFromStart;
         var stepsAmount;
@@ -485,12 +516,24 @@
 
                 easing = timingFunction((fractionalTime - offset) * scale);
 
-                from = normalize(element, propertyName, firstKeyframe.properties[propertyName]);
-                to = normalize(element, propertyName, secondKeyframe.properties[propertyName]);
+                from = firstKeyframe.properties[propertyName];
+                to = secondKeyframe.properties[propertyName];
+
+                id = element.getAttribute(DATA_ATTR_NAME);
+                elementData = this.cache[id];
+
+                if (from === SPECIAL_VALUE) {
+                    from = elementData[propertyName];
+                }
+                if (to === SPECIAL_VALUE) {
+                    to = elementData[propertyName];
+                }
+
+                from = normalize(element, propertyName, from);
+                to = normalize(element, propertyName, to);
 
                 fetchedProperties[propertyName] = blend(propertyName, from, to, easing);
 
-                console.assert(type.number(fetchedProperties[propertyName]), "fetched prop must be a number");
             }
         }
 
@@ -532,10 +575,10 @@
                     semiIndex = buffer.indexOf(";", colonIndex);
                     buffer = buffer.slice(0, colonIndex + 1) + propertyValue + buffer.slice(semiIndex);
                 }
-
-                // TODO Rules vs style проверка производительности
-                element.style.cssText = buffer;
             }
+
+            // TODO Rules vs style проверка производительности
+            element.style.cssText = buffer;
         }
     };
 
@@ -609,17 +652,17 @@
          */
         if (progr > iterations) {
             this.stop();
+        } else {
+            // аналогично операции NUM % 2, т.е. является ли число нечётным
+            iterationIsOdd = currentIteration & 1;
+
+            if (needsReverse(this.animationDirection, currentIteration)) {
+                fractionalTime = MAX_PROGR - fractionalTime;
+            }
+
+            fetchedProperties = this.fetch(fractionalTime);
+            this.render(fetchedProperties);
         }
-
-        // аналогично операции NUM % 2, т.е. является ли число нечётным
-        iterationIsOdd = currentIteration & 1;
-
-        if (needsReverse(this.animationDirection, currentIteration)) {
-            fractionalTime = MAX_PROGR - fractionalTime;
-        }
-
-        fetchedProperties = this.fetch(fractionalTime);
-        this.render(fetchedProperties);
     };
 
     window["KeyframeAnimation"] = KeyframeAnimation;
