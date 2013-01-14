@@ -1,6 +1,6 @@
     /**
      * Объект, содержащий алиасы
-     * @enum {object}
+     * @enum {Object}
      */
     var aliases = {};
 
@@ -15,13 +15,13 @@
 
     /**
      * Алиасы для временных функций
-     * @enum {object}
+     * @enum {Object}
      */
     var easingAliases =  aliases["easing"] = {};
 
     /**
      * Временные функции для CSS3 анимаций
-     * @enum {array}
+     * @enum {Array}
      */
     var cubicBezierAliases = aliases["cubicBezier"] = {
 
@@ -35,8 +35,9 @@
         "stepEnd": [1, false],
 
         // дополненные
-        "swing": [0.02, 0.01, 0.47, 1],
+        "swing": [0.02, 0.01, 0.47, 1]//,
 
+        /*
         // взято с
         // github.com/matthewlein/Ceaser
         "easeInCubic":[0.55, .055, .675, .19],
@@ -81,24 +82,25 @@
         // TODO
         //"easeInBounce": [],
         //"easeOutBounce": [],
-        //"easeInOutBounce": []
+        //"easeInOutBounce": []*/
     };
 
     /**
      * Плиближения для кубических кривых
-     * @enum {function}
+     * @enum {Function}
      */
     var cubicBezierApproximations = cubicBezierAliases["approximations"] = {
 
-        linear: function (x) { return x; },
+       "linear": function (x) { return x; },
 
         // взято с jQuery
-        swing: function (p) {
+        "swing": function (p) {
             return 0.5 - Math.cos( p * Math.PI ) / 2;
-        },
+        }/*,
 
         // взято с
         // Query plugin from GSGD
+        /*
         easeInCubic: function (x, t, b, c, d) {
             return c*(t/=d)*t*t + b;
         },
