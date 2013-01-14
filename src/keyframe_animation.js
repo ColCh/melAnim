@@ -160,13 +160,13 @@
      * @type {string}
      * @private
      */
-    KeyframeAnimation.prototype.fillingMode = undefined;
+    KeyframeAnimation.prototype["fillingMode"] = undefined;
 
     /**
      * Установит анимируемый элемент
      * @param {Element} elem Элемент
      */
-    KeyframeAnimation.prototype.element = function (elem) {
+    KeyframeAnimation.prototype["element"] = function (elem) {
         var id;
         if (type.element(elem)) {
             addClass(elem, this.name);
@@ -184,7 +184,7 @@
      * Установка продолжительности анимации
      * @param duration
      */
-    KeyframeAnimation.prototype.duration = function (duration) {
+    KeyframeAnimation.prototype["duration"] = function (duration) {
         this.animationTime = duration;
     };
 
@@ -193,7 +193,7 @@
      * завершения анимации
      * @param {Function} callback
      */
-    KeyframeAnimation.prototype.onComplete = function (callback) {
+    KeyframeAnimation.prototype["onComplete"] = function (callback) {
         this.oncomplete = callback;
     };
 
@@ -206,7 +206,7 @@
      * @param {string=} property для какого свойства устанавливается (по умол. для всех)
      * @see cubicBezierApproximations
      */
-    KeyframeAnimation.prototype.easing = function (easing, position, property) {
+    KeyframeAnimation.prototype["easing"] = function (easing, position, property) {
         var keyframe;
 
         if (type.string(property)) {
@@ -229,20 +229,20 @@
      * Допустимые значения см. в документации к CSS3 анимациям
      * @param {string} animationDirection
      */
-    KeyframeAnimation.prototype.direction = function (animationDirection) {
+    KeyframeAnimation.prototype["direction"] = function (animationDirection) {
         this.animationDirection = animationDirection;
     };
 
-    KeyframeAnimation.prototype.delay = function (delay) {
+    KeyframeAnimation.prototype["delay"] = function (delay) {
         delay = parseTimeString(delay);
         this.delayTime = delay;
     };
 
-    KeyframeAnimation.prototype.fillMode = function (fillMode) {
+    KeyframeAnimation.prototype["fillMode"] = function (fillMode) {
         this.fillingMode = fillMode;
     };
 
-    KeyframeAnimation.prototype.iterationCount = function (iterations) {
+    KeyframeAnimation.prototype["iterationCount"] = function (iterations) {
         this.iterations = iterations;
     };
 
@@ -305,7 +305,7 @@
      * Старт анимации или её продолжение после паузы
      * @param {boolean=} keepOn Продолжить ли предыдущие значения (установка в FALSY запускает заново)
      */
-    KeyframeAnimation.prototype.start = function (keepOn) {
+    KeyframeAnimation.prototype["start"] = function (keepOn) {
 
         var prop, delay, numericDefaultDelay, fillsBackwards, fillMode;
         var i;
@@ -343,7 +343,7 @@
     /**
      * Остановка анимации
      */
-    KeyframeAnimation.prototype.stop = function () {
+    KeyframeAnimation.prototype["stop"] = function () {
 
         var fillsForwards, fillMode;
 
@@ -369,7 +369,7 @@
      * @param {(string|number)=} position позиция, в долях. (по умол. 1)
      * @see KeyframeAnimation.easing
      */
-    KeyframeAnimation.prototype.propAt = function (name, value, position) {
+    KeyframeAnimation.prototype["propAt"] = function (name, value, position) {
 
         /**
          * Ключевой кадр, имеющий свои свойства и своё смягчение
