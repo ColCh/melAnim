@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8"/>
     <title> melAnim.js test </title>
-    <script type="text/javascript" src="../dist/mel-anim.compiled.js"></script>
     <style>
         @-webkit-keyframes tst {
 
@@ -21,7 +20,7 @@
         }
 
         .css {
-            -webkit-animation-name: tst;
+            -webkit-animation-name: tst-;
             -webkit-animation-duration: 3s;
             -webkit-animation-iteration-count: 1.5;
             -webkit-animation-timing-function: ease-in; /*cubic-bezier(1.000, 0.005, 1.000, 0)*/;
@@ -49,41 +48,55 @@
 <body>
 <div style="top: 10%;" class="anim css">Anim me ONE!</div>
 <div style="top: 20%;" class="anim js">Anim me TWO!</div>
+
+<script>
+    var PROFILE_START = 0;
+    var PROFILE_CONSTRUCTOR = 0;
+    var PROFILE_SETUP = 0;
+    var PROFILE_PROCESS = 0;
+
+    if (PROFILE_START) console.profile("startup");
+</script>
+<script type="text/javascript" src="../dist/mel-anim.min.js"></script>
 <script type="text/javascript">
+
+    if (PROFILE_START) console.profileEnd("startup");
+
+    if (PROFILE_CONSTRUCTOR) console.profile("constructor");
     var anim = new KeyframeAnimation();
+    if (PROFILE_CONSTRUCTOR) console.profileEnd("constructor");
 
-    anim.element(/** @type {Element} */document.querySelector(".js"));
-
-    //anim.propAt("width", "100px", "50%");
-    //anim.propAt("width", "300px", "90%");
+    if (PROFILE_SETUP) console.profile("setup");
+    anim.element(document.querySelectorAll(".anim"));
+    anim.propAt("width", "100px", "50%");
+    anim.propAt("width", "300px", "90%");
     anim.propAt("width", "550px", "100%");
 
-    //anim.propAt("height", "100px", "30%");
-    //anim.propAt("height", "550px", "100%");
+    anim.propAt("height", "100px", "30%");
+    anim.propAt("height", "250px", "100%");
 
-    anim.easing("ease-in");
+    anim.easing("linear");
     anim.easing("ease-out", "30%");
 
     anim.direction("alternate");
 
     anim.duration("3s");
 
-    anim.iterationCount("1.5");
+    anim.iterationCount("2.5");
 
     anim.delay("0s");
 
     anim.fillMode("both")
 
-    var PROFILE = false;
-
     anim.onComplete(function () {
         document.body.style.backgroundColor = 'green';
-        PROFILE && console.profileEnd();
+        if (PROFILE_PROCESS) console.profileEnd("animation process");
     });
 
-    PROFILE && console.profile();
-    anim.start();
+    if (PROFILE_SETUP) console.profileEnd("setup");
 
+    if (PROFILE_PROCESS) console.profile("animation process");
+    anim.start();
     /*
      var myAnimation = Animation(document.querySelectorAll('.js'), {
      "from": {
