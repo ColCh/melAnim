@@ -489,21 +489,23 @@
      * Итерирование прервётся, если callback вернёт false.
      * @param {Array|Object} arg
      * @param {function} callback
+     * @param {Object=} context контекст исполнения callback'а
      */
-    function each(arg, callback) {
+    function each(arg, callback, context) {
         var i, b;
+        context = context || window;
         if (type.array(arg)) {
             i = 0;
             b = arg.length;
-            while (i < b) {
-                if (callback(arg[i], i, arg) === false) {
+            while (i < b) if (i in arg) {
+                if (callback.call(context, arg[i], i, arg) === false) {
                     break;
                 }
                 i += 1;
             }
         } else {
             for (i in arg) if (arg.hasOwnProperty(i)) {
-                if (callback(arg[i], i, arg) === false) {
+                if (callback.call(context, arg[i], i, arg) === false) {
                     break;
                 }
             }
