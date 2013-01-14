@@ -218,6 +218,7 @@
                 position = normalizeKey(position);
             }
             if (type.number(position)) {
+                position /= 100;
                 keyframe = this.lookupKeyframe(position) || this.addKeyframe(position);
                 keyframe.easing = easing;
             }
@@ -665,4 +666,5 @@
         }
     };
 
+    /** @export */
     window["KeyframeAnimation"] = KeyframeAnimation;
