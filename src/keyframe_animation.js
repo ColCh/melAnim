@@ -180,7 +180,7 @@
      * Добавит элемент(-ы) в коллекцию анимируемых.
      * @param {Element} elem Элемент
      */
-    KeyframeAnimation.prototype["element"] = function (elem) {
+    KeyframeAnimation.prototype.element = function (elem) {
         var id;
         if (type.element(elem)) {
             addClass(elem, this.name);
@@ -202,15 +202,18 @@
      * и режим заполнения (fillMode) работает так же, как и при положительной продолжительности прохода
      * @param {string} duration
      */
-    KeyframeAnimation.prototype["duration"] = function (duration) {
-        this.animationTime = duration;
+    KeyframeAnimation.prototype.duration = function (duration) {
+        duration = parseTimeString(duration);
+        if (type.number(duration)) {
+            this.animationTime = duration;
+        }
     };
 
     /**
      * Установка обработчика завершения анимации
      * @param {Function} callback
      */
-    KeyframeAnimation.prototype["onComplete"] = function (callback) {
+    KeyframeAnimation.prototype.onComplete = function (callback) {
         this.oncomplete = callback;
     };
 
@@ -230,7 +233,7 @@
      * @see cubicBezierAliases
      * @see cubicBezierApproximations
      */
-    KeyframeAnimation.prototype["easing"] = function (timingFunction, position, property) {
+    KeyframeAnimation.prototype.easing = function (timingFunction, position, property) {
         var keyframe;
         var leftBracketIndex, rightBracketIndex, points, camelCased;
         var countFromStart, stepsAmount;
@@ -302,7 +305,7 @@
      * @see DEFAULT_DIRECTION
      * @param {string} animationDirection
      */
-    KeyframeAnimation.prototype["direction"] = function (animationDirection) {
+    KeyframeAnimation.prototype.direction = function (animationDirection) {
         this.animationDirection = animationDirection;
     };
 
@@ -312,9 +315,11 @@
      * Если отрицательное, то будет считаться, что прошло уже столько времени со старта.
      * @param {string} delay
      */
-    KeyframeAnimation.prototype["delay"] = function (delay) {
+    KeyframeAnimation.prototype.delay = function (delay) {
         delay = parseTimeString(delay);
-        this.delayTime = delay;
+        if (type.number(delay)) {
+            this.delayTime = delay;
+        }
     };
 
     /**
@@ -328,7 +333,7 @@
      * @param {string} fillMode
      * @see DEFAULT_FILLMODE
      */
-    KeyframeAnimation.prototype["fillMode"] = function (fillMode) {
+    KeyframeAnimation.prototype.fillMode = function (fillMode) {
         this.fillingMode = fillMode;
     };
 
@@ -340,7 +345,7 @@
      * @param {string} iterations
      * @see DEFAULT_ITERATIONCOUNT
      */
-    KeyframeAnimation.prototype["iterationCount"] = function (iterations) {
+    KeyframeAnimation.prototype.iterationCount = function (iterations) {
 
         // исключение составляет специальное значение
         if (iterations === ITERATIONCOUNT_INFINITE) {
@@ -412,7 +417,7 @@
     /**
      * Старт анимации
      */
-    KeyframeAnimation.prototype["start"] = function () {
+    KeyframeAnimation.prototype.start = function () {
 
         var prop, delay, numericDefaultDelay, fillsBackwards, fillMode;
         var i;
@@ -447,7 +452,7 @@
     /**
      * Остановка анимации
      */
-    KeyframeAnimation.prototype["stop"] = function () {
+    KeyframeAnimation.prototype.stop = function () {
 
         var fillsForwards, fillMode;
 
@@ -473,7 +478,7 @@
      * @param {string=} position строка прогресса в процентах (по умол. 100%)
      * @see KeyframeAnimation.easing
      */
-    KeyframeAnimation.prototype["propAt"] = function (name, value, position) {
+    KeyframeAnimation.prototype.propAt = function (name, value, position) {
 
         /**
          * Ключевой кадр, имеющий свои свойства и своё смягчение
@@ -654,32 +659,19 @@
      */
     KeyframeAnimation.prototype.tick = function (timeStamp) {
 
-        var duration, elapsedTime, progr, fractionalTime;
-        var iterations, integralIterations, currentIteration, iterationIsOdd, MAX_PROGR;
+        var elapsedTime, progr, fractionalTime;
+        var iterations, integralIterations, currentIteration, iterationIsOdd;
         var fetchedProperties;
-        var delay, numericDefaultDelay;
-
-        MAX_PROGR = 1;
-        numericDefaultDelay = parseTimeString(DEFAULT_DELAY);
 
         /*
          * Вычисление прогресса по итерации
          * */
         elapsedTime = timeStamp - this.started;
-
-
-        delay = parseTimeString(this.delayTime);
-        delay = type.number(delay) ? delay : numericDefaultDelay;
-
-        elapsedTime += -1 * delay;
-
+        elapsedTime += -1 * this.delayTime;
         if (elapsedTime < 0) elapsedTime = 0;
 
-        duration = parseTimeString(this.animationTime);
-        duration = type.number(duration) ? duration : parseTimeString(DEFAULT_DURATION);
-
         // прогресс относительно первой итерации
-        progr = elapsedTime / duration;
+        progr = elapsedTime / this.animationTime;
 
         currentIteration = Math.floor(progr);
 
@@ -689,13 +681,13 @@
         // прогресс относительно текущего прохода
         fractionalTime = progr - Math.min(currentIteration, integralIterations);
 
-        if (fractionalTime > MAX_PROGR) fractionalTime = MAX_PROGR;
+        if (fractionalTime > 1) fractionalTime = 1;
 
         /*
          * Условие завершения итерации
          */
-        if (fractionalTime === MAX_PROGR && currentIteration < iterations) {
-            type.func(this.oniteration) && this.oniteration();
+        if (fractionalTime === 1 && currentIteration < iterations) {
+            this.oniteration();
         }
 
         /*
@@ -704,11 +696,10 @@
         if (progr > iterations) {
             this.stop();
         } else {
-            // аналогично операции NUM % 2, т.е. является ли число нечётным
             iterationIsOdd = currentIteration & 1;
 
             if (needsReverse(this.animationDirection, currentIteration)) {
-                fractionalTime = MAX_PROGR - fractionalTime;
+                fractionalTime = 1 - fractionalTime;
             }
 
             fetchedProperties = this.fetch(fractionalTime);
