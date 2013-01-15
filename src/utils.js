@@ -1038,7 +1038,7 @@
 
     /**
      * Добавит указанный класс элементу
-     * @param {Element} elem
+     * @param {HTMLElement} elem
      * @param {string} value
      */
     function addClass(elem, value) {

@@ -178,19 +178,19 @@
 
     /**
      * Добавит элемент(-ы) в коллекцию анимируемых.
-     * @param {Element} elem Элемент
+     * @param {(HTMLElement|Array.<HTMLElement>)} elem Элемент
      */
     KeyframeAnimation.prototype.element = function (elem) {
-        var id;
+        var id, elements;
         if (type.element(elem)) {
             addClass(elem, this.name);
-            id = generateId()
+            id = generateId();
             elem.setAttribute(DATA_ATTR_NAME, id);
             this.cache[id] = {};
             this.targets.push(elem);
         } else {
-            elem = slice(elem);
-            each(elem, this.element, this);
+            elements = slice(elem);
+            each(elements, this.element, this);
         }
     };
 
@@ -203,9 +203,9 @@
      * @param {string} duration
      */
     KeyframeAnimation.prototype.duration = function (duration) {
-        duration = parseTimeString(duration);
-        if (type.number(duration)) {
-            this.animationTime = duration;
+        var numericDuration = parseTimeString(duration);
+        if (type.number(numericDuration)) {
+            this.animationTime = numericDuration;
         }
     };
 
