@@ -440,7 +440,7 @@
             var id = element.getAttribute(DATA_ATTR_NAME);
             var elementData = this.cache[id];
             each(this.animatedProperties, function (special_value, propertyName) {
-                elementData[propertyName] = normalize(element, propertyName);
+                elementData[propertyName] = normalize(element, propertyName, css(element, propertyName));
             }, this);
         }, this);
 
@@ -549,15 +549,12 @@
          *  информация о вычисленных значениях
          *  для каждого элемента
          *  */
-        globalFetch = [];
+        globalFetch = map(this.targets, function (element) {
 
-        for (j = 0; j < this.targets.length; j++) {
+            id = element.getAttribute(DATA_ATTR_NAME);
+            elementData = this.cache[id];
 
-            element = this.targets[j];
-            fetchedProperties = {};
-            globalFetch.push(fetchedProperties);
-
-            for (propertyName in this.animatedProperties) {
+            return map(this.animatedProperties, function (_, propertyName) {
 
                 /*
                  * Поиск двух ближайших ключевых кадров
@@ -567,43 +564,47 @@
                 secondKeyframe = keyframes[keyframes.length - 1];
 
                 //TODO было бы неплохо заменить линейный поиск на бинарный
-                for (i = 1; i < keyframes.length - 1; i++) {
-                    if (propertyName in keyframes[i].properties) {
-                        if (fractionalTime <= keyframes[i].key) {
-                            secondKeyframe = keyframes[i];
-                            break;
+                each(keyframes, function (keyframe) {
+                    // специальное значение для прекращения обхода
+                    var STOP_ITERATION = false;
+                    if (propertyName in keyframe) {
+                        if (fractionalTime <= keyframe.key) {
+                            secondKeyframe = keyframe;
+                            return STOP_ITERATION;
                         }
-                        firstKeyframe = keyframes[i];
+                        firstKeyframe = keyframe;
                     }
-                }
+                });
 
-                // смещение первого ключевого кадра относительно начала анимации
+                // для вычисления прогресса между двумя точками
                 offset = firstKeyframe.key;
-                // масштаб для сплющивания прогресса
                 scale = 1.0 / (secondKeyframe.key - firstKeyframe.key);
 
                 easing = timingFunction((fractionalTime - offset) * scale);
 
-                from = firstKeyframe.properties[propertyName];
-                to = secondKeyframe.properties[propertyName];
-
-                id = element.getAttribute(DATA_ATTR_NAME);
-                elementData = this.cache[id];
-
-                if (from === SPECIAL_VALUE) {
+                if (firstKeyframe.properties[propertyName] === SPECIAL_VALUE) {
                     from = elementData[propertyName];
+                } else {
+                    from = firstKeyframe.properties[propertyName];
                 }
-                if (to === SPECIAL_VALUE) {
+
+                if (secondKeyframe.properties[propertyName] === SPECIAL_VALUE) {
                     to = elementData[propertyName];
+                } else {
+                    to = secondKeyframe.properties[propertyName];
                 }
 
-                from = normalize(element, propertyName, from);
-                to = normalize(element, propertyName, to);
+                from = normalize(element, propertyName, from, false);
+                to = normalize(element, propertyName, to, false);
 
-                fetchedProperties[propertyName] = blend(propertyName, from, to, easing);
+                return {
+                    name: propertyName,
+                    value: blend(propertyName, from, to, easing)
+                };
 
-            }
-        }
+            }, this);
+
+        }, this);
 
         return globalFetch;
     };

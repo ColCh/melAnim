@@ -530,13 +530,15 @@
      * из возвращённых значений функции
      * @param {Array|Object} arg
      * @param {Function(?, number|string, Object|Array): ?} callback
+     * @param {Object=} ctx контекст callback'а
      * @return {Array|Object}
      */
-    function map(arg, callback) {
+    function map(arg, callback, ctx) {
         var accum = [];
+        ctx = ctx || window;
 
         each(arg, function (value, index, object) {
-            accum.push(callback(value, index, object));
+            accum.push(callback.call(ctx, value, index, object));
         });
 
         return accum;
@@ -1113,11 +1115,11 @@
     css.hooks = {};
 
     /**
-     * Преобразует строкое представление значения в численное и наоборот
-     * @param {Element} element элемент (для относительных значений)
+     * Преобразует строкое представление значения в численное или наоборот
+     * @param {HTMLElement} element элемент (для относительных значений)
      * @param {string} propertyName имя свойства
-     * @param {string=} propertyValue значение свойства
-     * @param {boolean=} toString к строке (true) или к числу (false)
+     * @param {(string|Array|number)} propertyValue значение свойства
+     * @param {boolean=} toString к строке (true) или к числовому значению (false)
      * @return {Array|number|undefined}
      */
     function normalize(element, propertyName, propertyValue, toString) {
@@ -1128,10 +1130,6 @@
         var vendorizedPropertyName;
 
         vendorizedPropertyName = getVendorPropName(propertyName);
-
-        if (type.undefined(propertyValue)) {
-            propertyValue = css(element, propertyName);
-        }
 
         if (hooks[propertyName]) {
             normalized = hooks[propertyName](element, vendorizedPropertyName, propertyValue, toString);
