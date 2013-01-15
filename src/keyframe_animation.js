@@ -201,26 +201,70 @@
      * Установка смягчения анимации при прогрессе (в долях)
      * возможно установить особое смягчение для свойства
      * При установке смягчения для свойства параметр прогресса игнорируется
-     * @param {(Function|string)} easing временная функция CSS, функция или алиас смягчения
+     * @param {(Function|string)} timingFunction временная функция CSS, функция или алиас смягчения
      * @param {number=} position прогресс в долях (по умол. для всей анимации)
      * @param {string=} property для какого свойства устанавливается (по умол. для всех)
      * @see cubicBezierApproximations
      */
-    KeyframeAnimation.prototype["easing"] = function (easing, position, property) {
+    KeyframeAnimation.prototype["easing"] = function (timingFunction, position, property) {
         var keyframe;
+        var leftBracketIndex, rightBracketIndex, points, camelCased;
+        var countFromStart, stepsAmount;
+
+        if (type.string(timingFunction)) {
+            // alias или CSS timing-function
+
+            camelCased = camelCase(trim(timingFunction));
+            if (camelCased in cubicBezierApproximations) {
+                timingFunction = cubicBezierApproximations[camelCased];
+            } else if (camelCased in cubicBezierAliases) {
+                timingFunction = cubicBezierAliases[camelCased];
+            }
+
+            if (!type.func(timingFunction)) {
+                if (type.array(timingFunction)) {
+                    points = timingFunction;
+                } else if (cubicBezierReg.test(timingFunction)) {
+                    leftBracketIndex = timingFunction.indexOf("(");
+                    rightBracketIndex = timingFunction.indexOf(")", leftBracketIndex);
+                    points = timingFunction.slice(leftBracketIndex, rightBracketIndex);
+                    points = map(points.split(","), parseFloat);
+                } else if (stepsReg.test(timingFunction)) {
+                    leftBracketIndex = timingFunction.indexOf("(");
+                    rightBracketIndex = timingFunction.indexOf(")", leftBracketIndex);
+                    points = timingFunction.slice(leftBracketIndex, rightBracketIndex);
+                    points = points.split(",");
+                }
+
+                // 4 аргумента - это кубическая кривая Безье
+                if (points.length === 4) {
+                    // TODO проверка абсцисс
+                    timingFunction = partial(cubicBezier, points);
+                } else if (points.length === 2) {
+                    // 2 аргумента - лестничная функция
+                    stepsAmount = parseInt(points[0], 10);
+                    countFromStart = points[1] === "start";
+                    timingFunction = partial(steps, [stepsAmount, countFromStart]);
+                }
+            }
+        }
+
+        if (!type.func(timingFunction)) {
+            return;
+        }
 
         if (type.string(property)) {
-            this.specialEasing[property] = easing;
+            this.specialEasing[property] = timingFunction;
         } else {
             if (type.undefined(position)) {
-                this.smoothing = easing;
+                this.smoothing = timingFunction;
             } else {
                 position = normalizeKey(position);
             }
             if (type.number(position)) {
                 position /= 100;
                 keyframe = this.lookupKeyframe(position) || this.addKeyframe(position);
-                keyframe.easing = easing;
+                keyframe.easing = timingFunction;
             }
         }
     };
@@ -406,17 +450,11 @@
 
         var elementData;
         var id;
-        var camelCased;
-        var countFromStart;
-        var stepsAmount;
-        var leftBracketIndex;
-        var rightBracketIndex;
-        var points;
         var i, j;
         var keyframes, globalFetch, fetchedProperties, firstKeyframe, secondKeyframe, from, to, propertyName;
         var element;
         var fractionalTime, offset, scale;
-        var easing, timingFunction, index;
+        var timingFunction, index, easing;
 
         keyframes = this.keyframes;
 
@@ -427,6 +465,7 @@
 
         index = binarySearch(keyframes, fractionalTime, function (fractionalTime, firstKeyframe, index, keyframes) {
             var secondKeyframe = keyframes[ index + 1];
+            // для навигации в бинарном поиске
             var MOVE_RIGHT = 1, MOVE_LEFT = -1, STOP = 0;
 
             if (!secondKeyframe) return MOVE_LEFT;
@@ -435,47 +474,7 @@
 
             return STOP;
         });
-
         timingFunction = keyframes[index].easing ? keyframes[index].easing : timingFunction;
-
-        if (type.string(timingFunction)) {
-            // alias или CSS timing-function
-
-            timingFunction = trim(timingFunction);
-            camelCased = camelCase(timingFunction);
-            easing = cubicBezierApproximations[camelCased] || cubicBezierAliases[camelCased] || easing;
-
-            if (type.func(easing)) {
-                timingFunction = easing;
-            } else if (type.array(easing)) {
-                points = easing;
-            } else if (cubicBezierReg.test(easing)) {
-                leftBracketIndex = easing.indexOf("(");
-                rightBracketIndex = easing.indexOf(")", leftBracketIndex);
-                points = easing.slice(leftBracketIndex, rightBracketIndex);
-                points = map(points.split(","), parseFloat);
-            } else if (stepsReg.test(easing)) {
-                leftBracketIndex = easing.indexOf("(");
-                rightBracketIndex = easing.indexOf(")", leftBracketIndex);
-                points = easing.slice(leftBracketIndex, rightBracketIndex);
-                points = points.split(",");
-            }
-
-            if (!timingFunction) {
-                if (points.length === 4) {
-                    timingFunction = function (fractionalTime) {
-                        return cubicBezier(points[0], points[1], points[2], points[3], fractionalTime);
-                    };
-                } else if (points.length === 2) {
-                    stepsAmount = parseInt(points[0], 10);
-                    countFromStart = trim(points[1]) === "start";
-                    timingFunction = function (fractionalTime) {
-                        return steps(stepsAmount, countFromStart, fractionalTime);
-                    };
-                }
-            }
-        }
-
         timingFunction = type.func(timingFunction) ? timingFunction : cubicBezierApproximations[ DEFAULT_EASING ];
 
         /**
