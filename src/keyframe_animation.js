@@ -619,7 +619,7 @@
     KeyframeAnimation.prototype.render = function (fetchedInfo, direct) {
 
         var buffer, property, propertyName, propertyValue, element;
-        var i, fetchedProperties;
+        var i, j, fetchedProperties;
         var index, NOT_FOUND, colonIndex, semiIndex;
 
         NOT_FOUND = -1;
@@ -630,10 +630,11 @@
             fetchedProperties = fetchedInfo[i];
             buffer = element.style.cssText + ';';
 
-            for (property in fetchedProperties) {
+            for (j = 0; j < fetchedProperties.length; j++) {
 
+                property = fetchedProperties[j].name;
                 propertyName = getVendorPropName.cache[property] || getVendorPropName(property);
-                propertyValue = normalize(element, property, fetchedProperties[property], true);
+                propertyValue = normalize(element, property, fetchedProperties[j].value, true);
 
                 index = buffer.indexOf(propertyName, 0);
                 index = index === NOT_FOUND ? buffer.indexOf(property, 0) : index;
