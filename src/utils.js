@@ -620,25 +620,19 @@
         "s":1e3
     };
 
-    function camelCase(string) {
-        return toString(string).replace(camelCase.reg, camelCase.callback);
-    }
-
     /**
-     * Применит toUpperCase ко второму аргументу.
-     * @param {string} a Не используется
-     * @param {string} letter
+     * Заменит дефисы и следующие за ним символы
+     * в верхний регистр
+     *
+     * Для перевода строк CSS-правил к DOM-стилю.
+     * @param {string} string
      * @return {string}
      */
-    camelCase.callback = function (a, letter) {
-        return letter.toUpperCase();
-    };
-
-    /**
-     * Словит дефис и запомнит следующий за ним символ
-     * @type {RegExp}
-     */
-    camelCase.reg = /-(.)/g;
+    function camelCase(string) {
+        return toString(string).replace(/-[a-z]/g, function (match) {
+            return match.charAt(1).toUpperCase();
+        });
+    }
 
     /**
      * Попытается вернуть верное имя свойства, подобрав при возможности вендорный префикс.
