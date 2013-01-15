@@ -474,8 +474,12 @@
 
             return STOP;
         });
-        timingFunction = keyframes[index].easing ? keyframes[index].easing : timingFunction;
-        timingFunction = type.func(timingFunction) ? timingFunction : cubicBezierApproximations[ DEFAULT_EASING ];
+
+        if (index in keyframes && type.func(keyframes[index].easing)) {
+            timingFunction = keyframes[index].easing;
+        } else if (!type.func(timingFunction)) {
+            timingFunction = cubicBezierApproximations[ DEFAULT_EASING ];
+        }
 
         /**
          *  информация о вычисленных значениях
