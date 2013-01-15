@@ -341,6 +341,17 @@
      * @see DEFAULT_ITERATIONCOUNT
      */
     KeyframeAnimation.prototype["iterationCount"] = function (iterations) {
+
+        // исключение составляет специальное значение
+        if (iterations === ITERATIONCOUNT_INFINITE) {
+            iterations = Number.POSITIVE_INFINITY;
+        } else {
+            iterations = parseFloat(iterations);
+            if (!isFinite(iterations) || iterations < 0) {
+                return;
+            }
+        }
+
         this.iterations = iterations;
     };
 
@@ -401,7 +412,7 @@
     /**
      * Старт анимации
      */
-    KeyframeAnimation.prototype["start"] = function (keepOn) {
+    KeyframeAnimation.prototype["start"] = function () {
 
         var prop, delay, numericDefaultDelay, fillsBackwards, fillMode;
         var i;
@@ -416,6 +427,8 @@
         delay = type.number(delay) ? delay : numericDefaultDelay;
 
         setTimeout(bind(this.timer.start, this.timer), delay);
+
+        this.started = now();
 
         // запоминаем текущие значения анимируемых свойств для каждого элемента
         each(this.targets, function (element) {
@@ -671,19 +684,6 @@
         currentIteration = Math.floor(progr);
 
         iterations = this.iterations;
-
-        // исключение составляет специальное значение
-        if (iterations === ITERATIONCOUNT_INFINITE) {
-            iterations = Number.POSITIVE_INFINITY;
-        } else {
-            iterations = parseFloat(iterations);
-            if (!isFinite(iterations) || iterations < 0) {
-                // установлено неприемлимое значение для кол-ва итераций
-                // откатываемся к значению по умолчанию
-                iterations = DEFAULT_ITERATIONCOUNT;
-            }
-        }
-
         integralIterations = Math.floor(iterations);
 
         // прогресс относительно текущего прохода
