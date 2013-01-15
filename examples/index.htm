@@ -50,14 +50,16 @@
 <div style="top: 20%;" class="anim js">Anim me TWO!</div>
 
 <script>
-    var PROFILE_START = 0;
-    var PROFILE_CONSTRUCTOR = 0;
-    var PROFILE_SETUP = 0;
-    var PROFILE_PROCESS = 0;
+    var PRROFILE_ENABLED = true;
+
+    var PROFILE_START = 1 && PRROFILE_ENABLED;
+    var PROFILE_CONSTRUCTOR = 1 && PRROFILE_ENABLED;
+    var PROFILE_SETUP = 1 && PRROFILE_ENABLED;
+    var PROFILE_PROCESS = 1 && PRROFILE_ENABLED;
 
     if (PROFILE_START) console.profile("startup");
 </script>
-<script type="text/javascript" src="../dist/mel-anim.min.js"></script>
+<script type="text/javascript" src="../dist/mel-anim.compiled.js"></script>
 <script type="text/javascript">
 
     if (PROFILE_START) console.profileEnd("startup");
