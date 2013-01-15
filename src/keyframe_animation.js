@@ -8,19 +8,24 @@
     var DEFAULT_HANDLER = noop;
     var DEFAULT_PLAYINGSTATE = "paused";
 
+    /**
+     * Имя атрибута для связывания элемента и
+     * данных, связанных с ним
+     * @type {String}
+     * @const
+     */
     var DATA_ATTR_NAME = mel + "-data-id";
+    /**
+     * Специальное значение свойства, указывающее
+     * на то, что нужно брать запомненное исходное
+     * значение свойства для элемента
+     * @type {null}
+     * @const
+     */
     var SPECIAL_VALUE = null;
 
-    // TODO animation-fill-mode
-    // TODO multiply elements
-    // TODO REFACTORING
-
     /**
-     * Конструктор анимаций с ключевыми кадрами
-     * отличается от обычной тем, что
-     * есть возможность установить значение
-     * для свойства, или определённое смягчение
-     * при указанном прогрессе анимации
+     * Конструктор анимаций с ключевыми кадрами на JavaScript.
      * @constructor
      */
     function KeyframeAnimation() {
@@ -49,50 +54,54 @@
     KeyframeAnimation.prototype.cache = undefined;
 
     /**
-     * Имя анимации
+     * Уникальная строка - имя анимации.
+     * Создаётся автоматически.
      * @type {string}
      * @private
      */
     KeyframeAnimation.prototype.name = undefined;
 
     /**
-     * Анимируемые элементы
+     * Коллекция элементов, учавствующих в анимации.
+     * Заполняется сеттером "element"
      * @private
      * @type {Array.<Element>}
      */
     KeyframeAnimation.prototype.targets = undefined;
 
     /**
-     * CSS-правило, в котором анимация будет отрисовываться
+     * CSS-правило, в котором будут отрисовываться свойства, значения которых совпадают для каждого элемента.
      * @type {CSSRule}
      */
     KeyframeAnimation.prototype.rule = undefined;
 
     /**
-     * Отсортированный массив ключевых кадров
+     * Отсортированный по возрастанию свойства "key" массив ключевых кадров.
      * @private
      * @typedef Array.{{key: number, properties: Object.<string, number>, easing: Function}}
      */
     KeyframeAnimation.prototype.keyframes = undefined;
 
     /**
-     * Значения вычисленного стиля.
-     * Родитель значений свойств
-     * для первого (0%) и последнего (100%) ключевых кадров
+     * Словарь, содержащий все анимируемые свойства.
+     * Заполняется из метода установки значений свойств по прогрессу (propAt)
+     * Нужен для первого (0%) и последнего (100%) ключевых кадров.
      * @type {Object}
      * @private
      */
     KeyframeAnimation.prototype.animatedProperties = undefined;
 
     /**
-     * Число проходов (по умол. 1)
+     * Число проходов;
+     * Значение устанавливается методов iterationCount.
      * @type {number}
      * @private
      */
     KeyframeAnimation.prototype.iterations = undefined;
 
     /**
-     * Направление анимации
+     * Направление анимации.
+     * Значение устанавливается методом direction.
      * @type {string}
      * @private
      */
@@ -101,12 +110,15 @@
     /**
      * Объект с особыми смягчениями для свойств
      * Ключ - имя свойства, Значение - функция смягчения
+     * Значения устанавливаются методом easing
      * @type {Object.<string, Function>}
      */
     KeyframeAnimation.prototype.specialEasing = undefined;
 
     /**
-     * Продолжительность анимации
+     * Продолжительность одного прохода, в миллисекундах
+     * Значение устанавливается методом.
+     * @see KeyframeAnimation.duration
      * @private
      * @type {number}
      */
@@ -134,7 +146,7 @@
     KeyframeAnimation.prototype.started = undefined;
 
     /**
-     * Смягчение анимации
+     * Смягчение всей анимации
      * @type {Function}
      * @private
      */
@@ -148,22 +160,24 @@
     KeyframeAnimation.prototype.timer = undefined;
 
     /**
-     * Время отложенного запуска (временная строка)
-     * @see parseTimeString
-     * @private
+     * Время отложенного запуска, в миллисекундах
+     * Значение устанавливается методом
+     * @see KeyframeAnimation.delay
      * @type {number}
+     * @private
      */
     KeyframeAnimation.prototype.delayTime = undefined;
 
     /**
-     * Режим заливки свойств
+     * Режим заливки свойств, устанавливается методом
+     * @see KeyframeAnimation.fillMode
      * @type {string}
      * @private
      */
-    KeyframeAnimation.prototype["fillingMode"] = undefined;
+    KeyframeAnimation.prototype.fillingMode = undefined;
 
     /**
-     * Установит анимируемый элемент
+     * Добавит элемент(-ы) в коллекцию анимируемых.
      * @param {Element} elem Элемент
      */
     KeyframeAnimation.prototype["element"] = function (elem) {
@@ -181,16 +195,19 @@
     };
 
     /**
-     * Установка продолжительности анимации
-     * @param duration
+     * Установка продолжительности прохода анимации.
+     * Отрицательные значения считаются за нулевое.
+     * Нулевое значение соответствует мгновенному проходу анимации, при этом
+     * все события (конца прохода и конца анимации) возникают так же, как и при положительной продолжительности прохода
+     * и режим заполнения (fillMode) работает так же, как и при положительной продолжительности прохода
+     * @param {string} duration
      */
     KeyframeAnimation.prototype["duration"] = function (duration) {
         this.animationTime = duration;
     };
 
     /**
-     * Установка обработчика
-     * завершения анимации
+     * Установка обработчика завершения анимации
      * @param {Function} callback
      */
     KeyframeAnimation.prototype["onComplete"] = function (callback) {
@@ -198,12 +215,19 @@
     };
 
     /**
-     * Установка смягчения анимации при прогрессе (в долях)
-     * возможно установить особое смягчение для свойства
-     * При установке смягчения для свойства параметр прогресса игнорируется
-     * @param {(Function|string)} timingFunction временная функция CSS, функция или алиас смягчения
-     * @param {number=} position прогресс в долях (по умол. для всей анимации)
+     * Установка смягчения анимации при прогрессе.
+     * Возможно установить особое смягчение для свойства (на протяжении всей анимации).
+     *
+     * Установленное смягчение будет использовано,
+     * если прогресс по проходу будет соответствовать неравенству:
+     * ТЕКУЩИЙ_КЛЮЧЕВОЙ_КАДР <= ПРОГРЕСС_ПО_ПРОХОДУ < СЛЕДУЮЩИЙ_КЛЮЧЕВОЙ_КАДР
+     * Метод устанавливает смягчение для "текущего" (см. неравенство) ключевого кадра.
+     *
+     * При установке смягчения для свойства параметр прогресса игнорируется.
+     * @param {(Function|string)} timingFunction временная функция CSS, JS функция или алиас смягчения
+     * @param {string=} position прогресс по проходу в процентах (по умол. не зваисит от прогресса)
      * @param {string=} property для какого свойства устанавливается (по умол. для всех)
+     * @see cubicBezierAliases
      * @see cubicBezierApproximations
      */
     KeyframeAnimation.prototype["easing"] = function (timingFunction, position, property) {
@@ -271,32 +295,60 @@
 
     /**
      * Установка направления анимации
-     * Допустимые значения см. в документации к CSS3 анимациям
+     * Значение "normal" соответствует возрастанию прогресса от 0 до 1 при каждом проходе
+     * Значение "reverse" соответствует убыванию прогресса от 1 до 0 при каждом проходе
+     * Значение "alternate" соответствует направлению "normal" для нечётных проходов и "reverse" для чётных
+     * Значение "alternate-reverse" соответствует направлению "reverse" для нечётных проходов и "normal" для чётных
+     * @see DEFAULT_DIRECTION
      * @param {string} animationDirection
      */
     KeyframeAnimation.prototype["direction"] = function (animationDirection) {
         this.animationDirection = animationDirection;
     };
 
+    /**
+     * Установка задержки старта
+     * Если значение положительное, старт анимации будет отложен на численное представление.
+     * Если отрицательное, то будет считаться, что прошло уже столько времени со старта.
+     * @param {string} delay
+     */
     KeyframeAnimation.prototype["delay"] = function (delay) {
         delay = parseTimeString(delay);
         this.delayTime = delay;
     };
 
+    /**
+     * Установка режима заполнения
+     * Значение "backwards" соответствует отрисовке значений
+     * начального ключевого кадра сразу после старта (и перед самим анимированием)
+     * Значение "forwards" соответствует отрисовке значений
+     * конечного ключевого кадра после окончания анимации.
+     * Значение "none" не соответствует ни одному из значений;
+     * Значение "both" соответствует и первому, и второму одновременно.
+     * @param {string} fillMode
+     * @see DEFAULT_FILLMODE
+     */
     KeyframeAnimation.prototype["fillMode"] = function (fillMode) {
         this.fillingMode = fillMode;
     };
 
+    /**
+     * Установка количества проходов цикла анимации.
+     * Значение "infinite" соответствует бесконечному числу повторений анимации.
+     * Дробные значения соответствуют конечному значению прогресса по проходу.
+     * Отрицательные числовые значения игнорируются.
+     * @param {string} iterations
+     * @see DEFAULT_ITERATIONCOUNT
+     */
     KeyframeAnimation.prototype["iterationCount"] = function (iterations) {
         this.iterations = iterations;
     };
 
     /**
-     * Добавит ключевой кадр на указанном прогрессе
-     * и вернёт его
+     * Добавит ключевой кадр на указанном прогрессе по проходу в долях и вернёт его
      * @param {key} position
-     * @param {Object=} properties
-     * @param {Function=} easing
+     * @param {Object} properties
+     * @param {Function} easing
      * @private
      */
     KeyframeAnimation.prototype.addKeyframe = function (position, properties, easing) {
@@ -331,8 +383,8 @@
     };
 
     /**
-     * Попытается найти в коллекции
-     * ключевой кадр с указанным прогрессом
+     * Попытается найти в коллекции ключевой кадр
+     * с указанным прогрессом по проходу в долях
      * @param {number} position
      * @return {Object}
      * @private
@@ -347,8 +399,7 @@
     };
 
     /**
-     * Старт анимации или её продолжение после паузы
-     * @param {boolean=} keepOn Продолжить ли предыдущие значения (установка в FALSY запускает заново)
+     * Старт анимации
      */
     KeyframeAnimation.prototype["start"] = function (keepOn) {
 
@@ -360,11 +411,6 @@
         fillMode = this.fillingMode || DEFAULT_FILLMODE;
         fillsBackwards = fillMode === FILLMODE_BACKWARDS;
         fillsBackwards |= fillMode === FILLMODE_BOTH;
-
-
-        if (!keepOn) {
-            this.started = now();
-        }
 
         delay = parseTimeString(this.delayTime);
         delay = type.number(delay) ? delay : numericDefaultDelay;
@@ -408,10 +454,10 @@
 
     /**
      * Установка значения свойства при указанном прогрессе
-     * Для установки смягчения см. метод easing
+     * Для установки смягчения используется метод easing
      * @param {string} name имя свойства
-     * @param {string|number} value значение свойства
-     * @param {(string|number)=} position позиция, в долях. (по умол. 1)
+     * @param {string} value значение свойства
+     * @param {string=} position строка прогресса в процентах (по умол. 100%)
      * @see KeyframeAnimation.easing
      */
     KeyframeAnimation.prototype["propAt"] = function (name, value, position) {
@@ -441,8 +487,8 @@
     };
 
     /**
-     * Высчитает значения свойств при указанном прогрессе
-     * @param {number} fractionalTime прогресс по итерации
+     * Высчитает значения свойств при указанном прогрессе про проходу
+     * @param {number} fractionalTime прогресс по проходу ( [0, 1] )
      * @return {Object}
      * @private
      */
@@ -546,8 +592,9 @@
 
     /**
      * Отрисует высчитанные значения свойств
-     * @param {Object} fetchedInfo
-     * @param {boolean=} direct отрисовывать ли напрямую в стили элементов
+     * @param {Object} fetchedInfo возвращённые fetch'ем значения
+     * @param {boolean} direct НЕ (!) использовать ли правило в таблице стилей для отрисовки одинаковых для элементов значений
+     * @see KeyframeAnimation.fetch
      * @private
      */
     KeyframeAnimation.prototype.render = function (fetchedInfo, direct) {
@@ -588,8 +635,8 @@
 
     /**
      * Тик анимации
-     * просчитывание и отрисовка
-     * @param {number=} timeStamp временная метка (или текущее время)
+     * просчитывание и отрисовка (fetch & render)
+     * @param {number} timeStamp временная метка (или текущее время)
      * @private
      */
     KeyframeAnimation.prototype.tick = function (timeStamp) {
