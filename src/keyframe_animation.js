@@ -470,7 +470,7 @@
 
             if (!secondKeyframe) return MOVE_LEFT;
             if (firstKeyframe.key > fractionalTime) return MOVE_LEFT;
-            if (secondKeyframe <= fractionalTime) return MOVE_RIGHT;
+            if (secondKeyframe.key <= fractionalTime) return MOVE_RIGHT;
 
             return STOP;
         });
