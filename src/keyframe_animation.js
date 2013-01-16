@@ -397,17 +397,24 @@
      */
     KeyframeAnimation.prototype.iterationCount = function (iterations) {
 
+        /**
+         * Числовое представление
+         * @type {number}
+         */
+        var numericIterations;
+
         // исключение составляет специальное значение
         if (iterations === ITERATIONCOUNT_INFINITE) {
-            iterations = Number.POSITIVE_INFINITY;
+            numericIterations = Number.POSITIVE_INFINITY;
         } else {
-            iterations = parseFloat(iterations);
-            if (!isFinite(iterations) || iterations < 0) {
+            numericIterations = parseFloat(iterations);
+            if (!isFinite(numericIterations) || numericIterations < 0) {
+                // переданное число не являетс корректным
                 return;
             }
         }
 
-        this.iterations = iterations;
+        this.iterations = numericIterations;
     };
 
     /**
