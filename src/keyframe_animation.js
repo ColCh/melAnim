@@ -233,6 +233,7 @@
      * Метод устанавливает смягчение для "текущего" (см. неравенство) ключевого кадра.
      *
      * При установке смягчения для свойства параметр прогресса игнорируется.
+     * (!) Абсциссы первой и второй точек для кубической кривой должны принадлежать промежутку [0, 1].
      * @param {(Function|string)} timingFunction временная функция CSS, JS функция или алиас смягчения
      * @param {string=} position прогресс по проходу в процентах (по умол. не зваисит от прогресса)
      * @param {string=} property для какого свойства устанавливается (по умол. для всех)
@@ -307,16 +308,20 @@
             }
 
             if (points) {
+                // переданы аргументы к временным функциям.
                 if (points.length === 4) {
                     // 4 аргумента - это кубическая кривая Безье
-                    // TODO проверка абсцисс
                     points = map(points, parseFloat);
-                    easing = partial(cubicBezier, points);
+                    if (inRange(points[0], 0, 1, true) && inRange(points[2], 0, 1, true)) {
+                        easing = partial(cubicBezier, points);
+                    }
                 } else if (points.length === 2) {
                     // 2 аргумента - лестничная функция
                     stepsAmount = parseInt(points[0], 10);
                     countFromStart = points[1] === "start";
-                    easing = partial(steps, [stepsAmount, countFromStart]);
+                    if (type.number(stepsAmount)) {
+                        easing = partial(steps, [stepsAmount, countFromStart]);
+                    }
                 }
             }
 
