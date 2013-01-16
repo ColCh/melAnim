@@ -23,6 +23,12 @@
      * @const
      */
     var SPECIAL_VALUE = null;
+    /**
+     * Для перевода из проценты в доли
+     * @type {number}
+     * @const
+     */
+    var PERCENT_TO_FRACTION = 100;
 
     /**
      * Конструктор анимаций с ключевыми кадрами на JavaScript.
@@ -234,64 +240,103 @@
      * @see cubicBezierApproximations
      */
     KeyframeAnimation.prototype.easing = function (timingFunction, position, property) {
-        var keyframe;
-        var leftBracketIndex, rightBracketIndex, points, camelCased;
-        var countFromStart, stepsAmount;
 
-        if (type.string(timingFunction)) {
+        /**
+         * Временной кадр, если указываем смягчение для него
+         * @type {{key: number, properties: Object, easing: Function}}
+         * */
+        var keyframe;
+        /**
+         * Функция смягчения
+         * @type {Function}
+         */
+        var easing;
+        // индексы левой и правой скобок, если передана строка временной функции css.
+        var leftBracketIndex, rightBracketIndex;
+        /**
+         * Аргументы к временной функции
+         * @type {Array}
+         */
+        var points;
+        /**
+         * для выделения алиасов
+         * ease-in -> easeIn
+         * @type {string}
+         */
+        var camelCased;
+        /**
+         * строка временной функции css без пробелов
+         * @type {string}
+         */
+        var trimmed;
+        /**
+         * Количество ступеней лестничной функции
+         * @type {number}
+         */
+        var stepsAmount;
+        /**
+         * Отсчитывать ли ступени лестничной функции от старта (или с конца)
+         * @type {boolean}
+         */
+        var countFromStart;
+        /**
+         * Числовое представление прогресса
+         * @type {number}
+         */
+        var key;
+
+        if (type.func(timingFunction)) {
+            easing = timingFunction;
+        } else if (type.string(timingFunction)) {
             // alias или CSS timing-function
 
-            camelCased = camelCase(trim(timingFunction));
+            trimmed = trim(timingFunction);
+            camelCased = camelCase(trimmed);
+
             if (camelCased in cubicBezierApproximations) {
-                timingFunction = cubicBezierApproximations[camelCased];
+                // алиас функции приближения
+                easing = cubicBezierApproximations[camelCased];
             } else if (camelCased in cubicBezierAliases) {
-                timingFunction = cubicBezierAliases[camelCased];
+                // алиас к точкам
+                points = cubicBezierAliases[camelCased];
+            } else {
+                // строка временной функции css
+                leftBracketIndex = trimmed.indexOf("(");
+                rightBracketIndex = trimmed.indexOf(")", leftBracketIndex);
+                points = trimmed.slice(leftBracketIndex, rightBracketIndex).split(",");
             }
 
-            if (!type.func(timingFunction)) {
-                if (type.array(timingFunction)) {
-                    points = timingFunction;
-                } else if (cubicBezierReg.test(timingFunction)) {
-                    leftBracketIndex = timingFunction.indexOf("(");
-                    rightBracketIndex = timingFunction.indexOf(")", leftBracketIndex);
-                    points = timingFunction.slice(leftBracketIndex, rightBracketIndex);
-                    points = map(points.split(","), parseFloat);
-                } else if (stepsReg.test(timingFunction)) {
-                    leftBracketIndex = timingFunction.indexOf("(");
-                    rightBracketIndex = timingFunction.indexOf(")", leftBracketIndex);
-                    points = timingFunction.slice(leftBracketIndex, rightBracketIndex);
-                    points = points.split(",");
-                }
-
-                // 4 аргумента - это кубическая кривая Безье
+            if (points) {
                 if (points.length === 4) {
+                    // 4 аргумента - это кубическая кривая Безье
                     // TODO проверка абсцисс
-                    timingFunction = partial(cubicBezier, points);
+                    points = map(points, parseFloat);
+                    easing = partial(cubicBezier, points);
                 } else if (points.length === 2) {
                     // 2 аргумента - лестничная функция
                     stepsAmount = parseInt(points[0], 10);
                     countFromStart = points[1] === "start";
-                    timingFunction = partial(steps, [stepsAmount, countFromStart]);
+                    easing = partial(steps, [stepsAmount, countFromStart]);
                 }
             }
+
         }
 
-        if (!type.func(timingFunction)) {
-            return;
-        }
-
-        if (type.string(property)) {
-            this.specialEasing[property] = timingFunction;
-        } else {
-            if (type.undefined(position)) {
-                this.smoothing = timingFunction;
+        if (type.func(easing)) {
+            if (type.string(property)) {
+                this.specialEasing[property] = easing;
             } else {
-                position = normalizeKey(position);
-            }
-            if (type.number(position)) {
-                position /= 100;
-                keyframe = this.lookupKeyframe(position) || this.addKeyframe(position);
-                keyframe.easing = timingFunction;
+                if (type.undefined(position)) {
+                    this.smoothing = easing;
+                } else {
+                    key = normalizeKey(position);
+                    if (type.number(key)) {
+                        // указываем в процентах, используем в долях.
+                        key /= PERCENT_TO_FRACTION;
+                        keyframe = this.lookupKeyframe(key) || this.addKeyframe(key);
+                        keyframe.easing = easing;
+                    }
+                }
             }
         }
     };
@@ -363,8 +408,8 @@
     /**
      * Добавит ключевой кадр на указанном прогрессе по проходу в долях и вернёт его
      * @param {key} position
-     * @param {Object} properties
-     * @param {Function} easing
+     * @param {Object=} properties
+     * @param {Function=} easing
      * @private
      */
     KeyframeAnimation.prototype.addKeyframe = function (position, properties, easing) {

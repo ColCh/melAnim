@@ -596,7 +596,7 @@
 
     /**
      * Обработает строку времени вида %время%+%размерность%
-     * @param {string|number} timeString
+     * @param {(string|number)} timeString
      * @return {(number|undefined)} обработанное время в миллисекундах или undefined в случае неудачи
      */
     function parseTimeString(timeString) {
@@ -998,8 +998,8 @@
     /**
      * Пропустит ключ через все фильтры и вернёт его
      * численное представление в процентах или undefined.
-     * @param {string|number} key
-     * @return {key}
+     * @param {(string|number)} key
+     * @return {number}
      */
     function normalizeKey(key) {
         if (type.string(key)) {
