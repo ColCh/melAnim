@@ -313,12 +313,12 @@
      * Установка задержки старта
      * Если значение положительное, старт анимации будет отложен на численное представление.
      * Если отрицательное, то будет считаться, что прошло уже столько времени со старта.
-     * @param {string} delay
+     * @param {(number|string)} delay
      */
     KeyframeAnimation.prototype.delay = function (delay) {
-        delay = parseTimeString(delay);
-        if (type.number(delay)) {
-            this.delayTime = delay;
+        var numericDelay = parseTimeString(delay);
+        if (type.number(numericDelay)) {
+            this.delayTime = numericDelay;
         }
     };
 
