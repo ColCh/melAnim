@@ -619,22 +619,20 @@
     KeyframeAnimation.prototype.render = function (fetchedInfo, direct) {
 
         var buffer, property, propertyName, propertyValue, element;
-        var i, j, fetchedProperties;
-        var index, NOT_FOUND, colonIndex, semiIndex;
+        var index, NOT_FOUND, colonIndex, semiIndex, fetchedProperties;
 
         NOT_FOUND = -1;
 
-        for (i = 0; i < this.targets.length; i++) {
+        each(this.targets, function (element, i) {
 
-            element = this.targets[i];
             fetchedProperties = fetchedInfo[i];
             buffer = element.style.cssText + ';';
 
-            for (j = 0; j < fetchedProperties.length; j++) {
+            each(fetchedProperties, function (fetchedProperty) {
 
-                property = fetchedProperties[j].name;
-                propertyName = getVendorPropName.cache[property] || getVendorPropName(property);
-                propertyValue = normalize(element, property, fetchedProperties[j].value, true);
+                property = fetchedProperty.name;
+                propertyName = getVendorPropName(property);
+                propertyValue = normalize(element, property, fetchedProperty.value, true);
 
                 index = buffer.indexOf(propertyName, 0);
                 index = index === NOT_FOUND ? buffer.indexOf(property, 0) : index;
@@ -646,11 +644,14 @@
                     semiIndex = buffer.indexOf(";", colonIndex);
                     buffer = buffer.slice(0, colonIndex + 1) + propertyValue + buffer.slice(semiIndex);
                 }
-            }
+
+            }, this);
 
             // TODO Rules vs style проверка производительности
             element.style.cssText = buffer;
-        }
+
+        }, this);
+
     };
 
     /**
