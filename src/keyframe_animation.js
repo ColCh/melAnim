@@ -419,7 +419,7 @@
 
     /**
      * Добавит ключевой кадр на указанном прогрессе по проходу в долях и вернёт его
-     * @param {key} position
+     * @param {number} position
      * @param {Object=} properties
      * @param {Function=} easing
      * @private
@@ -427,32 +427,27 @@
     KeyframeAnimation.prototype.addKeyframe = function (position, properties, easing) {
 
         var keyframe, keyframes;
-        var key, properties, easing;
 
-        position = normalizeKey(position);
+        if (type.number(position)) {
 
-        if (!type.number(position)) return;
+            /** @type {{key: number, properties: Object.<string, number>, easing: Function}} */
+            keyframe = {
+                key: position,
+                properties: type.object(properties) ? properties : {}
+            };
 
-        /** @typedef {number} */
-        key = position;
-        /** @typedef {Object.<string, number>} */
-        properties = properties || {};
-        /** @typedef {Function} */
-        easing = easing || null;
+            if (type.func(easing)) {
+                keyframe.easing = easing;
+            }
 
-        /** @typedef {{key: key, properties: properties, easing: easing}} */
-        keyframe = {
-            key:key,
-            properties:properties,
-            easing:easing
-        };
+            keyframes = this.keyframes;
+            keyframes.push(keyframe);
+            bubbleSort(/** @type {Array} */keyframes, compareKeyframes);
 
-        /** @type {Array.<keyframe>} */
-        keyframes = this.keyframes;
-        keyframes.push(keyframe);
-        bubbleSort(keyframes, compareKeyframes);
+            return keyframe;
 
-        return keyframe;
+        }
+
     };
 
     /**
