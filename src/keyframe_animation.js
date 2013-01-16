@@ -471,34 +471,26 @@
      */
     KeyframeAnimation.prototype.start = function () {
 
-        var prop, delay, numericDefaultDelay, fillsBackwards, fillMode;
-        var i;
-
-        numericDefaultDelay = parseTimeString(DEFAULT_DELAY);
-
-        fillMode = this.fillingMode || DEFAULT_FILLMODE;
-        fillsBackwards = fillMode === FILLMODE_BACKWARDS;
-        fillsBackwards |= fillMode === FILLMODE_BOTH;
-
-        delay = parseTimeString(this.delayTime);
-        delay = type.number(delay) ? delay : numericDefaultDelay;
-
-        setTimeout(bind(this.timer.start, this.timer), delay);
-
-        this.started = now();
+        if (this.delayTime > 0) {
+            setTimeout(bind(this.timer.start, this.timer), this.delayTime);
+        } else {
+            this.timer.start();
+        }
 
         // запоминаем текущие значения анимируемых свойств для каждого элемента
         each(this.targets, function (element) {
+
             var id = element.getAttribute(DATA_ATTR_NAME);
             var elementData = this.cache[id];
+
             each(this.animatedProperties, function (special_value, propertyName) {
-                elementData[propertyName] = normalize(element, propertyName, css(element, propertyName));
-            }, this);
+                elementData[propertyName] = css(element, propertyName);
+            });
+
         }, this);
 
-        if ((fillsBackwards && delay > 0) || delay <= 0) {
-            this.render(this.fetch(0));
-        }
+        this.started = now();
+        this.tick(this.started);
     };
 
     /**
