@@ -407,7 +407,7 @@
      */
     KeyframeAnimation.prototype.lookupKeyframe = function (position) {
         var keyframe, index;
-        index = binarySearch(this.keyframes, position, function (key, keyframe) {
+        index = binarySearch(/** @type {Array} */this.keyframes, position, function (key, keyframe) {
             return key - keyframe.key;
         });
         keyframe = this.keyframes[index];
