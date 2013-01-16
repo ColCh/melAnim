@@ -498,19 +498,17 @@
      */
     KeyframeAnimation.prototype.stop = function () {
 
-        var fillsForwards, fillMode;
+        var fillsForwards;
 
         this.timer.stop();
 
-        fillMode = this.fillingMode || DEFAULT_FILLMODE;
-        fillsForwards = fillMode === FILLMODE_FORWARDS;
-        fillsForwards |= fillMode === FILLMODE_BOTH;
+        fillsForwards = this.fillingMode === FILLMODE_FORWARDS ||this.fillingMode === FILLMODE_BOTH;
 
         if (fillsForwards) {
-            this.render(this.fetch(1), true);
+            this.tick(this.started + this.iterations * this.animationTime, true);
         }
 
-        type.func(this.oncomplete) && this.oncomplete();
+        this.oncomplete();
 
     };
 
@@ -701,7 +699,7 @@
     /**
      * Тик анимации
      * просчитывание и отрисовка (fetch & render)
-     * @param {number} timeStamp временная метка (или текущее время)
+     * @param {number} timeStamp временная метка
      * @private
      */
     KeyframeAnimation.prototype.tick = function (timeStamp) {
@@ -710,12 +708,7 @@
         var iterations, integralIterations, currentIteration, iterationIsOdd;
         var fetchedProperties;
 
-        /*
-         * Вычисление прогресса по итерации
-         * */
-        elapsedTime = timeStamp - this.started;
-        elapsedTime += -1 * this.delayTime;
-        if (elapsedTime < 0) elapsedTime = 0;
+        elapsedTime = this.computeElapsedTime(timeStamp);
 
         // прогресс относительно первой итерации
         progr = elapsedTime / this.animationTime;
@@ -742,16 +735,30 @@
          */
         if (progr > iterations) {
             this.stop();
-        } else {
-            iterationIsOdd = currentIteration & 1;
-
-            if (needsReverse(this.animationDirection, currentIteration)) {
-                fractionalTime = 1 - fractionalTime;
-            }
-
-            fetchedProperties = this.fetch(fractionalTime);
-            this.render(fetchedProperties);
         }
+
+        iterationIsOdd = currentIteration & 1;
+
+        if (needsReverse(this.animationDirection, currentIteration)) {
+            fractionalTime = 1 - fractionalTime;
+        }
+
+        fetchedProperties = this.fetch(fractionalTime);
+        this.render(fetchedProperties, false);
+
+    };
+
+    /**
+     * Вычислит прошедшее со старта время до временной метки
+     * @param {number} timeStamp временная метка
+     * @return {number}
+     * @private
+     */
+    KeyframeAnimation.computeElapsedTime = function (timeStamp) {
+        var elapsedTime = timeStamp - this.started;
+        elapsedTime += -1 * this.delayTime;
+        if (elapsedTime < 0) elapsedTime = 0;
+        return elapsedTime;
     };
 
     /** @export */
