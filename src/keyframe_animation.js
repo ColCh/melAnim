@@ -28,7 +28,7 @@
      * @type {number}
      * @const
      */
-    var PERCENT_TO_FRACTION = 100;
+    var PERCENT_TO_FRACTION = 1 / 100;
 
     /**
      * Конструктор анимаций с ключевыми кадрами на JavaScript.
@@ -50,6 +50,64 @@
         this.addKeyframe(1, createObject(this.animatedProperties));
         this.timer = new ReflowLooper(this.tick, this);
     }
+
+    /*
+    *   Наследуемые свойства.
+    * */
+
+    /**
+     * Время отложенного запуска, в миллисекундах
+     * Значение устанавливается методом
+     * @see KeyframeAnimation.delay
+     * @type {number}
+     * @private
+     */
+    KeyframeAnimation.prototype.delayTime = parseTimeString(DEFAULT_DELAY);
+
+    /**
+     * Режим заливки свойств, устанавливается методом
+     * @see KeyframeAnimation.fillMode
+     * @type {string}
+     * @private
+     */
+    KeyframeAnimation.prototype.fillingMode = DEFAULT_FILLMODE;
+
+    /**
+     * Продолжительность одного прохода, в миллисекундах
+     * Значение устанавливается методом.
+     * @see KeyframeAnimation.duration
+     * @private
+     * @type {number}
+     */
+    KeyframeAnimation.prototype.animationTime = parseTimeString(DEFAULT_DURATION);
+
+    /**
+     * Число проходов;
+     * Значение устанавливается методом iterationCount.
+     * @type {number}
+     * @private
+     */
+    KeyframeAnimation.prototype.iterations = DEFAULT_ITERATIONCOUNT;
+
+    /**
+     * Челосисленное число проходов;
+     * Значение устанавливается методом iterationCount.
+     * @type {number}
+     * @private
+     */
+    KeyframeAnimation.prototype.integralIterations = floor(DEFAULT_ITERATIONCOUNT);
+
+    /**
+     * Направление анимации.
+     * Значение устанавливается методом direction.
+     * @type {string}
+     * @private
+     */
+    KeyframeAnimation.prototype.animationDirection = DEFAULT_DIRECTION;
+
+    /*
+    *   Индивидуальные свойства
+    * */
 
     /**
      * Объект с временными данными, вроде кешей
@@ -98,45 +156,12 @@
     KeyframeAnimation.prototype.animatedProperties = undefined;
 
     /**
-     * Число проходов;
-     * Значение устанавливается методом iterationCount.
-     * @type {number}
-     * @private
-     */
-    KeyframeAnimation.prototype.iterations = DEFAULT_ITERATIONCOUNT;
-
-     /**
-     * Челосисленное число проходов;
-     * Значение устанавливается методом iterationCount.
-     * @type {number}
-     * @private
-     */
-    KeyframeAnimation.prototype.integralIterations = floor(DEFAULT_ITERATIONCOUNT);
-
-    /**
-     * Направление анимации.
-     * Значение устанавливается методом direction.
-     * @type {string}
-     * @private
-     */
-    KeyframeAnimation.prototype.animationDirection = DEFAULT_DIRECTION;
-
-    /**
      * Объект с особыми смягчениями для свойств
      * Ключ - имя свойства, Значение - функция смягчения
      * Значения устанавливаются методом easing
      * @type {Object.<string, Function>}
      */
     KeyframeAnimation.prototype.specialEasing = undefined;
-
-    /**
-     * Продолжительность одного прохода, в миллисекундах
-     * Значение устанавливается методом.
-     * @see KeyframeAnimation.duration
-     * @private
-     * @type {number}
-     */
-    KeyframeAnimation.prototype.animationTime = parseTimeString(DEFAULT_DURATION);
 
     /**
      * Обработчик завершения анимации
@@ -173,22 +198,9 @@
      */
     KeyframeAnimation.prototype.timer = undefined;
 
-    /**
-     * Время отложенного запуска, в миллисекундах
-     * Значение устанавливается методом
-     * @see KeyframeAnimation.delay
-     * @type {number}
-     * @private
-     */
-    KeyframeAnimation.prototype.delayTime = parseTimeString(DEFAULT_DELAY);
-
-    /**
-     * Режим заливки свойств, устанавливается методом
-     * @see KeyframeAnimation.fillMode
-     * @type {string}
-     * @private
-     */
-    KeyframeAnimation.prototype.fillingMode = DEFAULT_FILLMODE;
+    /*
+    * Публичные методы
+    * */
 
     /**
      * Добавит элемент(-ы) в коллекцию анимируемых.
@@ -345,7 +357,7 @@
                     key = normalizeKey(position);
                     if (type.number(key)) {
                         // указываем в процентах, используем в долях.
-                        key /= PERCENT_TO_FRACTION;
+                        key *= PERCENT_TO_FRACTION;
                         keyframe = this.lookupKeyframe(key) || this.addKeyframe(key);
                         keyframe.easing = easing;
                     }
@@ -427,55 +439,6 @@
     };
 
     /**
-     * Добавит ключевой кадр на указанном прогрессе по проходу в долях и вернёт его
-     * @param {number} position
-     * @param {Object=} properties
-     * @param {Function=} easing
-     * @private
-     */
-    KeyframeAnimation.prototype.addKeyframe = function (position, properties, easing) {
-
-        var keyframe, keyframes;
-
-        if (type.number(position)) {
-
-            /** @type {{key: number, properties: Object.<string, number>, easing: Function}} */
-            keyframe = {
-                key: position,
-                properties: type.object(properties) ? properties : {}
-            };
-
-            if (type.func(easing)) {
-                keyframe.easing = easing;
-            }
-
-            keyframes = this.keyframes;
-            keyframes.push(keyframe);
-            bubbleSort(/** @type {Array} */keyframes, compareKeyframes);
-
-            return keyframe;
-
-        }
-
-    };
-
-    /**
-     * Попытается найти в коллекции ключевой кадр
-     * с указанным прогрессом по проходу (в долях)
-     * @param {number} position
-     * @return {Object}
-     * @private
-     */
-    KeyframeAnimation.prototype.lookupKeyframe = function (position) {
-        var keyframe, index;
-        index = binarySearch(/** @type {Array} */this.keyframes, position, function (key, keyframe) {
-            return key - keyframe.key;
-        });
-        keyframe = this.keyframes[index];
-        return keyframe;
-    };
-
-    /**
      * Старт анимации
      */
     KeyframeAnimation.prototype.start = function () {
@@ -553,6 +516,59 @@
         keyframe = this.lookupKeyframe(position) || this.addKeyframe(position);
         this.animatedProperties[name] = SPECIAL_VALUE;
         keyframe.properties[name] = value;
+    };
+
+    /*
+    *   Приватные методы.
+    * */
+
+    /**
+     * Добавит ключевой кадр на указанном прогрессе по проходу в долях и вернёт его
+     * @param {number} position
+     * @param {Object=} properties
+     * @param {Function=} easing
+     * @private
+     */
+    KeyframeAnimation.prototype.addKeyframe = function (position, properties, easing) {
+
+        var keyframe, keyframes;
+
+        if (type.number(position)) {
+
+            /** @type {{key: number, properties: Object.<string, number>, easing: Function}} */
+            keyframe = {
+                key: position,
+                properties: type.object(properties) ? properties : {}
+            };
+
+            if (type.func(easing)) {
+                keyframe.easing = easing;
+            }
+
+            keyframes = this.keyframes;
+            keyframes.push(keyframe);
+            bubbleSort(/** @type {Array} */keyframes, compareKeyframes);
+
+            return keyframe;
+
+        }
+
+    };
+
+    /**
+     * Попытается найти в коллекции ключевой кадр
+     * с указанным прогрессом по проходу (в долях)
+     * @param {number} position
+     * @return {Object}
+     * @private
+     */
+    KeyframeAnimation.prototype.lookupKeyframe = function (position) {
+        var keyframe, index;
+        index = binarySearch(/** @type {Array} */this.keyframes, position, function (key, keyframe) {
+            return key - keyframe.key;
+        });
+        keyframe = this.keyframes[index];
+        return keyframe;
     };
 
     /**
