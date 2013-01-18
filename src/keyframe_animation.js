@@ -105,6 +105,27 @@
      */
     KeyframeAnimation.prototype.animationDirection = DEFAULT_DIRECTION;
 
+    /**
+     * Смягчение всей анимации
+     * @type {Function}
+     * @private
+     */
+    KeyframeAnimation.prototype.smoothing = cubicBezierApproximations[ DEFAULT_EASING ];
+
+    /**
+     * Обработчик завершения анимации
+     * @private
+     * @type {Function}
+     */
+    KeyframeAnimation.prototype.oncomplete = noop;
+
+    /**
+     * Обработчик завершения прохода
+     * @type {Function}
+     * @private
+     */
+    KeyframeAnimation.prototype.oniteration = noop;
+
     /*
     *   Индивидуальные свойства
     * */
@@ -164,32 +185,11 @@
     KeyframeAnimation.prototype.specialEasing = undefined;
 
     /**
-     * Обработчик завершения анимации
-     * @private
-     * @type {Function}
-     */
-    KeyframeAnimation.prototype.oncomplete = noop;
-
-    /**
-     * Обработчик завершения прохода
-     * @type {Function}
-     * @private
-     */
-    KeyframeAnimation.prototype.oniteration = noop;
-
-    /**
      * Временная метка старта
      * @type {number}
      * @private
      */
     KeyframeAnimation.prototype.started = undefined;
-
-    /**
-     * Смягчение всей анимации
-     * @type {Function}
-     * @private
-     */
-    KeyframeAnimation.prototype.smoothing = noop;
 
     /**
      * Таймер отрисовки
