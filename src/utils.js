@@ -121,20 +121,6 @@
     }
 
     /**
-     * Применит parseInt, а потом toString к аргументу
-     * @param {number} number
-     * @param {number} fromRadix второй аргумент для parseInt
-     * @param {number} toRadix аргумент для toString
-     */
-    function changeRadix(number, fromRadix, toRadix) {
-        return parseInt(number, fromRadix).toString(toRadix);
-    }
-
-    changeRadix.binToDec = function (num) {
-        return changeRadix(num, 2, 10);
-    };
-
-    /**
      * Сгенерирует уникальную строку.
      * @return {string}
      */
@@ -173,49 +159,50 @@
         this.length = collection.length;
     }
 
-    merge(Iterator.prototype, /** @lends Iterator.prototype */({
+    /**
+     * Индекс текущего элемента в коллекции
+     * @type {number}
+     * @private
+     */
+    Iterator.prototype.index = undefined;
 
-        /**
-         * Индекс текущего элемента в коллекции
-         */
-        index:0,
-        /**
-         * Запомненная длина коллекции
-         */
-        length:0,
-        /**
-         * Коллекция
-         */
-        collection:[],
-        /**
-         * Возвращается, если значения нет
-         * @see Iterator.next Iterator.previous
-         */
-        none:null,
+    /**
+     * Запомненная длина коллекции
+     * @type {number}
+     * @private
+     */
+    Iterator.prototype.length = undefined;
 
-        /**
-         * Возвратит текущий элемент коллекции
-         * @return {*}
-         */
-        current:function () {
-            return this.collection[this.index];
-        },
-        /**
-         * Возвратит следующий элемент коллекции или значение по-умолчанию
-         * @return {*}
-         */
-        next:function () {
-            return this.index < this.length ? this.collection[this.index++] : this.none;
-        },
-        /**
-         * Возвратит предыдущий элемент коллекции или значение по-умолчанию
-         * @return {*}
-         */
-        previous:function () {
-            return this.index > 0 ? this.collection[this.index--] : this.none;
-        }
+    /**
+     * Коллекция
+     * @type {Array}
+     * @private
+     */
+    Iterator.prototype.collection = undefined;
 
-    }));
+    /**
+     * Возвратит текущий элемент коллекции
+     * @return {*}
+     */
+    Iterator.prototype.current = function () {
+        return this.collection[this.index];
+    };
+
+    /**
+     * Возвратит следующий элемент коллекции или значение по-умолчанию
+     * @return {*}
+     */
+    Iterator.prototype.next = function () {
+        return this.index < this.length ? this.collection[this.index++] : undefined;
+    };
+
+    /**
+     * Возвратит предыдущий элемент коллекции или значение по-умолчанию
+     * @return {*}
+     */
+    Iterator.prototype.previous = function () {
+        return this.index > 0 ? this.collection[this.index--] : undefined;
+    };
 
     /**
      * Сортировка массива методом пузырька
@@ -271,16 +258,6 @@
         }
 
         return index;
-    }
-
-    /**
-     * Вернёт 1, если число положительное
-     * 0, если оно равно 0, и
-     * -1, если оно отрицательное
-     * @param {number} number
-     */
-    function sign(number) {
-        return number === 0 ? 0 : number > 0 ? 1 : -1;
     }
 
     /**
@@ -362,135 +339,27 @@
     }
 
     /**
-     * Вернёт функцию, которая применит список функций,
-     * до тех пор, пока они будут возвращать истинное значение
-     * при переданных аргументах
-     *
-     * альтернатива : f(x) && g(x) && ...
-     *
-     * @param {...Function} functions список функций
-     * @return {Function}
-     */
-    function and(functions) {
-
-        functions = slice(arguments);
-
-        return function (/* args */) {
-            var args = arguments;
-            return each(functions, function (func) {
-                return toBool(apply(func, args));
-            });
-        };
-    }
-
-    /**
-     * Частичное применение функции
-     * Аргументы можно пропускать, передав
-     * специальное значение "_"; при запуске
-     * пропущенные аргументы заполнятся
-     * слева направо.
+     * Частичное применение функции с возможностью привязывания контекста.
      *
      * @param {Function} fn функция
      * @param {Array} args аргументы
      * @param {Object=} ctx контекст исполнения функции
      * @return {Function} частично применённая функция
-     *
-     * @example
-     * var line = function (k, x, b) { return k * x + b; };
-     * var id = partial(line, [ 1, _, 0 ]);
-     * id(0);   // 0
-     * id(2);   // 2
-     * id(777); // 777
      */
     function partial(fn, args, ctx) {
-
-        function isHole(x) {
-            return x === partial.hole;
-        }
-
         return function () {
-
-            var fresh = new Iterator(arguments);
-            fresh.none = partial.defaultValue;
-
-            function filter(arg) {
-                return isHole(arg) ? fresh.next() : arg;
-            }
-
-            return apply(fn, map(args, filter).concat(slice(fresh.collection, fresh.index)), ctx);
+            return apply(fn, args.concat(slice(arguments)), ctx);
         };
     }
 
     /**
-     * Вернёт функцию, которая передаст первой функции только
-     * указанное количество аргументов
+     * Привяжет функцию к контексту
      * @param {Function} fn
-     * @param {number} num
-     * @return {Function}
-     */
-    function aritilize(fn, num) {
-        return function () {
-            return fn.apply(this, slice(arguments, 0, num));
-        }
-    }
-
-    /**
-     * Обратит порядок аргументов у функции
-     * @param {Function} fn
-     * @param {Object=} ctx Контекст исполнения
-     * @return {Function}
-     */
-    function reverse(fn, ctx) {
-        return function () {
-            apply(fn, slice(arguments).reverse(), ctx);
-        };
-    }
-
-    /**
-     * Аналог bind из ES5.
-     * @inheritDoc
+     * @param {Object} ctx
      */
     function bind(fn, ctx) {
         return function () {
             return fn.call(ctx);
-        };
-    }
-
-    /**
-     * Значение для любого аргумента по-умолчанию
-     * @type {undefined}
-     * @private
-     */
-    partial.defaultValue = undefined;
-
-    /**
-     * Специальное значение "дырка", указывающее на то,
-     * что аргумент пропущен
-     * @type {Object}
-     * @private
-     * @see partial
-     */
-    var _ = partial.hole = {};
-
-    /**
-     * Вернёт функцию, которая последовательно
-     * применит список функций к аргуметам
-     *
-     * Альтернатива: f(g(x))
-     *
-     * @param {...Function} functions список функций
-     * @return {Function}
-     */
-    function compose(functions) {
-
-        functions = slice(arguments);
-
-        return function (/* args */) {
-            var args = slice(arguments);
-            each(functions, function (func) {
-                args = [ apply(func, args) ];
-            });
-            return args;
         };
     }
 
@@ -502,16 +371,7 @@
      * @return {Array}
      */
     function slice(arrayLike, start, end) {
-        return Array.prototype.slice.call(arrayLike, type.number(start) ? start : 0, type.number(end) ? end : undefined);
-    }
-
-    /**
-     * Конвертирует аргумент к булеву типу
-     * @param {*} arg
-     * @return {Boolean}
-     */
-    function toBool(arg) {
-        return !!arg;
+        return Array.prototype.slice.call(arrayLike, start, end);
     }
 
     /**
@@ -543,65 +403,26 @@
     }
 
     /**
-     * Пройдётся по элементам массива\объекта,
-     * применит функцию к каждому; Если хотя бы
-     * одна функция возвратит ложное значение,
-     * перебор прерывается, и функция возвращает false.
-     * @param {array|object} arg
-     * @param {function} callback
-     * @return {boolean}
-     */
-    function every(arg, callback) {
-        return toBool(each(arg, partial(toBool)));
-    }
-
-    /**
      * Пройдётся по элементам массива \ объекта и соберёт новый
      * из возвращённых значений функции
      * @param {Array|Object} arg
-     * @param {Function(?, number|string, Object|Array): ?} callback
+     * @param {Function} callback
      * @param {Object=} ctx контекст callback'а
      * @return {Array|Object}
      */
     function map(arg, callback, ctx) {
         var accum = [];
-        ctx = ctx || window;
-
         each(arg, function (value, index, object) {
             accum.push(callback.call(ctx, value, index, object));
         });
-
         return accum;
     }
 
     /**
-     * Создаст объект, где ключами будут переданные аргументы, а значениями - undefined
-     * @type {function(...[?])}
-     * @return {Object.<string, undefined>}
-     */
-    function generateDictionary(/* arguments */) {
-        var obj = {};
-        each(arguments, function (key) {
-            obj[key] = undefined;
-        });
-        return obj;
-    }
-
-    /**
-     * Пройдётся по объекту/массиву с помощью each и заменит
-     * значения в нём на результат функции
-     * @param {Array|Object} obj
-     * @param {function} callback
-     */
-    function eachReplace(obj, callback) {
-        each(obj, function (val, index, obj) {
-            obj[index] = callback(val, index, obj);
-        });
-    }
-
-    /**
+     * Приведёт аргумент к строковому типу
      * @param {*} x
      * @return {string}
+     * @inheritDoc
      */
     function toString(x) {
         return x + "";
@@ -609,6 +430,7 @@
 
     /**
      * Преобразует строку в верхний регистр
+     * шорткат.
      * @param {string} str
      * @return {string}
      */
@@ -616,7 +438,8 @@
         return String.prototype.toUpperCase.call(toString(str));
     }
     /**
-     * Преобразует строку в нижний регистр
+     * Преобразует строку в нижний регистр.
+     * шорткат.
      * @param {string} str
      * @return {string}
      */
@@ -819,7 +642,6 @@
      * @param {number=} X0 начальное приближение (или значение уравнения)
      * @param {number=} X1 след. приближение
      * @param {number=} epsilon минимальная разница между двумя приближениями (или 10^-6)
-     * @param {Function=} contraction сжимающее отображение метода (по умол. метод хорд)
      * @param {Function=} derivative производная функции F (для метода касательных)
      * @return {number} приближённое значение корня уравнения
      */
@@ -934,7 +756,9 @@
      * Посчитает значение производной кубической кривой Безье
      * при прогрессе t
      * Считается, что P0 = (0;0) и P3 = (1;1)
-     * @param t
+     * @param {number} coord1
+     * @param {number} coord2
+     * @param {number} t
      */
     cubicBezier.derivative = function (coord1, coord2, t) {
         var B1d = function (t) { return 3 * ( (1 - t) * (1 - t) + t * 2 * (- 1) * (1 - t) ) };
@@ -963,29 +787,6 @@
     function steps(stepsAmount, countFromStart, fractionalTime) {
         // если отсчитываем с начала, просто реверсируем функцию
         return countFromStart ? 1.0 - steps(stepsAmount, countFromStart, 1.0 - fractionalTime) : Math.floor(stepsAmount * fractionalTime) / stepsAmount;
-    }
-
-    /**
-     * Известная всем функция для прототипного наследования.
-     * @param {Object} child Кто наследует
-     * @param {Object} parent Что наследует
-     */
-    function inherit(child, parent) {
-        var F = noop;
-        F.prototype = parent.prototype;
-        child.prototype = new F;
-        child.prototype.constructor = child;
-    }
-
-    /**
-     * Скопирует свойства одного объекта в другой.
-     * @param {Object|Function} target
-     * @param {Object} source
-     */
-    function merge(target, source) {
-        each(source, function (propertyValue, property) {
-            target[property] = propertyValue;
-        });
     }
 
     /**
@@ -1135,8 +936,7 @@
         }
 
         return propertyValue;
-    }
-    ;
+    };
 
     /**
      * Хуки для получения\установки значения свойства.
@@ -1288,52 +1088,48 @@
         this.looper = bind(this.looper, this);
     }
 
-    merge(ReflowLooper.prototype, /** @lends ReflowLooper.prototype */ ({
+    /**
+     * Функция будет исполняться циклически по таймеру
+     * @type {Function}
+     * @private
+     */
+    ReflowLooper.prototype.callback = undefined;
 
-        /**
-         * Функция будет исполняться циклически по таймеру
-         * @type {Function}
-         * @private
-         */
-        callback:null,
+    /**
+     * Контекст функции
+     * @type {Object}
+     * @private
+     */
+    ReflowLooper.prototype.context = undefined;
 
-        /**
-         * Контекст функции
-         * @type {Object}
-         * @private
-         */
-        context:null,
+    /**
+     * ID таймаута
+     * @type {number}
+     * @private
+     */
+    ReflowLooper.prototype.timeoutID = undefined;
 
-        /**
-         * ID таймаута
-         * @type {number}
-         * @private
-         */
-        timeoutID:null,
+    /**
+     * Запуск таймера
+     */
+    ReflowLooper.prototype.start = function () {
+        this.timeoutID = requestAnimationFrame(this.looper);
+    };
 
-        /**
-         * Запуск таймера
-         */
-        start:function () {
-            this.timeoutID = requestAnimationFrame(this.looper);
-        },
+    /**
+     * Остановка таймера
+     */
+    ReflowLooper.prototype.stop = function () {
+        cancelRequestAnimationFrame(this.timeoutID);
+        this.timeoutID = null;
+    };
 
-        /**
-         * Остановка таймера
-         */
-        stop:function () {
-            cancelRequestAnimationFrame(this.timeoutID);
-            this.timeoutID = null;
-        },
-
-        /**
-         * Враппер вызова функции с контекстом
-         * @private
-         */
-        looper:function (timeStamp) {
-            this.timeoutID = requestAnimationFrame(this.looper);
-            timeStamp = timeStamp || now();
-            this.callback.call(this.context, timeStamp);
-        }
-
-    }));
+    /**
+     * Враппер вызова функции с контекстом
+     * @private
+     */
+    ReflowLooper.prototype.looper = function (timeStamp) {
+        this.timeoutID = requestAnimationFrame(this.looper);
+        timeStamp = timeStamp || now();
+        this.callback.call(this.context, timeStamp);
+    };
