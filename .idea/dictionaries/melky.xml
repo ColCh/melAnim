@@ -2,6 +2,7 @@
   <dictionary name="melky">
     <words>
       <w>cssanimations</w>
+      <w>iterationcount</w>
       <w>keyframe</w>
       <w>keyframes</w>
       <w>looper</w>

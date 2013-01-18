@@ -50,7 +50,7 @@
 <div style="top: 20%;" class="anim js">Anim me TWO!</div>
 
 <script>
-    var PRROFILE_ENABLED = true;
+    var PRROFILE_ENABLED = 0;
 
     var PROFILE_START = 1 && PRROFILE_ENABLED;
     var PROFILE_CONSTRUCTOR = 1 && PRROFILE_ENABLED;
@@ -74,19 +74,19 @@
     anim.propAt("width", "300px", "90%");
     anim.propAt("width", "550px", "100%");
 
-    anim.propAt("height", "100px", "30%");
+    anim.propAt("height", "50px", "0%");
     anim.propAt("height", "250px", "100%");
 
     anim.easing("linear");
-    anim.easing("ease-out", "30%");
+    //anim.easing("ease-out", "30%");
 
     anim.direction("alternate");
 
     anim.duration("3s");
 
-    anim.iterationCount("2.5");
+    anim.iterationCount("1.5");
 
-    anim.delay("0s");
+    anim.delay("500ms");
 
     anim.fillMode("both")
 

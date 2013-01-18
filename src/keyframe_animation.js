@@ -99,11 +99,19 @@
 
     /**
      * Число проходов;
-     * Значение устанавливается методов iterationCount.
+     * Значение устанавливается методом iterationCount.
      * @type {number}
      * @private
      */
     KeyframeAnimation.prototype.iterations = undefined;
+
+     /**
+     * Челосисленное число проходов;
+     * Значение устанавливается методом iterationCount.
+     * @type {number}
+     * @private
+     */
+    KeyframeAnimation.prototype.integralIterations = undefined;
 
     /**
      * Направление анимации.
@@ -415,6 +423,7 @@
         }
 
         this.iterations = numericIterations;
+        this.integralIterations = floor(numericIterations);
     };
 
     /**
@@ -505,7 +514,7 @@
         fillsForwards = this.fillingMode === FILLMODE_FORWARDS ||this.fillingMode === FILLMODE_BOTH;
 
         if (fillsForwards) {
-            this.tick(this.started + this.iterations * this.animationTime, true);
+            this.tick(this.started + this.iterations * this.animationTime);
         }
 
         this.oncomplete();
@@ -704,47 +713,31 @@
      */
     KeyframeAnimation.prototype.tick = function (timeStamp) {
 
-        var elapsedTime, progr, fractionalTime;
-        var iterations, integralIterations, currentIteration, iterationIsOdd;
+        var animationProgress, iterationProgress;
+        var currentIteration;
         var fetchedProperties;
+        var iterationCount;
 
-        elapsedTime = this.computeElapsedTime(timeStamp);
+        iterationCount = this.iterations;
+        animationProgress = this.computeElapsedTime(timeStamp) / this.animationTime;
+        currentIteration = floor(animationProgress);
 
-        // прогресс относительно первой итерации
-        progr = elapsedTime / this.animationTime;
+        iterationProgress = animationProgress - min(currentIteration, this.integralIterations);
+        iterationProgress = max(iterationProgress, 1.0);
 
-        currentIteration = Math.floor(progr);
-
-        iterations = this.iterations;
-        integralIterations = Math.floor(iterations);
-
-        // прогресс относительно текущего прохода
-        fractionalTime = progr - Math.min(currentIteration, integralIterations);
-
-        if (fractionalTime > 1) fractionalTime = 1;
-
-        /*
-         * Условие завершения итерации
-         */
-        if (fractionalTime === 1 && currentIteration < iterations) {
+        if (iterationProgress === 1.0 && currentIteration <= iterationCount) {
+            // Условие завершения итерации
             this.oniteration();
-        }
-
-        /*
-         * Условие завершения анимации
-         */
-        if (progr > iterations) {
+        } else if (animationProgress >= iterationCount) {
+            // Условие завершения анимации
             this.stop();
+        } else {
+            if (this.needsReverse(currentIteration)) {
+                iterationProgress = 1.0 - iterationProgress;
+            }
+            fetchedProperties = this.fetch(iterationProgress);
+            this.render(fetchedProperties, false);
         }
-
-        iterationIsOdd = currentIteration & 1;
-
-        if (needsReverse(this.animationDirection, currentIteration)) {
-            fractionalTime = 1 - fractionalTime;
-        }
-
-        fetchedProperties = this.fetch(fractionalTime);
-        this.render(fetchedProperties, false);
 
     };
 
@@ -757,8 +750,28 @@
     KeyframeAnimation.computeElapsedTime = function (timeStamp) {
         var elapsedTime = timeStamp - this.started;
         elapsedTime += -1 * this.delayTime;
-        if (elapsedTime < 0) elapsedTime = 0;
+        elapsedTime = min(elapsedTime, 0);
         return elapsedTime;
+    };
+
+    /**
+     * Нужно ли обратить прогресс анимации, в зависимости от направления и номера текущей итерации
+     * @param {number} iterationNumber
+     * @return {boolean}
+     * @private
+     */
+    KeyframeAnimation.needsReverse = function (iterationNumber) {
+
+        var needsReverse, iterationIsOdd, direction;
+
+        direction = this.animationDirection;
+        iterationIsOdd = isOdd(iterationNumber);
+
+        needsReverse = direction === DIRECTION_REVERSE;
+        needsReverse = needsReverse || direction === DIRECTION_ALTERNATE && iterationIsOdd;
+        needsReverse = needsReverse || direction === DIRECTION_ALTERNATE_REVERSE && !iterationIsOdd;
+
+        return needsReverse;
     };
 
     /** @export */
