@@ -232,6 +232,8 @@
         var numericDuration = parseTimeString(duration);
         if (type.number(numericDuration)) {
             this.animationTime = numericDuration;
+        } else if (ENABLE_DEBUG) {
+            console.warn('duration: bad value "'+ duration +'"');
         }
     };
 
@@ -240,7 +242,11 @@
      * @param {Function} callback
      */
     KeyframeAnimation.prototype.onComplete = function (callback) {
-        this.oncomplete = callback;
+        if (type.func(callback)) {
+            this.oncomplete = callback;
+        } else if (ENABLE_DEBUG) {
+            console.warn("onComplete: callback is not a function : %o", callback);
+        }
     };
 
     /**
@@ -364,6 +370,8 @@
                     }
                 }
             }
+        } else if (ENABLE_DEBUG) {
+            console.warn('easing: cannot form a function from arguments %o', timingFunction);
         }
     };
 
@@ -377,7 +385,17 @@
      * @param {string} animationDirection
      */
     KeyframeAnimation.prototype.direction = function (animationDirection) {
-        this.animationDirection = animationDirection;
+
+        if (animationDirection === DIRECTION_NORMAL ||
+            animationDirection === DIRECTION_REVERSE ||
+            animationDirection === DIRECTION_ALTERNATE ||
+            animationDirection === DIRECTION_ALTERNATE_REVERSE) {
+
+            this.animationDirection = animationDirection;
+
+        } else if (ENABLE_DEBUG) {
+            console.warn('direction: invalid value "%s"', animationDirection);
+        }
     };
 
     /**
@@ -390,6 +408,8 @@
         var numericDelay = parseTimeString(delay);
         if (type.number(numericDelay)) {
             this.delayTime = numericDelay;
+        } else if (ENABLE_DEBUG) {
+            console.warn('delay: cannot parse value "%s"', delay);
         }
     };
 
@@ -405,7 +425,17 @@
      * @see DEFAULT_FILLMODE
      */
     KeyframeAnimation.prototype.fillMode = function (fillMode) {
-        this.fillingMode = fillMode;
+
+        if (fillMode === FILLMODE_FORWARDS ||
+            fillMode === FILLMODE_BACKWARDS ||
+            fillMode === FILLMODE_BOTH ||
+            fillMode === FILLMODE_NONE) {
+
+            this.fillingMode = fillMode;
+
+        } else if (ENABLE_DEBUG) {
+            console.warn('fillMode: invalid value "%s"', fillMode);
+        }
     };
 
     /**
@@ -430,7 +460,9 @@
         } else {
             numericIterations = parseFloat(iterations);
             if (!isFinite(numericIterations) || numericIterations < 0) {
-                // переданное число не являетс корректным
+                if (ENABLE_DEBUG) {
+                    console.warn('iterationCount: passed iterations is not a number or is negative "%s"', iterations);
+                }
                 return;
             }
         }
@@ -464,6 +496,10 @@
 
         this.started = now();
         this.tick(this.started);
+
+        if (ENABLE_DEBUG) {
+            console.log('start: animation "%s" started', this.name);
+        }
     };
 
     /**
@@ -479,6 +515,10 @@
 
         if (fillsForwards) {
             this.tick(this.started + this.iterations * this.animationTime);
+        }
+
+        if (ENABLE_DEBUG) {
+            console.log('stop: animation "%s" stopped', this.name);
         }
 
         this.oncomplete();
@@ -499,7 +539,7 @@
          * Ключевой кадр, имеющий свои свойства и своё смягчение
          * @typedef {{key: number, properties: Object.<string, number>, easing: Function}}
          * */
-        var keyframe, keyframes;
+        var keyframe, keyframes, key;
         var startingKeyframe, endingKeyframe;
 
         /**
@@ -507,14 +547,19 @@
          */
         keyframes = this.keyframes;
 
-        if (type.undefined(position)) position = keyAliases["to"];
-        position = normalizeKey(position);
+        key = type.undefined(position) ? keyAliases["to"] : position;
+        key = normalizeKey(position);
         // в долях
-        position /= 100;
+        key *= PERCENT_TO_FRACTION;
 
-        if (!type.number(position)) return;
+        if (!type.number(key)) {
+            if (ENABLE_DEBUG) {
+                console.warn('propAt: passed keyframe key is invalid "%s"', position);
+            }
+            return;
+        }
 
-        keyframe = this.lookupKeyframe(position) || this.addKeyframe(position);
+        keyframe = this.lookupKeyframe(key) || this.addKeyframe(key);
         this.animatedProperties[name] = SPECIAL_VALUE;
         keyframe.properties[name] = value;
     };
@@ -746,6 +791,9 @@
 
         if (iterationProgress === 1.0 && currentIteration <= iterationCount) {
             // Условие завершения итерации
+            if (ENABLE_DEBUG) {
+                console.log('tick: %s - iteration %d of total %d', this.name, currentIteration, iterationCount);
+            }
             this.oniteration();
         } else if (animationProgress >= iterationCount) {
             // Условие завершения анимации
