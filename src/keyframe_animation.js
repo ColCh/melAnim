@@ -272,8 +272,6 @@
          * @type {Function}
          */
         var easing;
-        // индексы левой и правой скобок, если передана строка временной функции css.
-        var leftBracketIndex, rightBracketIndex;
         /**
          * Аргументы к временной функции
          * @type {Array}
@@ -322,9 +320,11 @@
                 points = cubicBezierAliases[camelCased];
             } else {
                 // строка временной функции css
-                leftBracketIndex = trimmed.indexOf("(");
-                rightBracketIndex = trimmed.indexOf(")", leftBracketIndex);
-                points = trimmed.slice(leftBracketIndex, rightBracketIndex).split(",");
+                if (cubicBezierReg.test(trimmed)) {
+                    points = trimmed.match(cubicBezierReg)[1].split(",");
+                } else if (stepsReg.test(trimmed)) {
+                    points = trimmed.match(stepsReg)[1].split(",");
+                }
             }
 
             if (points) {
@@ -332,6 +332,7 @@
                 if (points.length === 4) {
                     // 4 аргумента - это кубическая кривая Безье
                     points = map(points, parseFloat);
+                    // абсциссы точек должны лежать в [0, 1]
                     if (inRange(points[0], 0, 1, true) && inRange(points[2], 0, 1, true)) {
                         easing = partial(cubicBezier, points);
                     }
