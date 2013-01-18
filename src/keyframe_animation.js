@@ -686,37 +686,20 @@
      */
     KeyframeAnimation.prototype.render = function (fetchedInfo, direct) {
 
-        var buffer, property, propertyName, propertyValue, element;
-        var index, NOT_FOUND, colonIndex, semiIndex, fetchedProperties;
-
-        NOT_FOUND = -1;
-
+        // TODO вывод одинаковых значений в css правило
         each(this.targets, function (element, i) {
 
-            fetchedProperties = fetchedInfo[i];
-            buffer = element.style.cssText + ';';
+            var style = element.style;
 
-            each(fetchedProperties, function (fetchedProperty) {
+            each(fetchedInfo[i], function (fetchedProperty) {
 
-                property = fetchedProperty.name;
-                propertyName = getVendorPropName(property);
-                propertyValue = normalize(element, property, fetchedProperty.value, true);
+                var propertyName = getVendorPropName(fetchedProperty.name);
+                var propertyValue = normalize(element, propertyName, fetchedProperty.value, true);
 
-                index = buffer.indexOf(propertyName, 0);
-                index = index === NOT_FOUND ? buffer.indexOf(property, 0) : index;
-
-                if (index === NOT_FOUND) {
-                    buffer += propertyName + ":" + propertyValue + ";";
-                } else {
-                    colonIndex = buffer.indexOf(":", index);
-                    semiIndex = buffer.indexOf(";", colonIndex);
-                    buffer = buffer.slice(0, colonIndex + 1) + propertyValue + buffer.slice(semiIndex);
-                }
+                // TODO check setProperty method vs direct as-object setting
+                style[propertyName] = propertyValue;
 
             }, this);
-
-            // TODO Rules vs style проверка производительности
-            element.style.cssText = buffer;
 
         }, this);
 
