@@ -79,6 +79,36 @@
     };
 
     /**
+     * Шорткат для Math.floor
+     * @return {number}
+     * @inheritDoc
+     */
+    var floor = Math.floor;
+
+    /**
+     * Шорткат для Math.min
+     * @return {number}
+     * @inheritDoc
+     */
+    var min = Math.min;
+
+    /**
+     * Шорткат для Math.max
+     * @return {number}
+     * @inheritDoc
+     */
+    var max = Math.max;
+
+    /**
+     * Вернёт true, если число нечётное; и false, если чётное.
+     * @param number
+     * @return {boolean}
+     */
+    function isOdd (number) {
+        return (number & 1) === 1;
+    }
+
+    /**
      * Проверит, принадлежит ли число диапазону
      * @param {number} num
      * @param {number=} lowbound нижняя граница
@@ -1307,25 +1337,3 @@
         }
 
     }));
-
-    /**
-     * Нужно ли обратить прогресс анимации,
-     * в зависимости от направления и номера текущей итерации
-     * @param {string} direction
-     * @param {number} iterationNumber
-     * @return {Boolean}
-     */
-    function needsReverse(direction, iterationNumber) {
-
-        var needsReverse, iterationIsOdd;
-
-        // аналогично операции NUM % 2
-        // т.е. является ли число нечётным
-        iterationIsOdd = iterationNumber & 1;
-
-        needsReverse = direction === DIRECTION_REVERSE;
-        needsReverse |= direction === DIRECTION_ALTERNATE && iterationIsOdd;
-        needsReverse |= direction === DIRECTION_ALTERNATE_REVERSE && !iterationIsOdd;
-
-        return needsReverse;
-    }
