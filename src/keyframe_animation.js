@@ -619,10 +619,12 @@
          *  */
         globalFetch = map(this.targets, function (element) {
 
+            var fetchedProperties;
+
             id = element.getAttribute(DATA_ATTR_NAME);
             elementData = this.cache[id];
 
-            return map(this.animatedProperties, function (_, propertyName) {
+            fetchedProperties = map(this.animatedProperties, function (_, propertyName) {
 
                 /*
                  * Поиск двух ближайших ключевых кадров
@@ -672,6 +674,11 @@
 
             }, this);
 
+            return {
+                id: id,
+                properties: fetchedProperties
+            };
+
         }, this);
 
         return globalFetch;
@@ -679,28 +686,40 @@
 
     /**
      * Отрисует высчитанные значения свойств
-     * @param {Object} fetchedInfo возвращённые fetch'ем значения
+     * @param {Object} globalFetch возвращённые fetch'ем значения
      * @param {boolean} direct НЕ (!) использовать ли правило в таблице стилей для отрисовки одинаковых для элементов значений
      * @see KeyframeAnimation.fetch
      * @private
      */
-    KeyframeAnimation.prototype.render = function (fetchedInfo, direct) {
+    KeyframeAnimation.prototype.render = function (globalFetch, direct) {
 
         // TODO вывод одинаковых значений в css правило
-        each(this.targets, function (element, i) {
+        each(globalFetch, function (fetchInfo) {
 
-            var style = element.style;
+            var id = fetchInfo.id;
+            var elementIndex = LinearSearch(this.targets, function (element) {
+                if (id === element.getAttribute(DATA_ATTR_NAME)) {
+                    return 0;
+                }
+                return;
+            });
+            var element, style;
 
-            each(fetchedInfo[i], function (fetchedProperty) {
+            if (elementIndex !== -1) {
 
-                var propertyName = getVendorPropName(fetchedProperty.name);
-                var propertyValue = normalize(element, propertyName, fetchedProperty.value, true);
+                element = this.targets[elementIndex];
+                style = element.style;
 
-                // TODO check setProperty method vs direct as-object setting
-                style[propertyName] = propertyValue;
+                each(fetchInfo.properties, function (fetchedProperty) {
 
-            }, this);
+                    var propertyName = getVendorPropName(fetchedProperty.name);
+                    var propertyValue = normalize(element, propertyName, fetchedProperty.value, true);
 
+                    // TODO check setProperty method vs direct as-object setting
+                    style[propertyName] = propertyValue;
+
+                }, this);
+            }
         }, this);
 
     };
