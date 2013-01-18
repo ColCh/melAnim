@@ -103,7 +103,7 @@
      * @type {number}
      * @private
      */
-    KeyframeAnimation.prototype.iterations = undefined;
+    KeyframeAnimation.prototype.iterations = DEFAULT_ITERATIONCOUNT;
 
      /**
      * Челосисленное число проходов;
@@ -111,7 +111,7 @@
      * @type {number}
      * @private
      */
-    KeyframeAnimation.prototype.integralIterations = undefined;
+    KeyframeAnimation.prototype.integralIterations = floor(DEFAULT_ITERATIONCOUNT);
 
     /**
      * Направление анимации.
@@ -119,7 +119,7 @@
      * @type {string}
      * @private
      */
-    KeyframeAnimation.prototype.animationDirection = undefined;
+    KeyframeAnimation.prototype.animationDirection = DEFAULT_DIRECTION;
 
     /**
      * Объект с особыми смягчениями для свойств
@@ -136,21 +136,21 @@
      * @private
      * @type {number}
      */
-    KeyframeAnimation.prototype.animationTime = undefined;
+    KeyframeAnimation.prototype.animationTime = parseTimeString(DEFAULT_DURATION);
 
     /**
      * Обработчик завершения анимации
      * @private
      * @type {Function}
      */
-    KeyframeAnimation.prototype.oncomplete = undefined;
+    KeyframeAnimation.prototype.oncomplete = noop;
 
     /**
      * Обработчик завершения прохода
      * @type {Function}
      * @private
      */
-    KeyframeAnimation.prototype.oniteration = undefined;
+    KeyframeAnimation.prototype.oniteration = noop;
 
     /**
      * Временная метка старта
@@ -164,7 +164,7 @@
      * @type {Function}
      * @private
      */
-    KeyframeAnimation.prototype.smoothing = undefined;
+    KeyframeAnimation.prototype.smoothing = noop;
 
     /**
      * Таймер отрисовки
@@ -180,7 +180,7 @@
      * @type {number}
      * @private
      */
-    KeyframeAnimation.prototype.delayTime = undefined;
+    KeyframeAnimation.prototype.delayTime = parseTimeString(DEFAULT_DELAY);
 
     /**
      * Режим заливки свойств, устанавливается методом
@@ -188,7 +188,7 @@
      * @type {string}
      * @private
      */
-    KeyframeAnimation.prototype.fillingMode = undefined;
+    KeyframeAnimation.prototype.fillingMode = DEFAULT_FILLMODE;
 
     /**
      * Добавит элемент(-ы) в коллекцию анимируемых.
@@ -723,7 +723,7 @@
         currentIteration = floor(animationProgress);
 
         iterationProgress = animationProgress - min(currentIteration, this.integralIterations);
-        iterationProgress = max(iterationProgress, 1.0);
+        iterationProgress = min(iterationProgress, 1.0);
 
         if (iterationProgress === 1.0 && currentIteration <= iterationCount) {
             // Условие завершения итерации
@@ -750,7 +750,7 @@
     KeyframeAnimation.prototype.computeElapsedTime = function (timeStamp) {
         var elapsedTime = timeStamp - this.started;
         elapsedTime += -1 * this.delayTime;
-        elapsedTime = min(elapsedTime, 0);
+        elapsedTime = max(elapsedTime, 0);
         return elapsedTime;
     };
 
