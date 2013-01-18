@@ -747,7 +747,7 @@
      * @return {number}
      * @private
      */
-    KeyframeAnimation.computeElapsedTime = function (timeStamp) {
+    KeyframeAnimation.prototype.computeElapsedTime = function (timeStamp) {
         var elapsedTime = timeStamp - this.started;
         elapsedTime += -1 * this.delayTime;
         elapsedTime = min(elapsedTime, 0);
@@ -760,7 +760,7 @@
      * @return {boolean}
      * @private
      */
-    KeyframeAnimation.needsReverse = function (iterationNumber) {
+    KeyframeAnimation.prototype.needsReverse = function (iterationNumber) {
 
         var needsReverse, iterationIsOdd, direction;
 
