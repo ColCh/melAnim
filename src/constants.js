@@ -92,3 +92,10 @@
      * @const
      */
     var CSSANIMATIONS_SUPPORTED = !!getVendorPropName("animation");
+
+    /**
+     * Идеальное количество кадров для анимации на JavaScript.
+     * @type {number}
+     * @const
+     */
+    var FRAMES_PER_SECOND = 60;

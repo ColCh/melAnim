@@ -1,29 +1,94 @@
     var
 
-        mel = "mel_animation_",
+        /**
+         * Префикс к разным строкам, которые не могут начинаться с числа
+         * @type {string}
+         * @const
+         * */
+        mel = "melAnimation",
 
+        /**
+         * Шорткат для document
+         * @type {HTMLDocument}
+         * @const
+         * */
         document = window.document,
 
-        undefined;
+        /**
+         * Правильная undefined.
+         * @type {undefined}
+         * @const
+         */
+        undefined,
 
-    var ENABLE_DEBUG = true;
+        /**
+         * Разрешить ли вывод отладочных сообщений
+         * @type {boolean}
+         * @const
+         */
+        ENABLE_DEBUG = true,
 
-    var FRAMES_PER_SECOND = 60;
+        /**
+         * Стиль, где можно смотреть CSS-свойства
+         * @type {CSSStyleDeclaration}
+         * @const
+         */
+        dummy = document.documentElement.style,
 
-    var dummy = document.documentElement.style, prefix, lowPrefix;
+        /**
+         * Вендорный префикс к текущему браузеру
+         * @type {string}
+         */
+        prefix,
 
-    var cssNumericValueReg = /(-?\d*\.?\d+)(.*)/;
+        /**
+         * Вендорный префикс к текущему браузеру в нижнем регистре
+         * @type {string}
+         */
+        lowPrefix,
 
-    var animCount = 0;
+        /**
+         * Регвыр для выделения численного значения и размерности у значений CSS свойств
+         * @type {RegExp}
+         * @const
+         */
+        cssNumericValueReg = /(-?\d*\.?\d+)(.*)/,
 
-    var noop = function () {};
+        /**
+         * Инкремент для генерации уникальной строки
+         * @type {number}
+         */
+        animCount = 0,
 
-    var cubicBezierReg = /^cubic-bezier\(((?:\s*\d*\.?\d+\s*,\s*){3}\d*\.?\d+\s*)\)$/i;
+        /**
+         * Пустая функция
+         * @const
+         */
+        noop = function () {},
 
-    var stepsReg = /^steps\((\d+(?:,\s*(?:start|end))?)\)$/i;
+        /**
+         * Регвыр для кубической кривой Безье
+         * needed?
+         */
+        cubicBezierReg = /^cubic-bezier\(((?:\s*\d*\.?\d+\s*,\s*){3}\d*\.?\d+\s*)\)$/i,
 
-    var style = document.createElement("style");
+        /**
+         * Регвыр для лестничной функции
+         * needed?
+         */
+        stepsReg = /^steps\((\d+(?:,\s*(?:start|end))?)\)$/i,
 
-    document.getElementsByTagName("head")[0].parentNode.appendChild(style);
+        /**
+         * Свой тег <style> для возможности CSS3 анимаций
+         * Используется так же в анимации на JavaScript для ускорения.
+         * @type {HTMLStyleElement}
+         * @const
+         */
+        style = document.getElementsByTagName("head")[0].parentNode.appendChild(document.createElement("style")),
 
-    var stylesheet = style.sheet || style.styleSheet;
+        /**
+         * Каскадная таблица из тега <style>
+         * @type {CSSStyleSheet}
+         * @const
+         */
+        stylesheet = style.sheet || style.styleSheet;
