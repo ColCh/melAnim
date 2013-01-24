@@ -42,7 +42,7 @@
         this.keyframes = [];
         this.specialEasing = {};
         this.iterations = 1;
-        this.rule = addRule("." + this.name, "");
+        this.rules = {};
         this.animatedProperties = {};
         // начальный и конечный ключевые кадры
         // их свойства наследуют вычисленные
@@ -87,7 +87,7 @@
      * @type {number}
      * @private
      */
-    KeyframeAnimation.prototype.iterations = DEFAULT_ITERATIONCOUNT;
+    KeyframeAnimation.prototype.iterations = parseInt(DEFAULT_ITERATIONCOUNT, 10);
 
     /**
      * Челосисленное число проходов;
@@ -155,10 +155,11 @@
     KeyframeAnimation.prototype.targets = undefined;
 
     /**
-     * CSS-правило, в котором будут отрисовываться свойства, значения которых совпадают для каждого элемента.
-     * @type {CSSRule}
+     * Объект с CSS-правилами, в котором будут отрисовываться свойства.
+     * Ключ - ID элемента, значение - CSS правило.
+     * @enum {CSSRule}
      */
-    KeyframeAnimation.prototype.rule = undefined;
+    KeyframeAnimation.prototype.rules = undefined;
 
     /**
      * Отсортированный по возрастанию свойства "key" массив ключевых кадров.
@@ -209,8 +210,9 @@
     KeyframeAnimation.prototype.element = function (elem) {
         var id, elements;
         if (type.element(elem)) {
-            addClass(elem, this.name);
             id = generateId();
+            this.rules[id] = addRule("." + id);
+            addClass(elem, id);
             elem.setAttribute(DATA_ATTR_NAME, id);
             this.cache[id] = {};
             this.targets.push(elem);
@@ -627,11 +629,10 @@
 
         var elementData;
         var id;
-        var i, j;
         var keyframes, globalFetch, fetchedProperties, firstKeyframe, secondKeyframe, from, to, propertyName;
         var element;
         var fractionalTime, offset, scale;
-        var timingFunction, index, easing;
+        var timingFunction, specialEasing, index, easing;
 
         keyframes = this.keyframes;
 
@@ -748,21 +749,29 @@
                 }
                 return;
             });
-            var element, style;
+            var element, elementStyle;
+            var rule, ruleStyle;
+            var destinationStyle;
 
             if (elementIndex !== -1) {
 
                 element = this.targets[elementIndex];
-                style = element.style;
+                elementStyle = element.style;
+                rule = this.rules[id];
+                ruleStyle = rule.style;
+                destinationStyle = direct ? elementStyle : ruleStyle;
 
                 each(fetchInfo.properties, function (fetchedProperty) {
-
                     var propertyName = getVendorPropName(fetchedProperty.name);
                     var propertyValue = normalize(element, propertyName, fetchedProperty.value, true);
-
-                    // TODO check setProperty method vs direct as-object setting
-                    style[propertyName] = propertyValue;
-
+                    if (!direct && elementStyle[propertyName]) {
+                        // удалить свойство из стиля элемента, чтобы оно не перекрывало значение css правила
+                        elementStyle[propertyName] = '';
+                        if (ENABLE_DEBUG) {
+                            console.info('Property "%s" was overridden. Removing it from style of %o', propertyName, element);
+                        }
+                    }
+                    destinationStyle[propertyName] = propertyValue;
                 }, this);
             }
         }, this);
