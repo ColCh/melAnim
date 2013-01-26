@@ -29,6 +29,12 @@
         ENABLE_DEBUG = true,
 
         /**
+         * Шорткат для объекта отладочного вывода
+         * @inheritDoc
+         */
+        console = window.console,
+
+        /**
          * Стиль, где можно смотреть CSS-свойства
          * @type {CSSStyleDeclaration}
          * @const
