@@ -409,7 +409,7 @@
     KeyframeAnimation.prototype.delay = function (delay) {
         var numericDelay = parseTimeString(delay);
         if (type.number(numericDelay)) {
-            this.delayTime = numericDelay;
+            this.delayTime =/** @type {number} */ (numericDelay);
         } else if (ENABLE_DEBUG) {
             console.warn('delay: cannot parse value "%s"', delay);
         }
@@ -544,9 +544,6 @@
         var keyframe, keyframes, key;
         var startingKeyframe, endingKeyframe;
 
-        /**
-         * @type {Array.<keyframe>}
-         */
         keyframes = this.keyframes;
 
         key = type.undefined(position) ? keyAliases["to"] : position;
@@ -579,23 +576,21 @@
      */
     KeyframeAnimation.prototype.addKeyframe = function (position, properties, easing) {
 
-        var keyframe, keyframes;
+        /** @type {{key: number, properties: Object, easing: Function}} */
+        var keyframe;
+        var keyframes;
 
         if (type.number(position)) {
 
-            /** @type {{key: number, properties: Object.<string, number>, easing: Function}} */
             keyframe = {
                 key: position,
-                properties: type.object(properties) ? properties : {}
+                properties: type.object(properties) ? properties : {},
+                easing: type.func(easing) ? easing : noop
             };
-
-            if (type.func(easing)) {
-                keyframe.easing = easing;
-            }
 
             keyframes = this.keyframes;
             keyframes.push(keyframe);
-            bubbleSort(/** @type {Array} */keyframes, compareKeyframes);
+            bubbleSort(/** @type {Array} */(keyframes), compareKeyframes);
 
             return keyframe;
 
@@ -612,7 +607,7 @@
      */
     KeyframeAnimation.prototype.lookupKeyframe = function (position) {
         var keyframe, index;
-        index = binarySearch(/** @type {Array} */this.keyframes, position, function (key, keyframe) {
+        index = binarySearch(/** @type {Array} */(this.keyframes), position, function (key, keyframe) {
             return key - keyframe.key;
         });
         keyframe = this.keyframes[index];
@@ -631,7 +626,7 @@
         var id;
         var keyframes, globalFetch, fetchedProperties, firstKeyframe, secondKeyframe, from, to, propertyName;
         var element;
-        var fractionalTime, offset, scale;
+        var offset, scale;
         var timingFunction, specialEasing, index, easing;
 
         keyframes = this.keyframes;
@@ -641,7 +636,7 @@
          */
         timingFunction = this.smoothing;
 
-        index = binarySearch(keyframes, fractionalTime, function (fractionalTime, firstKeyframe, index, keyframes) {
+        index = binarySearch(/**@type {Array}*/(keyframes), fractionalTime, function (fractionalTime, firstKeyframe, index, keyframes) {
             var secondKeyframe = keyframes[ index + 1];
             // для навигации в бинарном поиске
             var MOVE_RIGHT = 1, MOVE_LEFT = -1, STOP = 0;
@@ -653,7 +648,7 @@
             return STOP;
         });
 
-        if (index in keyframes && type.func(keyframes[index].easing)) {
+        if (index in keyframes && keyframes[index].easing !== noop) {
             timingFunction = keyframes[index].easing;
         } else if (!type.func(timingFunction)) {
             timingFunction = cubicBezierApproximations[ DEFAULT_EASING ];
@@ -715,7 +710,7 @@
 
                 return {
                     name: propertyName,
-                    value: blend(propertyName, from, to, easing)
+                    value: blend(propertyName, /** @type {(Array|number)} */ (from), /** @type {(Array|number)} */(to), easing)
                 };
 
             }, this);
@@ -738,16 +733,11 @@
      * @private
      */
     KeyframeAnimation.prototype.render = function (globalFetch, direct) {
-
-        // TODO вывод одинаковых значений в css правило
         each(globalFetch, function (fetchInfo) {
 
             var id = fetchInfo.id;
             var elementIndex = LinearSearch(this.targets, function (element) {
-                if (id === element.getAttribute(DATA_ATTR_NAME)) {
-                    return 0;
-                }
-                return;
+                return id === element.getAttribute(DATA_ATTR_NAME);
             });
             var element, elementStyle;
             var rule, ruleStyle;
@@ -762,16 +752,7 @@
                 destinationStyle = direct ? elementStyle : ruleStyle;
 
                 each(fetchInfo.properties, function (fetchedProperty) {
-                    var propertyName = getVendorPropName(fetchedProperty.name);
-                    var propertyValue = normalize(element, propertyName, fetchedProperty.value, true);
-                    if (!direct && elementStyle[propertyName]) {
-                        // удалить свойство из стиля элемента, чтобы оно не перекрывало значение css правила
-                        elementStyle[propertyName] = '';
-                        if (ENABLE_DEBUG) {
-                            console.info('Property "%s" was overridden. Removing it from style of %o', propertyName, element);
-                        }
-                    }
-                    destinationStyle[propertyName] = propertyValue;
+                    css(destinationStyle, fetchedProperty.name, fetchedProperty.value);
                 }, this);
             }
         }, this);
@@ -824,7 +805,14 @@
      * @private
      */
     KeyframeAnimation.prototype.computeElapsedTime = function (timeStamp) {
-        var elapsedTime = timeStamp - this.started;
+        var elapsedTime;
+
+        if (timeStamp < HIGHRESOLUTION_TIMER_BOUND) {
+            // высокоточный таймер
+            timeStamp += navigStart;
+        }
+
+        elapsedTime = timeStamp - this.started;
         elapsedTime += -1 * this.delayTime;
         elapsedTime = max(elapsedTime, 0);
         return elapsedTime;

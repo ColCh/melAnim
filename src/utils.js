@@ -80,21 +80,18 @@
 
     /**
      * Шорткат для Math.floor
-     * @return {number}
      * @inheritDoc
      */
     var floor = Math.floor;
 
     /**
      * Шорткат для Math.min
-     * @return {number}
      * @inheritDoc
      */
     var min = Math.min;
 
     /**
      * Шорткат для Math.max
-     * @return {number}
      * @inheritDoc
      */
     var max = Math.max;
@@ -125,7 +122,7 @@
      * @return {string}
      */
     function generateId() {
-        return /** @type {string} */ mel + animCount++;
+        return /** @type {string} */ (mel) + animCount++;
     }
 
     /**
@@ -240,7 +237,7 @@
         var callable = type.func(val),
             index, i, m, curr,
             native = Array.prototype.indexOf,
-            EQUALS = 0, NOT_FOUND = -1;
+            EQUALS = true, NOT_FOUND = -1;
 
         index = NOT_FOUND;
 
@@ -359,7 +356,7 @@
      */
     function bind(fn, ctx) {
         return function () {
-            return fn.call(ctx);
+            return fn.apply(ctx, arguments);
         };
     }
 
@@ -378,7 +375,7 @@
      * Пройдётся по элементам массива или свойствам объекта.
      * Итерирование прервётся, если callback вернёт false.
      * @param {Array|Object} arg
-     * @param {function} callback
+     * @param {Function} callback
      * @param {Object=} context контекст исполнения callback'а
      */
     function each(arg, callback, context) {
@@ -494,7 +491,7 @@
      * Возвращает undefined в случае неудачи.
      *
      * @param {string} property Имя свойства.
-     * @param {boolean=|object=} target Где смотреть наличие свойств - в стилях при falsy (!), и в window при true, или в указанном объекте.
+     * @param {(Object|boolean)} target Где смотреть наличие свойств - в стилях при falsy (!), и в window при true, или в указанном объекте.
      *
      * @return {string?}
      * */
@@ -563,22 +560,47 @@
     };
 
     /**
+     * Объект window.peformance
+     * @type {(undefined|Object)}
+     */
+    var performance = window[ getVendorPropName("performance", true) ];
+
+    /**
+     * Измерит и вернёт точное время, прошедшее с момента navigationStart.
+     * (если поддерживается)
+     * @type {(undefined|Function)}
+     */
+    var perfNow;
+
+    /**
+     * Время navigationStart
+     * @type {(undefined|number)}
+     */
+    var navigStart;
+
+    if (performance) {
+        perfNow = bind(performance[ getVendorPropName("now", performance) ], performance);
+        navigStart = performance["timing"]["navigationStart"];
+        now = function () {
+            return perfNow() + navigStart;
+        };
+        if (ENABLE_DEBUG) {
+            console.log("DOMHighResTimeStamp support detected");
+        }
+    } else if (ENABLE_DEBUG) {
+        console.log("DOMHighResTimeStamp isn't supported. Using Date.now as usual.");
+    }
+
+    /**
      * Замена для requestAnimationFrame.
      * @param {function(number)} callback
      * @return {number} ID таймаута
      */
     function rAF_imitation(callback) {
-
-        var id = rAF_imitation.unique++,
-
-            info = {
-                id:id,
-                func:callback
-            };
+        var id = rAF_imitation.unique++;
 
         if (!rAF_imitation.timerID) rAF_imitation.timerID = setInterval(rAF_imitation.looper, 1e3 / FRAMES_PER_SECOND);
-
-        rAF_imitation.queue.push(info);
+        rAF_imitation.queue[id] = callback;
         return id;
     }
 
@@ -587,23 +609,15 @@
      * @param {number} id
      */
     function rAF_imitation_dequeue(id) {
-
-        var index, queue, eq;
-
-        eq = function (/**@type {{id: number, func: Function}}*/val) {
-            return val.id === id;
-        };
-        queue = rAF_imitation.queue;
-        index = LinearSearch(/**@type {Array}*/(queue), eq);
-        if (index !== -1) {
-            // don't splice
-            queue[index] = null;
+        var queue = rAF_imitation.queue;
+        if (id in queue) {
+            delete queue[id];
         }
     }
 
     /**
      * ID таймаута "перерисовки"
-     * @type {number}
+     * @type {?number}
      * @private
      */
     rAF_imitation.timerID = null;
@@ -616,10 +630,10 @@
 
     /**
      * Очередь обработчиков и их контекстов
-     * @type {Array.<{func: Function, id: number}>}
+     * @type {Object}
      * @const
      */
-    rAF_imitation.queue = [];
+    rAF_imitation.queue = {};
 
     /**
      * Таймер "отрисовки" - пройдется по обработчикам и повызывает их,
@@ -627,17 +641,17 @@
      * @private
      */
     rAF_imitation.looper = function () {
-        var reflowTimeStamp = now(), queue = rAF_imitation.queue, info;
-        while (queue.length) {
-            info = queue.pop();
-            info && info.func.call(window, reflowTimeStamp);
-        }
+        var reflowTimeStamp = now();
+        each(rAF_imitation.queue, function (callback, id, queue) {
+            callback.call(window, reflowTimeStamp);
+            delete queue[id];
+        });
     };
 
     /**
      * Найдёт корень уравнения вида f(x)=val с указанной точностью итерационным способом
      * Если не указать сжимающее отображение, то будет использован метод хорд
-     * @param {function} F уравнение
+     * @param {Function} F уравнение
      * @param {number} Y значение уравнения в искомой точке
      * @param {number=} X0 начальное приближение (или значение уравнения)
      * @param {number=} X1 след. приближение
@@ -888,11 +902,11 @@
     /**
      * Установит значение стиля элементу, либо получит текущее
      * значение свойства, при необходимости конвертируя вывод.
-     * @param {Element} element Элемент
+     * @param {(Element|CSSStyleDeclaration)} element Элемент
      * @param {string} propertyName Имя свойства
      * @param {string=} propertyValue Значение свойства. Если пропустить (undefined) - функция
      *
-     * @return {string=}
+     * @return {(string|undefined)}
      * */
     function css(element, propertyName, propertyValue) {
 
@@ -940,7 +954,7 @@
 
     /**
      * Хуки для получения\установки значения свойства.
-     * @type {Object.<string, Object.<string, function>>}
+     * @type {Object.<string, Object.<string, Function>>}
      */
     css.hooks = {};
 
@@ -991,13 +1005,13 @@
      * Второй - имя свойства
      * Третий - значение
      * Червёртый - приводим к строке (true) или к числу (false)
-     * @type {Object.<string, function>}
+     * @type {Object.<string, Function>}
      */
     normalize.hooks = {};
 
     /**
      * Хуки для преобразования из исходных единиц измерения к абсолютным
-     * @type {Object.<string, function>}
+     * @type {Object.<string, Function>}
      */
     normalize.units = {
         // это и есть абсолютное значение
@@ -1027,8 +1041,8 @@
      * Вычисление значения между двумя точками
      * для анимируемого свойства
      * @param {string} propertyName Имя свойства
-     * @param {number} from Имя меньшей точки
-     * @param {number} to Имя большей точки
+     * @param {(Array|number)} from Значение меньшей точки
+     * @param {(Array|number)} to Значение большей точки
      * @param {number} timingFunctionValue Значение прогресса между ними
      * @return {number|Array} Вычисленное значение
      */
@@ -1055,8 +1069,6 @@
      * передав её текущую отметку времени
      * Оригинальная функция
      * @type {Function}
-     * @param {Function}
-        * @return {number} номер таймера
      */
     var rAF = window[getVendorPropName("requestAnimationFrame", window)];
 
@@ -1064,17 +1076,22 @@
      * Исполнит функцию перед отрисовкой, передав ей отметку времени
      * (обёртка)
      * @type {Function}
-     * @param {Function} callback
-     * @return {number} ID таймера для его отмены
      */
     var requestAnimationFrame = rAF ? rAF : rAF_imitation;
 
     /**
      * Отменит исполнение функции перед отрисовкой
      * @type {Function}
-     * @param {number} id ID таймаута
      */
     var cancelRequestAnimationFrame = rAF ? window[getVendorPropName("cancelRequestAnimationFrame", window)] : rAF_imitation_dequeue;
+
+    if (ENABLE_DEBUG) {
+        if (rAF) {
+            console.log("detected native requestAnimationFrame support");
+        } else {
+            console.log("requestAnimationFrame is not found. Using imitation.");
+        }
+    }
 
     /**
      * Таймер для анимации
@@ -1130,6 +1147,5 @@
      */
     ReflowLooper.prototype.looper = function (timeStamp) {
         this.timeoutID = requestAnimationFrame(this.looper);
-        timeStamp = timeStamp || now();
         this.callback.call(this.context, timeStamp);
     };

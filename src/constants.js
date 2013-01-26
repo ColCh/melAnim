@@ -99,3 +99,10 @@
      * @const
      */
     var FRAMES_PER_SECOND = 60;
+
+    /**
+     * Число-предел, ограничивающее обычные отметки времени от Date.now и новые высокочувствительные таймеры
+     * @type {number}
+     * @const
+     */
+    var HIGHRESOLUTION_TIMER_BOUND = 1e12;
