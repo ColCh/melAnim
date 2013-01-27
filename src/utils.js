@@ -1,14 +1,24 @@
     /**
+     * Проверит, является ли объект x экземпляром constructor.
+     * @param {*} x
+     * @param {*} constructor
+     * @return {boolean}
+     */
+    function instanceOf (x, constructor) {
+        return x instanceof constructor;
+    }
+
+    /**
      * Вернёт строковое представление типа аргумента.
      * При необходимости вернёт [[Class]] в нижнем регистре.
      *
-     * @param {?} x
+     * @param {*} x
      * @return {string}
      */
-    function type(x) {
+    function typeOf(x) {
         var type = typeof(x);
         if (type === "object") {
-            type = Object.prototype.toString.call(x).slice(8, -1).toLowerCase();
+            type = Object.prototype.toString.call(/** @type {Object} */ (x)).slice(8, -1).toLowerCase();
         }
         return type;
     }
@@ -16,21 +26,21 @@
     /**
      * Проверит, является ли аргумент HTML элементом.
      *
-     * @param {?} x
+     * @param {*} x
      * @return {boolean}
      */
-    type.element = function (x) {
-        return "nodeType" in x;
+    typeOf.element = function (x) {
+        return x && "nodeType" in x && x.nodeType === Node.ELEMENT_NODE;
     };
 
     /**
      * Проверит, является ли аргумент функцией.
      *
-     * @param {Function=} x
+     * @param {*} x
      * @return {boolean}
      */
-    type.func = function (x) {
-        return type(x) === "function";
+    typeOf.func = function (x) {
+        return instanceOf(x, Function) || typeOf(x) === "function";
     };
 
     /**
@@ -38,8 +48,8 @@
      * @param x
      * @return {boolean}
      */
-    type.array = function (x) {
-        return type(x) === "array";
+    typeOf.array = function (x) {
+        return instanceOf(x, Array) || typeOf(x) === "array";
     };
 
     /**
@@ -47,8 +57,8 @@
      * @param x
      * @return {boolean}
      */
-    type.undefined = function (x) {
-        return type(x) === "undefined";
+    typeOf.undefined = function (x) {
+        return x === undefined || typeOf(x) === "undefined";
     };
 
     /**
@@ -56,8 +66,8 @@
      * @param {*} x
      * @return {Boolean}
      */
-    type.number = function (x) {
-        return type(x) === "number";
+    typeOf.number = function (x) {
+        return instanceOf(x, Number) || typeOf(x) === "number";
     };
 
     /**
@@ -65,8 +75,8 @@
      * @param x
      * @return {Boolean}
      */
-    type.string = function (x) {
-        return type(x) === "string";
+    typeOf.string = function (x) {
+        return instanceOf(x, String) || typeOf(x) === "string";
     };
 
     /**
@@ -74,8 +84,8 @@
      * @param {*} x
      * @return {Boolean}
      */
-    type.object = function (x) {
-        return type(x) === "object";
+    typeOf.object = function (x) {
+        return instanceOf(x, Object) || typeOf(x) === "object";
     };
 
     /**
