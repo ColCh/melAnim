@@ -36,7 +36,7 @@
             aliases;
 
         // если передан объект с расширенными опциями; разворачиваем его.
-        if (type(duration) === "object" && arguments.length === 3) {
+        if (typeOf(duration) === "object" && arguments.length === 3) {
             classicMode = duration["classicMode"];
             direction = duration["direction"];
             start = duration["start"];
@@ -64,7 +64,7 @@
 
 
         // проверка входных данных
-        elements = type.element(elements) ? [elements]:slice(elements);
+        elements = typeOf.element(elements) ? [elements]:slice(elements);
 
 
 
@@ -78,7 +78,7 @@
 
 
 
-        if (type.func(easing)) {
+        if (typeOf.func(easing)) {
             classicMode = true;
         } else {
             // превращаем easing в массив точек \ аргументов.
@@ -90,7 +90,7 @@
             easing = aliases[easing] || easing;
 
             // строка CSS timing-function
-            if (type(easing) === "string") {
+            if (typeOf(easing) === "string") {
 
                 easing = cubicBezierReg.exec(easing) || stepsReg.exec(easing) || "";
                 easing = easing.slice(1).split(",");
@@ -142,16 +142,16 @@
 
 
 
-        iterationCount = type.undefined(iterationCount) ? DEFAULT_ITERATIONCOUNT:iterationCount;
+        iterationCount = typeOf.undefined(iterationCount) ? DEFAULT_ITERATIONCOUNT:iterationCount;
         iterationCount = iterationCounts[toLowerCase(iterationCount)] || iterationCount;
         iterationCount = parseInt(iterationCount, 10);
         iterationCount = iterationCount > 0 && !isNaN(iterationCount) ? iterationCount:DEFAULT_ITERATIONCOUNT;
 
 
 
-        complete = type.func(complete) ? complete:DEFAULT_HANDLER;
-        start = type.func(start) ? complete:DEFAULT_HANDLER;
-        iteration = type.func(iteration) ? complete:DEFAULT_HANDLER;
+        complete = typeOf.func(complete) ? complete:DEFAULT_HANDLER;
+        start = typeOf.func(start) ? complete:DEFAULT_HANDLER;
+        iteration = typeOf.func(iteration) ? complete:DEFAULT_HANDLER;
 
 
 

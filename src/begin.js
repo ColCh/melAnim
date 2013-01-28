@@ -9,7 +9,7 @@
 
         /**
          * Шорткат для document
-         * @type {HTMLDocument}
+         * @type {Document}
          * @const
          * */
         document = window.document,

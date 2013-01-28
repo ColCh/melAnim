@@ -30,7 +30,7 @@
      * @return {boolean}
      */
     typeOf.element = function (x) {
-        return x && "nodeType" in x && x.nodeType === Node.ELEMENT_NODE;
+        return "nodeType" in x && x.nodeType === Node.ELEMENT_NODE;
     };
 
     /**
@@ -118,9 +118,9 @@
     /**
      * Проверит, принадлежит ли число диапазону
      * @param {number} num
-     * @param {number=} lowbound нижняя граница
-     * @param {number=} highbound верхняя граница
-     * @param {boolean} including включая ли границы
+     * @param {number} lowbound нижняя граница
+     * @param {number} highbound верхняя граница
+     * @param {boolean=} including включая ли границы
      * @return {boolean}
      */
     function inRange(num, lowbound, highbound, including) {
@@ -151,6 +151,7 @@
      * @return {Object}
      */
     function createObject(parent) {
+        /** @constructor */
         var F = noop;
         F.prototype = parent;
         return new F;
@@ -171,21 +172,21 @@
      * @type {number}
      * @private
      */
-    Iterator.prototype.index = undefined;
+    Iterator.prototype.index = -1;
 
     /**
      * Запомненная длина коллекции
      * @type {number}
      * @private
      */
-    Iterator.prototype.length = undefined;
+    Iterator.prototype.length = -1;
 
     /**
      * Коллекция
      * @type {Array}
      * @private
      */
-    Iterator.prototype.collection = undefined;
+    Iterator.prototype.collection = null;
 
     /**
      * Возвратит текущий элемент коллекции
@@ -222,9 +223,9 @@
 
         var i, j, cache;
 
-        if (!type.number(low)) low = 0;
-        if (!type.number(high)) high = array.length - 1;
-        if (!type.func(compare)) compare = compareNumbers;
+        if (!typeOf.number(low)) low = 0;
+        if (!typeOf.number(high)) high = array.length - 1;
+        if (!typeOf.func(compare)) compare = compareNumbers;
 
         for (j = low; j < high; j += 1) {
             for (i = low; i < high - j; i += 1) {
@@ -244,7 +245,7 @@
      */
     function LinearSearch(arr, val) {
 
-        var callable = type.func(val),
+        var callable = typeOf.func(val),
             index, i, m, curr,
             native = Array.prototype.indexOf,
             EQUALS = true, NOT_FOUND = -1;
@@ -257,7 +258,7 @@
             for (i = 0, m = arr.length; i < m && index === NOT_FOUND; i++) {
                 curr = arr[i];
                 if (callable) {
-                    if (val(curr, i, arr) === EQUALS) index = i;
+                    if (/** @type {Function} */(val)(curr, i, arr) === EQUALS) index = i;
                 } else {
                     if (val === curr) index = i;
                 }
@@ -280,8 +281,8 @@
 
     /**
      * Сравнит 2 ключевых кадра по их ключам
-     * @param {keyframe} a
-     * @param {keyframe} b
+     * @param {Keyframe} a
+     * @param {Keyframe} b
      * @return {number} отрицальное число, если a < b, положительное число, если a > b, и 0, если они равны
      * @see compareNumbers
      */
@@ -304,10 +305,10 @@
 
         var mid, comp;
 
-        if (!type.number(lowBound)) lowBound = 0;
-        if (!type.number(upperBound)) upperBound = array.length - 1;
+        if (!typeOf.number(lowBound)) lowBound = 0;
+        if (!typeOf.number(upperBound)) upperBound = array.length - 1;
 
-        compare = type.func(compare) ? compare : compareNumbers;
+        compare = typeOf.func(compare) ? compare : compareNumbers;
 
         do {
 
@@ -342,7 +343,7 @@
      * @return {*}
      */
     function apply(func, args, ctx) {
-        return type.func(func) && func.apply(ctx, args);
+        return typeOf.func(func) && func.apply(ctx, args);
     }
 
     /**
@@ -391,7 +392,7 @@
     function each(arg, callback, context) {
         var i, b;
         context = context || window;
-        if (type.array(arg)) {
+        if (typeOf.array(arg)) {
             i = 0;
             b = arg.length;
             while (i < b) if (i in arg) {
@@ -415,7 +416,7 @@
      * @param {Array|Object} arg
      * @param {Function} callback
      * @param {Object=} ctx контекст callback'а
-     * @return {Array|Object}
+     * @return {Array}
      */
     function map(arg, callback, ctx) {
         var accum = [];
@@ -442,7 +443,7 @@
      * @return {string}
      */
     function toUpperCase(str) {
-        return String.prototype.toUpperCase.call(toString(str));
+        return String.prototype.toUpperCase.call(/** @type {String} */(str));
     }
     /**
      * Преобразует строку в нижний регистр.
@@ -451,7 +452,7 @@
      * @return {string}
      */
     function toLowerCase(str) {
-        return String.prototype.toLowerCase.call(toString(str));
+        return String.prototype.toLowerCase.call(/** @type {String} */(str));
     }
 
     /**
@@ -501,7 +502,7 @@
      * Возвращает undefined в случае неудачи.
      *
      * @param {string} property Имя свойства.
-     * @param {(Object|boolean)} target Где смотреть наличие свойств - в стилях при falsy (!), и в window при true, или в указанном объекте.
+     * @param {(Object|boolean)=} target Где смотреть наличие свойств - в стилях при falsy (!), и в window при true, или в указанном объекте.
      *
      * @return {string?}
      * */
@@ -634,7 +635,7 @@
 
     /**
      * Для генерации ID таймаута.
-     * @type {Number}
+     * @type {number}
      */
     rAF_imitation.unique = 0;
 
@@ -663,10 +664,10 @@
      * Если не указать сжимающее отображение, то будет использован метод хорд
      * @param {Function} F уравнение
      * @param {number} Y значение уравнения в искомой точке
-     * @param {number=} X0 начальное приближение (или значение уравнения)
-     * @param {number=} X1 след. приближение
-     * @param {number=} epsilon минимальная разница между двумя приближениями (или 10^-6)
-     * @param {Function=} derivative производная функции F (для метода касательных)
+     * @param {number} X0 начальное приближение (или значение уравнения)
+     * @param {number} X1 след. приближение
+     * @param {number} epsilon минимальная разница между двумя приближениями (или 10^-6)
+     * @param {Function} derivative производная функции F (для метода касательных)
      * @return {number} приближённое значение корня уравнения
      */
     function findEquationRoot(F, Y, X0, X1, epsilon, derivative) {
@@ -678,10 +679,10 @@
          * @const
          */
         var DEFAULT_EPSILON = 1e-6;
-        var i, stopCondition, contraction, X1, cache;
+        var i, stopCondition, contraction, cache;
         var savedX0, savedX1, deriv;
 
-        epsilon = type.number(epsilon) ? epsilon : DEFAULT_EPSILON;
+        epsilon = typeOf.number(epsilon) ? epsilon : DEFAULT_EPSILON;
         stopCondition = function (X0, X1) { return Math.abs(X0 - X1) <= epsilon; };
 
         // сохраним для метода хорд
@@ -737,7 +738,7 @@
      * @param {number} p2x
      * @param {number} p2y
      * @param {number} fractionalTime Вход. Это X.
-     * @param {number=} epsilon Погрешность
+     * @param {number} epsilon Погрешность
      * @return {number} Выходное значение - easing - Y.
      */
     function cubicBezier(p1x, p1y, p2x, p2y, fractionalTime, epsilon) {
@@ -819,7 +820,7 @@
      * @return {CSSStyleDeclaration}
      */
     function getComputedStyle(element) {
-        return window.getComputedStyle ? window.getComputedStyle(element) : element.currentStyle;
+        return window.getComputedStyle ? window.getComputedStyle(element, null) : element.currentStyle;
     }
 
     /**
@@ -857,11 +858,11 @@
      * @return {number}
      */
     function normalizeKey(key) {
-        if (type.string(key)) {
-            key = !type.undefined(keyAliases[key]) ? keyAliases[key] : key;
-            key = parseInt(key, 10);
+        var numericKey;
+        if (typeOf.string(key)) {
+            numericKey = key in keyAliases ? keyAliases[key] : parseInt(key, 10);
         }
-        return inRange(key, 0, 100, true) ? key : undefined;
+        return inRange(numericKey, 0, 100, true) ? numericKey : undefined;
     }
 
     /**
@@ -912,22 +913,22 @@
     /**
      * Установит значение стиля элементу, либо получит текущее
      * значение свойства, при необходимости конвертируя вывод.
-     * @param {(Element|CSSStyleDeclaration)} element Элемент
+     * @param {(HTMLElement|CSSStyleDeclaration)} element Элемент
      * @param {string} propertyName Имя свойства
-     * @param {string=} propertyValue Значение свойства. Если пропустить (undefined) - функция
+     * @param {(Array|string|number)=} propertyValue Значение свойства.
      *
      * @return {(string|undefined)}
      * */
     function css(element, propertyName, propertyValue) {
 
-        var getting = type.undefined(propertyValue);
+        var getting = typeOf.undefined(propertyValue);
         var action = getting ? "get" : "set";
         var hooks = css.hooks;
-        var hookVal;
-        var vendorizedPropertyName;
+        var hookVal, vendorizedPropertyName;
+        var stringValue;
 
         // нечему устанавливать\неоткуда получать
-        if (!element) return null;
+        if (!element) return;
 
         vendorizedPropertyName = getVendorPropName(propertyName);
 
@@ -937,29 +938,29 @@
 
         if (getting) {
 
-            if (type.undefined(hookVal)) {
-                //TODO нормализацию значений \ конвертацию.
-                propertyValue = getComputedStyle(element)[vendorizedPropertyName];
+            if (typeOf.undefined(hookVal)) {
+                stringValue = getComputedStyle(/** @type {HTMLElement} */(element))[vendorizedPropertyName];
             } else {
-                propertyValue = hookVal;
+                stringValue = hookVal;
             }
 
         } else {
 
-            if (!type.string(propertyValue)) {
-                propertyValue = normalize(element, propertyName, propertyValue, true);
+            if (typeOf.string(propertyValue)) {
+                stringValue = propertyValue;
+            } else {
+                stringValue = normalize(/** @type {HTMLElement} */(element), propertyName, /** @type {(Array|number)} */(propertyValue), true);
             }
 
-            if (type.element(element)) {
-                element.style[vendorizedPropertyName] = propertyValue;
+            if (typeOf.element(element)) {
+                /** @type {HTMLElement} */(element).style[vendorizedPropertyName] = propertyValue;
             } else {
-                // CSSStyleDeclaration
-                element[vendorizedPropertyName] = propertyValue;
+                /** @type {CSSStyleDeclaration} */(element)[vendorizedPropertyName] = propertyValue;
             }
 
         }
 
-        return propertyValue;
+        return stringValue;
     };
 
     /**
@@ -989,13 +990,13 @@
             normalized = hooks[propertyName](element, vendorizedPropertyName, propertyValue, toString);
         }
 
-        if (type.undefined(normalized)) {
+        if (typeOf.undefined(normalized)) {
 
             if (toString) {
-                if (type.number(propertyValue) && !normalize.nopx[propertyName]) {
+                if (typeOf.number(propertyValue) && !normalize.nopx[propertyName]) {
                     normalized = propertyValue + "px";
                 }
-            } else if (!type.number(propertyValue)) {
+            } else if (!typeOf.number(propertyValue)) {
                 unit = propertyValue.match(cssNumericValueReg)[2];
 
                 if (units[unit]) {
@@ -1034,7 +1035,7 @@
     /**
      * Список свойств, к которым не надо добавлять "PX"
      * при переводе из числа в строку.
-     * @enum {undefined}
+     * @enum {boolean}
      */
     normalize.nopx = {
         "fill-opacity":true,
@@ -1059,10 +1060,10 @@
     function blend(propertyName, from, to, timingFunctionValue) {
 
         if (propertyName in blend.hooks) {
-            return blend.hooks[propertyName](from, to, timingFunctionValue);
+            return /** @type {(Array|number)} */ (blend.hooks[propertyName](from, to, timingFunctionValue));
         }
 
-        return (to - from) * timingFunctionValue + from;
+        return /** @type {number} */ ((to - from) * timingFunctionValue + from);
     }
 
     /**
@@ -1110,8 +1111,15 @@
      * @constructor
      */
     function ReflowLooper(callback, context) {
-        this.callback = callback;
-        this.context = context;
+
+        if (typeOf.func(callback)) {
+            this.callback = /** @type {Function} */(callback);
+        }
+
+        if (typeOf.object(context)) {
+            this.context = /** @type {Object} */(context);
+        }
+
         this.looper = bind(this.looper, this);
     }
 
@@ -1120,21 +1128,21 @@
      * @type {Function}
      * @private
      */
-    ReflowLooper.prototype.callback = undefined;
+    ReflowLooper.prototype.callback = null;
 
     /**
      * Контекст функции
      * @type {Object}
      * @private
      */
-    ReflowLooper.prototype.context = undefined;
+    ReflowLooper.prototype.context = null;
 
     /**
      * ID таймаута
      * @type {number}
      * @private
      */
-    ReflowLooper.prototype.timeoutID = undefined;
+    ReflowLooper.prototype.timeoutID = -1;
 
     /**
      * Запуск таймера
@@ -1148,7 +1156,7 @@
      */
     ReflowLooper.prototype.stop = function () {
         cancelRequestAnimationFrame(this.timeoutID);
-        this.timeoutID = null;
+        delete this.timeoutID;
     };
 
     /**

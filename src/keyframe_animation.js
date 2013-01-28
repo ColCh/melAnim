@@ -11,7 +11,7 @@
     /**
      * Имя атрибута для связывания элемента и
      * данных, связанных с ним
-     * @type {String}
+     * @type {string}
      * @const
      */
     var DATA_ATTR_NAME = mel + "-data-id";
@@ -31,23 +31,61 @@
     var PERCENT_TO_FRACTION = 1 / 100;
 
     /**
+     * Конструктор ключевых кадров.
+     * @constructor
+     * @param {number} key
+     * @param {Object=} properties
+     * @param {Function=} easing
+     */
+    function Keyframe (key, properties, easing) {
+        if (typeOf.number(key)) {
+            this.key = /** @type {number} */ (key);
+        }
+        if (typeOf.object(properties)) {
+            this.properties = /** @type {Object} */ (properties);
+        } else {
+            this.properties = new Object();
+        }
+        if (typeOf.func(easing)) {
+            this.easing = /** @type {Function} */(easing);
+        }
+    }
+
+    /**
+     * Прогресс, к которому относится ключевой кадр (в долях)
+     * @type {number}
+     */
+    Keyframe.prototype.key = 0.00;
+
+    /**
+     * Смягчение ключевого кадра
+     * @type {Function}
+     */
+    Keyframe.prototype.easing = noop;
+
+    /**
+     * Значения свойств для этого ключевого кадра.
+     * @type {Object}
+     */
+    Keyframe.prototype.properties = new Object();
+
+    /**
      * Конструктор анимаций с ключевыми кадрами на JavaScript.
      * @constructor
      */
     function KeyframeAnimation() {
-        this.targets = [];
-        this.cache = {};
+        this.targets = new Array();
+        this.cache = new Object();
         this.name = generateId();
-        /** @type KeyframeAnimation.prototype.keyframes */
-        this.keyframes = [];
-        this.specialEasing = {};
+        this.keyframes = new Array();
+        this.specialEasing = new Object();
         this.iterations = 1;
-        this.rules = {};
-        this.animatedProperties = {};
+        this.rules = new Object();
+        this.animatedProperties = new Object();
         // начальный и конечный ключевые кадры
         // их свойства наследуют вычисленные
-        this.addKeyframe(0, createObject(this.animatedProperties));
-        this.addKeyframe(1, createObject(this.animatedProperties));
+        this.addKeyframe(0.0, createObject(this.animatedProperties));
+        this.addKeyframe(1.0, createObject(this.animatedProperties));
         this.timer = new ReflowLooper(this.tick, this);
     }
 
@@ -62,7 +100,7 @@
      * @type {number}
      * @private
      */
-    KeyframeAnimation.prototype.delayTime = parseTimeString(DEFAULT_DELAY);
+    KeyframeAnimation.prototype.delayTime = /** @type {number} */ (parseTimeString(DEFAULT_DELAY));
 
     /**
      * Режим заливки свойств, устанавливается методом
@@ -79,7 +117,7 @@
      * @private
      * @type {number}
      */
-    KeyframeAnimation.prototype.animationTime = parseTimeString(DEFAULT_DURATION);
+    KeyframeAnimation.prototype.animationTime = /** @type {number} */ (parseTimeString(DEFAULT_DURATION));
 
     /**
      * Число проходов;
@@ -136,7 +174,7 @@
      * @type {Object}
      * @private
      */
-    KeyframeAnimation.prototype.cache = undefined;
+    KeyframeAnimation.prototype.cache = null;
 
     /**
      * Уникальная строка - имя анимации.
@@ -144,7 +182,7 @@
      * @type {string}
      * @private
      */
-    KeyframeAnimation.prototype.name = undefined;
+    KeyframeAnimation.prototype.name = "";
 
     /**
      * Коллекция элементов, учавствующих в анимации.
@@ -152,21 +190,21 @@
      * @private
      * @type {Array.<Element>}
      */
-    KeyframeAnimation.prototype.targets = undefined;
+    KeyframeAnimation.prototype.targets = null;
 
     /**
      * Объект с CSS-правилами, в котором будут отрисовываться свойства.
      * Ключ - ID элемента, значение - CSS правило.
-     * @enum {CSSRule}
+     * @type {Object.<string, CSSRule>}
      */
-    KeyframeAnimation.prototype.rules = undefined;
+    KeyframeAnimation.prototype.rules = null;
 
     /**
      * Отсортированный по возрастанию свойства "key" массив ключевых кадров.
      * @private
      * @typedef Array.{{key: number, properties: Object.<string, number>, easing: Function}}
      */
-    KeyframeAnimation.prototype.keyframes = undefined;
+    KeyframeAnimation.prototype.keyframes = null;
 
     /**
      * Словарь, содержащий все анимируемые свойства.
@@ -175,7 +213,7 @@
      * @type {Object}
      * @private
      */
-    KeyframeAnimation.prototype.animatedProperties = undefined;
+    KeyframeAnimation.prototype.animatedProperties = null;
 
     /**
      * Объект с особыми смягчениями для свойств
@@ -183,21 +221,21 @@
      * Значения устанавливаются методом easing
      * @type {Object.<string, Function>}
      */
-    KeyframeAnimation.prototype.specialEasing = undefined;
+    KeyframeAnimation.prototype.specialEasing = null;
 
     /**
      * Временная метка старта
      * @type {number}
      * @private
      */
-    KeyframeAnimation.prototype.started = undefined;
+    KeyframeAnimation.prototype.started = 0;
 
     /**
      * Таймер отрисовки
      * @type {ReflowLooper}
      * @private
      */
-    KeyframeAnimation.prototype.timer = undefined;
+    KeyframeAnimation.prototype.timer = null;
 
     /*
     * Публичные методы
@@ -209,10 +247,10 @@
      */
     KeyframeAnimation.prototype.element = function (elem) {
         var id, elements;
-        if (type.element(elem)) {
+        if (typeOf.element(elem)) {
             id = generateId();
             this.rules[id] = addRule("." + id);
-            addClass(elem, id);
+            addClass(/** @type {HTMLElement} */(elem), id);
             elem.setAttribute(DATA_ATTR_NAME, id);
             this.cache[id] = {};
             this.targets.push(elem);
@@ -232,8 +270,8 @@
      */
     KeyframeAnimation.prototype.duration = function (duration) {
         var numericDuration = parseTimeString(duration);
-        if (type.number(numericDuration)) {
-            this.animationTime = numericDuration;
+        if (typeOf.number(numericDuration)) {
+            this.animationTime = /** @type {number} */ (numericDuration);
         } else if (ENABLE_DEBUG) {
             console.warn('duration: bad value "'+ duration +'"');
         }
@@ -244,7 +282,7 @@
      * @param {Function} callback
      */
     KeyframeAnimation.prototype.onComplete = function (callback) {
-        if (type.func(callback)) {
+        if (typeOf.func(callback)) {
             this.oncomplete = callback;
         } else if (ENABLE_DEBUG) {
             console.warn("onComplete: callback is not a function : %o", callback);
@@ -263,7 +301,7 @@
      * При установке смягчения для свойства параметр прогресса игнорируется.
      * (!) Абсциссы первой и второй точек для кубической кривой должны принадлежать промежутку [0, 1].
      * @param {(Function|string)} timingFunction временная функция CSS, JS функция или алиас смягчения
-     * @param {string=} position прогресс по проходу в процентах (по умол. не зваисит от прогресса)
+     * @param {(number|string)=} position прогресс по проходу в процентах (по умол. не зваисит от прогресса)
      * @param {string=} property для какого свойства устанавливается (по умол. для всех)
      * @see cubicBezierAliases
      * @see cubicBezierApproximations
@@ -312,12 +350,12 @@
          */
         var key;
 
-        if (type.func(timingFunction)) {
-            easing = timingFunction;
-        } else if (type.string(timingFunction)) {
+        if (typeOf.func(timingFunction)) {
+            easing = /** @type {Function} */ (timingFunction);
+        } else if (typeOf.string(timingFunction)) {
             // alias или CSS timing-function
 
-            trimmed = trim(timingFunction);
+            trimmed = trim(/** @type {string} */ (timingFunction) );
             camelCased = camelCase(trimmed);
 
             if (camelCased in cubicBezierApproximations) {
@@ -348,7 +386,7 @@
                     // 2 аргумента - лестничная функция
                     stepsAmount = parseInt(points[0], 10);
                     countFromStart = points[1] === "start";
-                    if (type.number(stepsAmount)) {
+                    if (typeOf.number(stepsAmount)) {
                         easing = partial(steps, [stepsAmount, countFromStart]);
                     }
                 }
@@ -356,15 +394,15 @@
 
         }
 
-        if (type.func(easing)) {
-            if (type.string(property)) {
-                this.specialEasing[property] = easing;
+        if (typeOf.func(easing)) {
+            if (typeOf.string(property)) {
+                this.specialEasing[/** @type {string} */(property)] = easing;
             } else {
-                if (type.undefined(position)) {
+                if (typeOf.undefined(position)) {
                     this.smoothing = easing;
                 } else {
-                    key = normalizeKey(position);
-                    if (type.number(key)) {
+                    key = normalizeKey(/** @type {(number|string)} */(position));
+                    if (typeOf.number(key)) {
                         // указываем в процентах, используем в долях.
                         key *= PERCENT_TO_FRACTION;
                         keyframe = this.lookupKeyframe(key) || this.addKeyframe(key);
@@ -408,7 +446,7 @@
      */
     KeyframeAnimation.prototype.delay = function (delay) {
         var numericDelay = parseTimeString(delay);
-        if (type.number(numericDelay)) {
+        if (typeOf.number(numericDelay)) {
             this.delayTime =/** @type {number} */ (numericDelay);
         } else if (ENABLE_DEBUG) {
             console.warn('delay: cannot parse value "%s"', delay);
@@ -532,26 +570,25 @@
      * Для установки смягчения используется метод easing
      * @param {string} name имя свойства
      * @param {string} value значение свойства
-     * @param {string=} position строка прогресса в процентах (по умол. 100%)
+     * @param {(number|string)=} position строка прогресса в процентах (по умол. 100%)
      * @see KeyframeAnimation.easing
      */
     KeyframeAnimation.prototype.propAt = function (name, value, position) {
 
-        /**
-         * Ключевой кадр, имеющий свои свойства и своё смягчение
-         * @typedef {{key: number, properties: Object.<string, number>, easing: Function}}
-         * */
-        var keyframe, keyframes, key;
+        var keyframe;
+        var keyframes;
+        /** @type {(number|string)} */
+        var key;
         var startingKeyframe, endingKeyframe;
 
         keyframes = this.keyframes;
 
-        key = type.undefined(position) ? keyAliases["to"] : position;
-        key = normalizeKey(position);
+        key = typeOf.undefined(position) ? keyAliases["to"] : position;
+        key = normalizeKey(key);
         // в долях
         key *= PERCENT_TO_FRACTION;
 
-        if (!type.number(key)) {
+        if (!typeOf.number(key)) {
             if (ENABLE_DEBUG) {
                 console.warn('propAt: passed keyframe key is invalid "%s"', position);
             }
@@ -576,17 +613,12 @@
      */
     KeyframeAnimation.prototype.addKeyframe = function (position, properties, easing) {
 
-        /** @type {{key: number, properties: Object, easing: Function}} */
         var keyframe;
         var keyframes;
 
-        if (type.number(position)) {
+        if (typeOf.number(position)) {
 
-            keyframe = {
-                key: position,
-                properties: type.object(properties) ? properties : {},
-                easing: type.func(easing) ? easing : noop
-            };
+            keyframe = new Keyframe(position, properties, easing);
 
             keyframes = this.keyframes;
             keyframes.push(keyframe);
@@ -650,7 +682,7 @@
 
         if (index in keyframes && keyframes[index].easing !== noop) {
             timingFunction = keyframes[index].easing;
-        } else if (!type.func(timingFunction)) {
+        } else if (!typeOf.func(timingFunction)) {
             timingFunction = cubicBezierApproximations[ DEFAULT_EASING ];
         }
 

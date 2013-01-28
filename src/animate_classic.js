@@ -10,7 +10,7 @@
 
         // обёртка даёт возможность менять смягчение после старта
         function timingFunction (fractionalTime) {
-            if (type.func(easing)) {
+            if (typeOf.func(easing)) {
                 return easing(fractionalTime);
             } else {
                 // TODO остальные смягчения

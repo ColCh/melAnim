@@ -8,7 +8,7 @@
      * Алиасы для значений ключевых кадров
      * @enum {number}
      */
-    var keyAliases = aliases["keys"] = {
+    var keyAliases = {
         "from": 0,
         "to": 100
     };
@@ -17,13 +17,13 @@
      * Алиасы для временных функций
      * @enum {Object}
      */
-    var easingAliases =  aliases["easing"] = {};
+    var easingAliases = {};
 
     /**
      * Временные функции для CSS3 анимаций
      * @enum {Array}
      */
-    var cubicBezierAliases = aliases["cubicBezier"] = {
+    var cubicBezierAliases = {
 
         // встроенные
         "linear": [0.0, 0.0, 1.0, 1.0],
@@ -89,7 +89,7 @@
      * Плиближения для кубических кривых
      * @enum {Function}
      */
-    var cubicBezierApproximations = cubicBezierAliases["approximations"] = {
+    var cubicBezierApproximations = {
 
        "linear": function (x) { return x; },
 
