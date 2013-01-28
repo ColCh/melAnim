@@ -46,16 +46,20 @@
     </style>
 </head>
 <body>
+
+<div id="fps" style="position: absolute; top: 0; left: 0; font-size: 22px; color: red;">FPS HERE</div>
+
 <div style="top: 10%;" class="anim css">Anim me ONE!</div>
 <div style="top: 20%;" class="anim js">Anim me TWO!</div>
 
 <script>
-    var PRROFILE_ENABLED = 0;
+    var PROFILE_ENABLED = 1;
 
-    var PROFILE_START = 1 && PRROFILE_ENABLED;
-    var PROFILE_CONSTRUCTOR = 1 && PRROFILE_ENABLED;
-    var PROFILE_SETUP = 1 && PRROFILE_ENABLED;
-    var PROFILE_PROCESS = 1 && PRROFILE_ENABLED;
+    var PROFILE_FPS = 1 && PROFILE_ENABLED;
+    var PROFILE_START = 1 && PROFILE_ENABLED;
+    var PROFILE_CONSTRUCTOR = 1 && PROFILE_ENABLED;
+    var PROFILE_SETUP = 1 && PROFILE_ENABLED;
+    var PROFILE_PROCESS = 1 && PROFILE_ENABLED;
 
     if (PROFILE_START) console.profile("startup");
 </script>
@@ -88,7 +92,7 @@
 
     anim.delay("500ms");
 
-    anim.fillMode("both")
+    anim.fillMode("none");
 
     anim.onComplete(function () {
         document.body.style.backgroundColor = 'green';
