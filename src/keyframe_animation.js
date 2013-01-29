@@ -9,6 +9,12 @@
     var DEFAULT_PLAYINGSTATE = "paused";
 
     /**
+     * Количество знаков после запятой для значений
+     * @type {number}
+     * @const
+     */
+    var DEFAULT_DIGITS_ROUND = 5;
+    /**
      * Имя атрибута для связывания элемента и
      * данных, связанных с ним
      * @type {string}
@@ -164,6 +170,20 @@
      */
     KeyframeAnimation.prototype.oniteration = noop;
 
+     /**
+     * Функция будет выполняться на каждом тике (tick) анимации
+     * @private
+     * @type {Function}
+     */
+    KeyframeAnimation.prototype.onstep = noop;
+
+    /**
+     * Количество знаков после запятой для прогресса и свойств.
+     * @type {number}
+     * @private
+     */
+    KeyframeAnimation.prototype.digits = DEFAULT_DIGITS_ROUND;
+
     /*
     *   Индивидуальные свойства
     * */
@@ -272,6 +292,10 @@
         var numericDuration = parseTimeString(duration);
         if (typeOf.number(numericDuration)) {
             this.animationTime = /** @type {number} */ (numericDuration);
+            this.digits = floor(lg(this.animationTime * FRAMES_PER_SECOND - 1));
+            if (ENABLE_DEBUG) {
+                console.log('duration: computed epsilon is "%d" digits', this.digits);
+            }
         } else if (ENABLE_DEBUG) {
             console.warn('duration: bad value "'+ duration +'"');
         }
@@ -565,6 +589,16 @@
 
     };
 
+     /**
+     * Установка функции, которая будет выполняться на каждом шаге анимации
+     * @param {Function} callback
+     */
+    KeyframeAnimation.prototype.step = function (callback) {
+       if (typeOf.func(callback)) {
+           this.onstep = callback;
+       }
+    };
+
     /**
      * Установка значения свойства при указанном прогрессе
      * Для установки смягчения используется метод easing
@@ -659,10 +693,10 @@
         var keyframes, globalFetch, fetchedProperties, firstKeyframe, secondKeyframe, from, to, propertyName;
         var element;
         var offset, scale;
-        var timingFunction, specialEasing, index, easing;
-
+        var timingFunction, specialEasing, index, easing, epsilon;
         keyframes = this.keyframes;
 
+        epsilon = Math.pow(10, - this.digits);
         /*
          * Поиск функции смягчения для текущего ключевого кадра
          */
@@ -723,7 +757,8 @@
                 offset = firstKeyframe.key;
                 scale = 1.0 / (secondKeyframe.key - firstKeyframe.key);
 
-                easing = timingFunction((fractionalTime - offset) * scale);
+                easing = timingFunction((fractionalTime - offset) * scale, epsilon);
+                easing = round(easing, this.digits);
 
                 if (firstKeyframe.properties[propertyName] === SPECIAL_VALUE) {
                     from = elementData[propertyName];
@@ -742,7 +777,7 @@
 
                 return {
                     name: propertyName,
-                    value: blend(propertyName, /** @type {(Array|number)} */ (from), /** @type {(Array|number)} */(to), easing)
+                    value: blend(propertyName, /** @type {(Array|number)} */ (from), /** @type {(Array|number)} */(to), easing, this.digits)
                 };
 
             }, this);
@@ -806,6 +841,7 @@
 
         iterationCount = this.iterations;
         animationProgress = this.computeElapsedTime(timeStamp) / this.animationTime;
+        animationProgress = round(animationProgress, this.digits);
         currentIteration = floor(animationProgress);
 
         iterationProgress = animationProgress - min(currentIteration, this.integralIterations);
@@ -828,6 +864,7 @@
             this.render(fetchedProperties, false);
         }
 
+        this.step(timeStamp);
     };
 
     /**

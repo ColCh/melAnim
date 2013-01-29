@@ -660,6 +660,26 @@
     };
 
     /**
+     * Вернёт логарифм числа x по основанию 10 (десятичный логарифм)
+     * @param {number} x
+     * @return {number}
+     * */
+    function lg (x) {
+        return Math.log(x) * Math.LOG10E;
+    }
+
+    /**
+     * Округлит число до указанного знака
+     * @param {number} x число
+     * @param {number} digits количество знаков после запятой
+     * @return {number}
+     */
+    function round (x, digits) {
+        var factor = Math.pow(10, digits);
+        return Math.round( x * factor ) / factor;
+    }
+
+    /**
      * Найдёт корень уравнения вида f(x)=val с указанной точностью итерационным способом
      * Если не указать сжимающее отображение, то будет использован метод хорд
      * @param {Function} F уравнение
@@ -1054,16 +1074,23 @@
      * @param {string} propertyName Имя свойства
      * @param {(Array|number)} from Значение меньшей точки
      * @param {(Array|number)} to Значение большей точки
+     * @param {number} digits точность значения в количестве знакв после запятой
      * @param {number} timingFunctionValue Значение прогресса между ними
      * @return {number|Array} Вычисленное значение
      */
-    function blend(propertyName, from, to, timingFunctionValue) {
+    function blend(propertyName, from, to, timingFunctionValue, digits) {
+
+        /** @type {(Array|number)} */
+        var value;
 
         if (propertyName in blend.hooks) {
-            return /** @type {(Array|number)} */ (blend.hooks[propertyName](from, to, timingFunctionValue));
+            value = blend.hooks[propertyName](from, to, timingFunctionValue, digits);
+        } else {
+            value = ((to - from) * timingFunctionValue + from);
+            value = round(value, digits);
         }
 
-        return /** @type {number} */ ((to - from) * timingFunctionValue + from);
+        return value;
     }
 
     /**
@@ -1071,7 +1098,6 @@
      * transform или crop, к примеру
      * @type {Object}
      * @private
-     * @static
      */
     blend.hooks = {};
 
