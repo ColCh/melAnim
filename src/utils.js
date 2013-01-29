@@ -953,9 +953,9 @@
             }
 
             if (typeOf.element(element)) {
-                /** @type {HTMLElement} */(element).style[vendorizedPropertyName] = propertyValue;
+                /** @type {HTMLElement} */(element).style[vendorizedPropertyName] = stringValue;
             } else {
-                /** @type {CSSStyleDeclaration} */(element)[vendorizedPropertyName] = propertyValue;
+                /** @type {CSSStyleDeclaration} */(element)[vendorizedPropertyName] = stringValue;
             }
 
         }

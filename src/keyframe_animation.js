@@ -76,11 +76,11 @@
     function KeyframeAnimation() {
         this.targets = new Array();
         this.cache = new Object();
-        this.name = generateId();
+        this.animationName = generateId();
         this.keyframes = new Array();
         this.specialEasing = new Object();
         this.iterations = 1;
-        this.rules = new Object();
+        this.rulesList = new Object();
         this.animatedProperties = new Object();
         // начальный и конечный ключевые кадры
         // их свойства наследуют вычисленные
@@ -182,7 +182,7 @@
      * @type {string}
      * @private
      */
-    KeyframeAnimation.prototype.name = "";
+    KeyframeAnimation.prototype.animationName = "";
 
     /**
      * Коллекция элементов, учавствующих в анимации.
@@ -197,7 +197,7 @@
      * Ключ - ID элемента, значение - CSS правило.
      * @type {Object.<string, CSSRule>}
      */
-    KeyframeAnimation.prototype.rules = null;
+    KeyframeAnimation.prototype.rulesList = null;
 
     /**
      * Отсортированный по возрастанию свойства "key" массив ключевых кадров.
@@ -249,7 +249,7 @@
         var id, elements;
         if (typeOf.element(elem)) {
             id = generateId();
-            this.rules[id] = addRule("." + id);
+            this.rulesList[id] = addRule("." + id);
             addClass(/** @type {HTMLElement} */(elem), id);
             elem.setAttribute(DATA_ATTR_NAME, id);
             this.cache[id] = {};
@@ -538,7 +538,7 @@
         this.tick(this.started);
 
         if (ENABLE_DEBUG) {
-            console.log('start: animation "%s" started', this.name);
+            console.log('start: animation "%s" started', this.animationName);
         }
     };
 
@@ -558,7 +558,7 @@
         }
 
         if (ENABLE_DEBUG) {
-            console.log('stop: animation "%s" stopped', this.name);
+            console.log('stop: animation "%s" stopped', this.animationName);
         }
 
         this.oncomplete();
@@ -779,7 +779,7 @@
 
                 element = this.targets[elementIndex];
                 elementStyle = element.style;
-                rule = this.rules[id];
+                rule = this.rulesList[id];
                 ruleStyle = rule.style;
                 destinationStyle = direct ? elementStyle : ruleStyle;
 
@@ -814,7 +814,7 @@
         if (iterationProgress === 1.0 && currentIteration <= iterationCount) {
             // Условие завершения итерации
             if (ENABLE_DEBUG) {
-                console.log('tick: %s - iteration %d of total %d', this.name, currentIteration, iterationCount);
+                console.log('tick: %s - iteration %d of total %d', this.animationName, currentIteration, iterationCount);
             }
             this.oniteration();
         } else if (animationProgress >= iterationCount) {
@@ -869,6 +869,19 @@
 
         return needsReverse;
     };
+
+    /* Экспорты */
+    KeyframeAnimation.prototype["element"] = KeyframeAnimation.prototype.element;
+    KeyframeAnimation.prototype["delay"] = KeyframeAnimation.prototype.delay;
+    KeyframeAnimation.prototype["duration"] = KeyframeAnimation.prototype.duration;
+    KeyframeAnimation.prototype["direction"] = KeyframeAnimation.prototype.direction;
+    KeyframeAnimation.prototype["easing"] = KeyframeAnimation.prototype.easing;
+    KeyframeAnimation.prototype["fillMode"] = KeyframeAnimation.prototype.fillMode;
+    KeyframeAnimation.prototype["iterationCount"] = KeyframeAnimation.prototype.iterationCount;
+    KeyframeAnimation.prototype["onComplete"] = KeyframeAnimation.prototype.onComplete;
+    KeyframeAnimation.prototype["propAt"] = KeyframeAnimation.prototype.propAt;
+    KeyframeAnimation.prototype["start"] = KeyframeAnimation.prototype.start;
+    KeyframeAnimation.prototype["stop"] = KeyframeAnimation.prototype.stop;
 
     /** @export */
     window["KeyframeAnimation"] = KeyframeAnimation;
