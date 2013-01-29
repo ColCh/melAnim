@@ -98,7 +98,7 @@
      * @type {number}
      * @const
      */
-    var FRAMES_PER_SECOND = 60;
+    var FRAMES_PER_SECOND = 24//60;
 
     /**
      * Число-предел, ограничивающее обычные отметки времени от Date.now и новые высокочувствительные таймеры

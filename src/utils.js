@@ -456,6 +456,15 @@
     }
 
     /**
+     * Размерности для parseTimeString
+     * @type {Object}
+     */
+    var timeStringModificators = {
+        "ms": 1,
+        "s": 1e3
+    };
+
+    /**
      * Обработает строку времени вида %время%+%размерность%
      * @param {(string|number)} timeString
      * @return {(number|undefined)} обработанное время в миллисекундах или undefined в случае неудачи
@@ -467,21 +476,12 @@
 
         if (matched) {
             numeric = parseFloat(matched[1]);
-            coefficient = parseTimeString.modificators[ matched[2] ] || 1;
+            coefficient = timeStringModificators[ matched[2] ] || 1;
             return numeric * coefficient;
         }
 
         return undefined;
     }
-
-    /**
-     * Размерности для parseTimeString
-     * @type {Object}
-     */
-    parseTimeString.modificators = {
-        "ms":1,
-        "s":1e3
-    };
 
     /**
      * Заменит дефисы и следующие за ним символы
@@ -507,60 +507,62 @@
      * @return {string?}
      * */
     function getVendorPropName(property, target) {
-        var cache, result, camelCased;
+        var result, camelCased;
 
         target = !target ? dummy : (target === true ? window : target);
-        cache = getVendorPropName.cache;
 
-        if (property in target) {
-            return cache[property] = property;
-        }
-
-        if (cache[property] === undefined) {
+        if (property in gVPNCache) {
+            result = gVPNCache[property];
+        } else if (property in target) {
+            result = property;
+        } else {
             camelCased = camelCase(property);
+
             if (camelCased in target) {
-                return cache[property] = camelCased;
+                result = gVPNCache[property] = camelCased;
             } else {
                 camelCased = camelCased.charAt(0).toUpperCase() + camelCased.slice(1);
-                if (cache.prefix && cache.lowPrefix) {
-                    if (cache.prefix + camelCased in target) {
-                        cache[property] = cache.prefix + camelCased;
-                    } else if (cache.lowPrefix + camelCased in target) {
-                        cache[property] = cache.lowPrefix + camelCased;
+                if (prefix && lowPrefix) {
+                    if (prefix + camelCased in target) {
+                        result = gVPNCache[property] = prefix + camelCased;
+                    } else if (lowPrefix + camelCased in target) {
+                        result = gVPNCache[property] = lowPrefix + camelCased;
                     }
                 } else {
-                    each(getVendorPropName.prefixes, function (prefix) {
+                    each(vendorPrefixes, function (probePrefix) {
 
-                        var lowPrefix = prefix.toLowerCase();
+                        var probeLowPrefix = toLowerCase(probePrefix), STOP = false;
 
-                        if (prefix + camelCased in target) {
-                            cache.prefix = prefix;
-                            cache.lowPrefix = lowPrefix;
-                            cache[property] = prefix + camelCased;
-                        } else if (lowPrefix + camelCased in target) {
-                            cache.prefix = prefix;
-                            cache.lowPrefix = lowPrefix;
-                            cache[property] = lowPrefix + camelCased;
+                        if (probePrefix + camelCased in target) {
+                            prefix = probePrefix;
+                            lowPrefix = probeLowPrefix;
+                            result = gVPNCache[property] = probePrefix + camelCased;
+                            return STOP;
+                        } else if (probeLowPrefix + camelCased in target) {
+                            prefix = probePrefix;
+                            lowPrefix = probeLowPrefix;
+                            result = gVPNCache[property] = probeLowPrefix + camelCased;
+                            return STOP;
                         }
 
                     });
                 }
             }
         }
-        return cache[property];
+        return result;
     }
 
     /**
      * Какие префиксы будет пробовать getVendorPropName
-     * @type {Array}
+     * @type {Array.<string>}
      */
-    getVendorPropName.prefixes = "ms O Moz webkit".split(" ");
+    var vendorPrefixes = "ms O Moz webkit".split(" ");
 
     /**
-     * Где getVendorPropName запоминает результаты вычислений имени свойства
+     * Где getVendorPropName запоминает результаты вычислений имени свойства (кеш)
      * @type {Object}
      */
-    getVendorPropName.cache = {};
+    var gVPNCache = {};
 
     /**
      * Вернёт кол-во миллисекунд с 1 Января 1970 00:00:00 UTC
