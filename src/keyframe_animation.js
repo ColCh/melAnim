@@ -93,6 +93,7 @@
         this.addKeyframe(0.0, createObject(this.animatedProperties));
         this.addKeyframe(1.0, createObject(this.animatedProperties));
         this.timer = new ReflowLooper(this.tick, this);
+        return this;
     }
 
     /*
@@ -864,7 +865,7 @@
             this.render(fetchedProperties, false);
         }
 
-        this.step(timeStamp);
+        this.onstep(timeStamp);
     };
 
     /**

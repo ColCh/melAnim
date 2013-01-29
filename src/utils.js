@@ -1000,32 +1000,22 @@
      * @return {Array|number|undefined}
      */
     function normalize(element, propertyName, propertyValue, toString) {
-        var hooks = normalize.hooks;
-        var units = normalize.units;
         var normalized;
         var unit;
         var vendorizedPropertyName;
 
         vendorizedPropertyName = getVendorPropName(propertyName);
 
-        if (hooks[propertyName]) {
-            normalized = hooks[propertyName](element, vendorizedPropertyName, propertyValue, toString);
-        }
-
-        if (typeOf.undefined(normalized)) {
-
+        if (propertyName in normalizeHooks) {
+            normalized = normalizeHooks[propertyName](element, vendorizedPropertyName, propertyValue, toString);
+        } else {
             if (toString) {
-                if (typeOf.number(propertyValue) && !normalize.nopx[propertyName]) {
+                if (typeOf.number(propertyValue) && !(propertyName in nopx)) {
                     normalized = propertyValue + "px";
                 }
-            } else if (!typeOf.number(propertyValue)) {
-                unit = propertyValue.match(cssNumericValueReg)[2];
-
-                if (units[unit]) {
-                    normalized = units[unit](element, vendorizedPropertyName, propertyValue);
-                }
             } else {
-                normalized = propertyValue;
+                unit = propertyValue.match(cssNumericValueReg)[2];
+                normalized = normalizeUnits[unit](element, vendorizedPropertyName, propertyValue);
             }
         }
 
@@ -1040,13 +1030,13 @@
      * Червёртый - приводим к строке (true) или к числу (false)
      * @type {Object.<string, Function>}
      */
-    normalize.hooks = {};
+    var normalizeHooks = {};
 
     /**
      * Хуки для преобразования из исходных единиц измерения к абсолютным
      * @type {Object.<string, Function>}
      */
-    normalize.units = {
+    var normalizeUnits = {
         // это и есть абсолютное значение
         "px":function (element, propName, propVal) {
             // просто возвращаем число без "px"
@@ -1059,7 +1049,7 @@
      * при переводе из числа в строку.
      * @enum {boolean}
      */
-    normalize.nopx = {
+    var nopx = {
         "fill-opacity":true,
         "font-weight":true,
         "line-height":true,
@@ -1088,7 +1078,7 @@
         if (propertyName in blend.hooks) {
             value = blend.hooks[propertyName](from, to, timingFunctionValue, digits);
         } else {
-            value = ((to - from) * timingFunctionValue + from);
+            value = /** @type {number} */ ((to - from) * timingFunctionValue + from);
             value = round(value, digits);
         }
 
