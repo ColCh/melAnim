@@ -40,6 +40,12 @@
      * @const
      * */
     var MAXIMAL_PROGRESS = 1.0;
+    /**
+     * Разрешено ли KeyframeAnimation.prototype.fetch использовать кеш для вычислений
+     * @type {boolean}
+     * @const
+     */
+    var FETCH_USE_CACHE = false;
 
     function easingSearchCallback (fractionalTime, firstKeyframe, index, keyframes) {
         var secondKeyframe = keyframes[ index + 1];
@@ -98,6 +104,8 @@
      */
     function KeyframeAnimation() {
         this.targets = new Array();
+        this.startingValues = new Object();
+        this.currentValues = new Object();
         this.cache = new Object();
         this.animationName = generateId();
         this.keyframes = new Array();
@@ -207,12 +215,25 @@
     * */
 
     /**
-     * Объект с временными данными, вроде кешей
-     * или же запомненных индивидуальных значений свойств.
+     * Объект с временными данными.
      * @type {Object}
      * @private
      */
     KeyframeAnimation.prototype.cache = null;
+
+    /**
+     * Объект с текущими значениями свойств
+     * @type {Object.<string, Object.<string, (number|Array)>>}
+     * @private
+     */
+    KeyframeAnimation.prototype.currentValues = null;
+
+    /**
+     * Объект со стартовыми значениями свойств
+     * @type {Object.<string, Object.<string, (number|Array)>>}
+     * @private
+     */
+    KeyframeAnimation.prototype.startingValues = null;
 
     /**
      * Уникальная строка - имя анимации.
@@ -318,7 +339,9 @@
             this.rulesList[id] = addRule("." + id);
             addClass(/** @type {HTMLElement} */(elem), id);
             elem.setAttribute(DATA_ATTR_NAME, id);
-            this.cache[id] = {};
+            this.cache[id] = new Object();
+            this.startingValues[id] = new Object();
+            this.currentValues[id] = new Object();
             this.targets.push(elem);
         } else {
             elements = slice(elem);
@@ -596,11 +619,12 @@
         each(this.targets, function (element) {
 
             var id = element.getAttribute(DATA_ATTR_NAME);
-            var elementData = this.cache[id];
+            var startingValues = this.startingValues[id];
 
             each(this.animatedProperties, function (special_value, propertyName) {
-                elementData[propertyName] = css(element, propertyName);
-            });
+                var currentPropertyValue = css(element, propertyName);
+                startingValues[propertyName] = normalize(element, propertyName, currentPropertyValue, false);
+            }, this);
 
         }, this);
 
@@ -725,13 +749,11 @@
     /**
      * Высчитает значения свойств при указанном прогрессе про проходу
      * @param {number} fractionalTime прогресс по проходу ( [0, 1] )
-     * @return {Object}
+     * @return {undefined}
      * @private
      */
     KeyframeAnimation.prototype.fetch = function (fractionalTime) {
 
-        var elementData;
-        var id;
         var keyframes, globalFetch, fetchedProperties, firstKeyframe, secondKeyframe, from, to, propertyName;
         var element;
         var offset, scale;
@@ -754,14 +776,18 @@
          *  информация о вычисленных значениях
          *  для каждого элемента
          *  */
-        globalFetch = map(this.targets, function (element) {
+        each(this.targets, function (element) {
 
-            var fetchedProperties;
+            var id, elementData, startingValues, currentValues;
 
             id = element.getAttribute(DATA_ATTR_NAME);
             elementData = this.cache[id];
+            startingValues = this.startingValues[id];
+            currentValues = this.currentValues[id];
 
-            fetchedProperties = map(this.animatedProperties, function (_, propertyName) {
+            each(this.animatedProperties, function (_, propertyName) {
+
+                var value;
 
                 /*
                  * Поиск двух ближайших ключевых кадров
@@ -784,7 +810,6 @@
                     return !STOP_ITERATION;
                 });
 
-                // для вычисления прогресса между двумя точками
                 offset = firstKeyframe.key;
                 scale = 1.0 / (secondKeyframe.key - firstKeyframe.key);
 
@@ -792,68 +817,57 @@
                 easing = round(easing, this.digits);
 
                 if (firstKeyframe.properties[propertyName] === SPECIAL_VALUE) {
-                    from = elementData[propertyName];
+                    from = startingValues[propertyName];
                 } else {
                     from = firstKeyframe.properties[propertyName];
+                    from = normalize(element, propertyName, from, false);
                 }
 
                 if (secondKeyframe.properties[propertyName] === SPECIAL_VALUE) {
-                    to = elementData[propertyName];
+                    to = startingValues[propertyName];
                 } else {
                     to = secondKeyframe.properties[propertyName];
+                    to = normalize(element, propertyName, to, false);
                 }
 
-                from = normalize(element, propertyName, from, false);
-                to = normalize(element, propertyName, to, false);
+                value = blend(propertyName, /** @type {(Array|number)} */ (from), /** @type {(Array|number)} */(to), easing, this.digits);
 
-                return {
-                    name: propertyName,
-                    value: blend(propertyName, /** @type {(Array|number)} */ (from), /** @type {(Array|number)} */(to), easing, this.digits)
-                };
+                currentValues[propertyName] = value;
 
-            }, this);
+            }, this); // end properties loop
 
-            return {
-                id: id,
-                properties: fetchedProperties
-            };
-
-        }, this);
+        }, this); // end targets loop
 
         return globalFetch;
     };
 
     /**
      * Отрисует высчитанные значения свойств
-     * @param {Object} globalFetch возвращённые fetch'ем значения
      * @param {boolean} direct НЕ (!) использовать ли правило в таблице стилей для отрисовки одинаковых для элементов значений
      * @see KeyframeAnimation.fetch
      * @private
      */
-    KeyframeAnimation.prototype.render = function (globalFetch, direct) {
-        each(globalFetch, function (fetchInfo) {
+    KeyframeAnimation.prototype.render = function (direct) {
+        each(this.targets, function (element) {
 
-            var id = fetchInfo.id;
-            var elementIndex = LinearSearch(this.targets, function (element) {
-                return id === element.getAttribute(DATA_ATTR_NAME);
-            });
-            var element, elementStyle;
+            var id, elementData, startingValues, currentValues;
+            var elementStyle;
             var rule, ruleStyle;
             var destinationStyle;
 
-            if (elementIndex !== -1) {
+            id = element.getAttribute(DATA_ATTR_NAME);
+            rule = this.rulesList[id];
+            elementData = this.cache[id];
+            currentValues = this.currentValues[id];
 
-                element = this.targets[elementIndex];
-                elementStyle = element.style;
-                rule = this.rulesList[id];
-                ruleStyle = rule.style;
+            elementStyle = element.style;
+            ruleStyle = rule.style;
 
-                destinationStyle = direct ? elementStyle : ruleStyle;
+            destinationStyle = direct ? elementStyle : ruleStyle;
 
-                each(fetchInfo.properties, function (fetchedProperty) {
-                    css(destinationStyle, fetchedProperty.name, fetchedProperty.value);
-                }, this);
-            }
+            each(currentValues, function (propertyValue, propertyName) {
+                css(destinationStyle, propertyName, propertyValue);
+            }, this);
         }, this);
     };
 
