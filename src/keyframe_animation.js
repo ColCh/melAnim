@@ -35,6 +35,23 @@
      * @const
      */
     var PERCENT_TO_FRACTION = 1 / 100;
+    /**
+     * Максимальный прогресс по проходу, в долях
+     * @const
+     * */
+    var MAXIMAL_PROGRESS = 1.0;
+
+    function easingSearchCallback (fractionalTime, firstKeyframe, index, keyframes) {
+        var secondKeyframe = keyframes[ index + 1];
+        // для навигации в бинарном поиске
+        var MOVE_RIGHT = 1, MOVE_LEFT = -1, STOP = 0;
+
+        if (!secondKeyframe) return MOVE_LEFT;
+        if (firstKeyframe.key > fractionalTime) return MOVE_LEFT;
+        if (secondKeyframe.key <= fractionalTime) return MOVE_RIGHT;
+
+        return STOP;
+    }
 
     /**
      * Конструктор ключевых кадров.
@@ -250,6 +267,34 @@
      * @private
      */
     KeyframeAnimation.prototype.started = 0;
+
+    /**
+     * Номер текущей итерации
+     * @type {number}
+     * @private
+     * */
+    KeyframeAnimation.prototype.currentIteration = 0;
+
+    /**
+     * Прошедшее со старта время
+     * @type {number}
+     * @private
+     */
+    KeyframeAnimation.prototype.elapsedTime = 0;
+
+    /**
+     * Текущий прогресс по проходу
+     * @type {number}
+     * @private
+     */
+    KeyframeAnimation.prototype.fractionalTime = 0.0;
+
+    /**
+     * Прогресс относительно первой итерации
+     * @type {number}
+     * @private
+     */
+    KeyframeAnimation.prototype.animationProgress = 0.0;
 
     /**
      * Таймер отрисовки
@@ -652,17 +697,13 @@
         var keyframes;
 
         if (typeOf.number(position)) {
-
             keyframe = new Keyframe(position, properties, easing);
-
             keyframes = this.keyframes;
             keyframes.push(keyframe);
             bubbleSort(/** @type {Array} */(keyframes), compareKeyframes);
-
-            return keyframe;
-
         }
 
+        return keyframe;
     };
 
     /**
@@ -703,22 +744,10 @@
          */
         timingFunction = this.smoothing;
 
-        index = binarySearch(/**@type {Array}*/(keyframes), fractionalTime, function (fractionalTime, firstKeyframe, index, keyframes) {
-            var secondKeyframe = keyframes[ index + 1];
-            // для навигации в бинарном поиске
-            var MOVE_RIGHT = 1, MOVE_LEFT = -1, STOP = 0;
+        index = binarySearch(/**@type {Array}*/(keyframes), fractionalTime, easingSearchCallback);
 
-            if (!secondKeyframe) return MOVE_LEFT;
-            if (firstKeyframe.key > fractionalTime) return MOVE_LEFT;
-            if (secondKeyframe.key <= fractionalTime) return MOVE_RIGHT;
-
-            return STOP;
-        });
-
-        if (index in keyframes && keyframes[index].easing !== noop) {
+        if (index !== -1 && keyframes[index].easing !== noop) {
             timingFunction = keyframes[index].easing;
-        } else if (!typeOf.func(timingFunction)) {
-            timingFunction = cubicBezierApproximations[ DEFAULT_EASING ];
         }
 
         /**
@@ -752,6 +781,7 @@
                         }
                         firstKeyframe = keyframe;
                     }
+                    return !STOP_ITERATION;
                 });
 
                 // для вычисления прогресса между двумя точками
@@ -817,6 +847,7 @@
                 elementStyle = element.style;
                 rule = this.rulesList[id];
                 ruleStyle = rule.style;
+
                 destinationStyle = direct ? elementStyle : ruleStyle;
 
                 each(fetchInfo.properties, function (fetchedProperty) {
@@ -824,7 +855,6 @@
                 }, this);
             }
         }, this);
-
     };
 
     /**
@@ -835,20 +865,17 @@
      */
     KeyframeAnimation.prototype.tick = function (timeStamp) {
 
-        var animationProgress, iterationProgress;
-        var currentIteration;
-        var fetchedProperties;
-        var iterationCount;
+        var fetchedProperties, iterationCount, animationProgress;
+        var previousIteration, currentIteration;
 
         iterationCount = this.iterations;
-        animationProgress = this.computeElapsedTime(timeStamp) / this.animationTime;
-        animationProgress = round(animationProgress, this.digits);
-        currentIteration = floor(animationProgress);
+        previousIteration = this.currentIteration;
 
-        iterationProgress = animationProgress - min(currentIteration, this.integralIterations);
-        iterationProgress = min(iterationProgress, 1.0);
+        animationProgress = this.animationProgress = this.computeProgress(timeStamp);
+        currentIteration = this.currentIteration = this.computeIteration(this.animationProgress);
+        this.fractionalTime = this.computeFractionalTime(this.animationProgress, this.currentIteration);
 
-        if (iterationProgress === 1.0 && currentIteration <= iterationCount) {
+        if (currentIteration !== previousIteration) {
             // Условие завершения итерации
             if (ENABLE_DEBUG) {
                 console.log('tick: %s - iteration %d of total %d', this.animationName, currentIteration, iterationCount);
@@ -858,14 +885,62 @@
             // Условие завершения анимации
             this.stop();
         } else {
-            if (this.needsReverse(currentIteration)) {
-                iterationProgress = 1.0 - iterationProgress;
-            }
-            fetchedProperties = this.fetch(iterationProgress);
-            this.render(fetchedProperties, false);
+            this.onstep();
         }
 
-        this.onstep(timeStamp);
+        fetchedProperties = this.fetch(this.fractionalTime);
+        this.render(fetchedProperties, false);
+    };
+
+    /***
+     * Вычислит и вернёт прогресс анимации относительно первой итерации
+     * @param {number} timeStamp временная метка
+     * @return {number} прогресс анимации относительно первой итерации
+     * @private
+     */
+    KeyframeAnimation.prototype.computeProgress = function (timeStamp) {
+
+        var animationProgress;
+
+        animationProgress = this.computeElapsedTime(timeStamp) / this.animationTime;
+        animationProgress = round(animationProgress, this.digits);
+
+        return animationProgress;
+    };
+
+    /**
+     * Вычислит номер текущей итерации из прогресса.
+     * @type {number} animationProgress прогресс относительно первого прохода
+     * @return {number}
+     * @private
+     */
+    KeyframeAnimation.prototype.computeIteration = function (animationProgress) {
+        var currentIteration;
+        currentIteration = floor(animationProgress);
+        return min(currentIteration, this.integralIterations);
+    };
+
+    /***
+     * Вычислит и вернёт прогресс анимации относительно текущей итерации
+     * @param {number} animationProgress прогресс относительно первой итерации
+     * @param {number} currentIteration номер итерации из прогресса
+     * @return {number} прогресс анимации относительно текущей итерации
+     * @private
+     */
+    KeyframeAnimation.prototype.computeFractionalTime = function (animationProgress, currentIteration) {
+
+        var iterationProgress, iterationCount;
+
+        iterationCount = this.iterations;
+
+        iterationProgress = animationProgress - currentIteration;
+        iterationProgress = min(iterationProgress, MAXIMAL_PROGRESS);
+
+        if (this.needsReverse(currentIteration)) {
+            iterationProgress = MAXIMAL_PROGRESS - iterationProgress;
+        }
+
+        return iterationProgress;
     };
 
     /**

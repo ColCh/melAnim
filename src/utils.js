@@ -545,6 +545,7 @@
                             return STOP;
                         }
 
+                        return !STOP;
                     });
                 }
             }
@@ -592,16 +593,21 @@
     var navigStart;
 
     if (performance) {
-        perfNow = bind(performance[ getVendorPropName("now", performance) ], performance);
-        navigStart = performance["timing"]["navigationStart"];
-        now = function () {
-            return perfNow() + navigStart;
-        };
-        if (ENABLE_DEBUG) {
-            console.log("DOMHighResTimeStamp support detected");
+        perfNow = performance[ getVendorPropName("now", performance) ];
+        if (perfNow){
+            perfNow = bind(perfNow, performance);
+            navigStart = performance["timing"]["navigationStart"];
+            now = function () {
+                return perfNow() + navigStart;
+            };
+            if (ENABLE_DEBUG) {
+                console.log("DOMHighResTimeStamp support detected");
+            }
+        } else if (ENABLE_DEBUG) {
+            console.log('Found window.performance but no "now" method so DOMHighResTimeStamp isn\'t supported.');
         }
     } else if (ENABLE_DEBUG) {
-        console.log("DOMHighResTimeStamp isn't supported. Using Date.now as usual.");
+        console.log("Cannot find window.performance so DOMHighResTimeStamp isn't supported to. Using Date.now as usual.");
     }
 
     /**
@@ -945,41 +951,39 @@
 
         var getting = typeOf.undefined(propertyValue);
         var action = getting ? "get" : "set";
-        var hooks = css.hooks;
         var hookVal, vendorizedPropertyName;
         var stringValue;
 
-        // нечему устанавливать\неоткуда получать
-        if (!element) return;
+        if (element) {
+            vendorizedPropertyName = getVendorPropName(propertyName);
 
-        vendorizedPropertyName = getVendorPropName(propertyName);
-
-        if (propertyName in hooks && action in hooks[propertyName]) {
-            hookVal = hooks[propertyName][action](element, vendorizedPropertyName, propertyValue);
-        }
-
-        if (getting) {
-
-            if (typeOf.undefined(hookVal)) {
-                stringValue = getComputedStyle(/** @type {HTMLElement} */(element))[vendorizedPropertyName];
-            } else {
-                stringValue = hookVal;
+            if (propertyName in cssHooks && action in cssHooks[propertyName]) {
+                hookVal = cssHooks[propertyName][action](element, vendorizedPropertyName, propertyValue);
             }
 
-        } else {
+            if (getting) {
 
-            if (typeOf.string(propertyValue)) {
-                stringValue = propertyValue;
+                if (typeOf.undefined(hookVal)) {
+                    stringValue = getComputedStyle(/** @type {HTMLElement} */(element))[vendorizedPropertyName];
+                } else {
+                    stringValue = hookVal;
+                }
+
             } else {
-                stringValue = normalize(/** @type {HTMLElement} */(element), propertyName, /** @type {(Array|number)} */(propertyValue), true);
-            }
 
-            if (typeOf.element(element)) {
-                /** @type {HTMLElement} */(element).style[vendorizedPropertyName] = stringValue;
-            } else {
-                /** @type {CSSStyleDeclaration} */(element)[vendorizedPropertyName] = stringValue;
-            }
+                if (typeOf.string(propertyValue)) {
+                    stringValue = propertyValue;
+                } else {
+                    stringValue = normalize(/** @type {HTMLElement} */(element), propertyName, /** @type {(Array|number)} */(propertyValue), true);
+                }
 
+                if (typeOf.element(element)) {
+                    /** @type {HTMLElement} */(element).style[vendorizedPropertyName] = stringValue;
+                } else {
+                    /** @type {CSSStyleDeclaration} */(element)[vendorizedPropertyName] = stringValue;
+                }
+
+            }
         }
 
         return stringValue;
@@ -989,7 +993,7 @@
      * Хуки для получения\установки значения свойства.
      * @type {Object.<string, Object.<string, Function>>}
      */
-    css.hooks = {};
+    var cssHooks = {};
 
     /**
      * Преобразует строкое представление значения в численное или наоборот
