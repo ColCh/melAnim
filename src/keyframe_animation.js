@@ -641,21 +641,30 @@
      */
     KeyframeAnimation.prototype.stop = function () {
 
-        var fillsForwards;
+        var fillsForwards, endFractionalTime;
 
         this.timer.stop();
 
         fillsForwards = this.fillingMode === FILLMODE_FORWARDS ||this.fillingMode === FILLMODE_BOTH;
 
         if (fillsForwards) {
-            this.tick(this.started + this.iterations * this.animationTime);
+            endFractionalTime = this.needsReverse(this.iterations) ? 1.0 : 0.0;
+            if (ENABLE_DEBUG) {
+                console.log('stop: animation fills forwards and has direction "' + this.animationDirection + '" and iteration count "' + this.iterations + '" so fetching with keyframe "' + endFractionalTime + '"');
+            }
+            this.fetch(endFractionalTime);
+            this.render(true);
         }
-
+        // очистка css правил
+        each(this.rulesList, function (rule) {
+            rule.style.cssText = "";
+        });
         if (ENABLE_DEBUG) {
-            console.log('stop: animation "%s" stopped', this.animationName);
+            console.log('stop: CSSRules are cleared.');
         }
-
-        this.oncomplete();
+        if (ENABLE_DEBUG) {
+            console.log('stop: animation "' + this.animationName + '" stopped');
+        }
 
     };
 
@@ -898,6 +907,8 @@
         } else if (animationProgress >= iterationCount) {
             // Условие завершения анимации
             this.stop();
+            this.oncomplete();
+            return;
         } else {
             this.onstep();
         }
