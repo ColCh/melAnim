@@ -945,7 +945,7 @@
      * @param {string} propertyName Имя свойства
      * @param {(Array|string|number)=} propertyValue Значение свойства.
      *
-     * @return {(string|undefined)}
+     * @return {string}
      * */
     function css(element, propertyName, propertyValue) {
 

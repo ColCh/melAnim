@@ -361,7 +361,7 @@
         var numericDuration = parseTimeString(duration);
         if (typeOf.number(numericDuration)) {
             this.animationTime = /** @type {number} */ (numericDuration);
-            this.digits = floor(lg(this.animationTime * FRAMES_PER_SECOND - 1));
+            this.digits = floor(lg(this.animationTime * FRAMES_PER_SECOND)) - 2.0;
             if (ENABLE_DEBUG) {
                 console.log('duration: computed epsilon is "%d" digits', this.digits);
             }
@@ -800,8 +800,8 @@
                 each(keyframes, function (keyframe) {
                     // специальное значение для прекращения обхода
                     var STOP_ITERATION = false;
-                    if (propertyName in keyframe) {
-                        if (fractionalTime <= keyframe.key) {
+                    if (propertyName in keyframe.properties) {
+                        if (fractionalTime < keyframe.key || (fractionalTime === 1.0 && keyframe.key === 1.0)) {
                             secondKeyframe = keyframe;
                             return STOP_ITERATION;
                         }
@@ -879,7 +879,7 @@
      */
     KeyframeAnimation.prototype.tick = function (timeStamp) {
 
-        var fetchedProperties, iterationCount, animationProgress;
+        var iterationCount, animationProgress;
         var previousIteration, currentIteration;
 
         iterationCount = this.iterations;
@@ -902,8 +902,8 @@
             this.onstep();
         }
 
-        fetchedProperties = this.fetch(this.fractionalTime);
-        this.render(fetchedProperties, false);
+        this.fetch(this.fractionalTime);
+        this.render(false);
     };
 
     /***
@@ -924,7 +924,7 @@
 
     /**
      * Вычислит номер текущей итерации из прогресса.
-     * @type {number} animationProgress прогресс относительно первого прохода
+     * @param {number} animationProgress прогресс относительно первого прохода
      * @return {number}
      * @private
      */
