@@ -88,7 +88,7 @@
 
     /**
      * Смягчение ключевого кадра
-     * @type {Function}
+     * @type {(Function|CubicBezier|Steps)}
      */
     Keyframe.prototype.easing = noop;
 
@@ -177,7 +177,7 @@
 
     /**
      * Смягчение всей анимации
-     * @type {Function}
+     * @type {(Function|CubicBezier|Steps)}
      * @private
      */
     KeyframeAnimation.prototype.smoothing = cubicBezierApproximations[ DEFAULT_EASING ];
@@ -278,7 +278,7 @@
      * Объект с особыми смягчениями для свойств
      * Ключ - имя свойства, Значение - функция смягчения
      * Значения устанавливаются методом easing
-     * @type {Object.<string, Function>}
+     * @type {Object.<string, (Function|CubicBezier|Steps)>}
      */
     KeyframeAnimation.prototype.specialEasing = null;
 
@@ -408,7 +408,7 @@
         var keyframe;
         /**
          * Функция смягчения
-         * @type {Function}
+         * @type {(Function|CubicBezier|Steps)}
          */
         var easing;
         /**
@@ -473,21 +473,21 @@
                     points = map(points, parseFloat);
                     // абсциссы точек должны лежать в [0, 1]
                     if (inRange(points[0], 0, 1, true) && inRange(points[2], 0, 1, true)) {
-                        easing = partial(cubicBezier, points);
+                        easing = new CubicBezier(points[0], points[1], points[2], points[3]);
                     }
                 } else if (points.length === 2) {
                     // 2 аргумента - лестничная функция
                     stepsAmount = parseInt(points[0], 10);
                     countFromStart = points[1] === "start";
                     if (typeOf.number(stepsAmount)) {
-                        easing = partial(steps, [stepsAmount, countFromStart]);
+                        easing = new Steps(stepsAmount, countFromStart);
                     }
                 }
             }
 
         }
 
-        if (typeOf.func(easing)) {
+        if (typeOf.func(easing) || instanceOf(easing, CubicBezier) || instanceOf(easing, Steps)) {
             if (typeOf.string(property)) {
                 this.specialEasing[/** @type {string} */(property)] = easing;
             } else {
@@ -802,7 +802,7 @@
 
             each(this.animatedProperties, function (_, propertyName) {
 
-                var value;
+                var value, individualFractionalTime;
 
                 /*
                  * Поиск двух ближайших ключевых кадров
@@ -827,8 +827,15 @@
 
                 offset = firstKeyframe.key;
                 scale = 1.0 / (secondKeyframe.key - firstKeyframe.key);
+                individualFractionalTime = (fractionalTime - offset) * scale;
 
-                easing = timingFunction((fractionalTime - offset) * scale, epsilon);
+                if (instanceOf(timingFunction, CubicBezier)) {
+                    easing = /** @type {CubicBezier} */(timingFunction).calc(individualFractionalTime);
+                } else if (instanceOf(timingFunction, Steps)) {
+                    easing = /** @type {Steps} */(timingFunction).calc(individualFractionalTime);
+                } else {
+                    easing = timingFunction(individualFractionalTime);
+                }
                 easing = round(easing, this.digits);
 
                 if (firstKeyframe.properties[propertyName] === SPECIAL_VALUE) {

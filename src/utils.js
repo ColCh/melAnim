@@ -758,76 +758,70 @@
     }
 
     /**
-     * Представление аналога временной функции transition-timing-function
-     * Кубическая кривая Безье.
-     *
+     * Представление кубической кривой Безье для смягчения анимации
+     * Считается, что P0 = (0;0) и P3 = (1;1)
      * @param {number} p1x
      * @param {number} p1y
      * @param {number} p2x
      * @param {number} p2y
-     * @param {number} fractionalTime Вход. Это X.
-     * @param {number} epsilon Погрешность
-     * @return {number} Выходное значение - easing - Y.
+     * @constructor
      */
-    function cubicBezier(p1x, p1y, p2x, p2y, fractionalTime, epsilon) {
+    function CubicBezier (p1x, p1y, p2x, p2y) {
+        // Кривая записана в полиноминальной форме
+        this.cx = 3.0 * p1x;
+        this.bx = 3.0 * (p2x - p1x) - this.cx;
+        this.ax = 1.0 - this.cx - this.bx;
 
-        // вернёт значение X при передаваемом времени.
-        var B_bindedToX = function (t) {
-            return cubicBezier.B(p1x, p2x, t);
-        };
-        var derivative_X = function (t) { return cubicBezier.derivative(p1x, p2x, t); };
-
-        var X0 = 0, X1 = 1;
-
-        // находим время t, при котором кубическая кривая принимает значение X.
-        var bezierTime = findEquationRoot(B_bindedToX, fractionalTime, 0, 1, epsilon, derivative_X);
-
-        // вычисляем по этому времени Y.
-        var bezierFunctionValue = cubicBezier.B(p1y, p2y, bezierTime);
-
-        return bezierFunctionValue;
+        this.cy = 3.0 * p1y;
+        this.by = 3.0 * (p2y - p1y) - this.cy;
+        this.ay = 1.0 - this.cy - this.by;
     }
 
     /**
-     * Вычислит значение кубической кривой Безье при переданном t
-     * Считается, что P0 = (0;0) и P3 = (1;1)
-     * @param {number} coord1
-     * @param {number} coord2
+     * Вернёт значение кривой в координатах x,t при переданном t.
      * @param {number} t
      * @return {number}
+     * @private
      */
-    cubicBezier.B = function (coord1, coord2, t) {
-
-        var B1 = function (t) { return 3 * t * (1 - t) * (1 - t); };
-        var B2 = function (t) { return 3 * t * t * (1 - t); };
-        var B3 = function (t) { return t * t * t; };
-
-        return B1(t) * coord1 + B2(t) * coord2 + B3(t);
+    CubicBezier.prototype.B_absciss = function (t) {
+        return ((this.ax * t + this.bx) * t + this.cx) * t;
     };
 
     /**
-     * Посчитает значение производной кубической кривой Безье
-     * при прогрессе t
-     * Считается, что P0 = (0;0) и P3 = (1;1)
-     * @param {number} coord1
-     * @param {number} coord2
+     * Вернёт значение производной в координатах x,t при переданном времени t.
      * @param {number} t
+     * @return {number}
+     * @private
      */
-    cubicBezier.derivative = function (coord1, coord2, t) {
-        var B1d = function (t) { return 3 * ( (1 - t) * (1 - t) + t * 2 * (- 1) * (1 - t) ) };
-        var B2d = function (t) { return 3 * ( 2 * t * (1 - t) + t * t * (- 1) ) };
-        var B3d = function (t) { return 3 * t * t; };
-
-        return B1d(t) * coord1 + B2d(t) * coord2 + B3d(t);
+    CubicBezier.prototype.B_derivative_absciss = function (t) {
+        return (3.0 * this.ax * t + 2.0 * this.bx) * t + this.cx;
     };
 
     /**
-     * Вычислит требуемую точность вычислений, исходя из длительности анимации
-     * @param {number} duration
+     * Вернёт значение кривой в координатах y,t при переданном времени t.
+     * @param {number} t
+     * @return {number}
+     * @private
+     */
+    CubicBezier.prototype.B_ordinate = function (t) {
+        return ((this.ay * t + this.by) * t + this.cy) * t;
+    };
+
+    /**
+     * Вычислит значение ординаты (Y) кубической кривой при известной абсциссе (X)
+     * @param {number} x
      * @return {number}
      */
-    cubicBezier.solveEpsilon = function (duration) {
-        return 1.0 / (200.0 * duration);
+    CubicBezier.prototype.calc = function (x) {
+
+        var B_bindedToX = bind(this.B_absciss, this);
+        var derivative_X = bind(this.B_derivative_absciss, this);
+
+        var t = findEquationRoot(B_bindedToX, x, 0, 1, 1e-5, derivative_X);
+
+        var y = this.B_ordinate(t);
+
+        return y;
     };
 
     /**
@@ -835,12 +829,41 @@
      * Ступени отсчитываются с конца, или с начала.
      * @param {number} stepsAmount Количество ступеней
      * @param {boolean} countFromStart Отсчитывать с начала (true) или с конца (false).
-     * @param {number} fractionalTime
+     * @constructor
      */
-    function steps(stepsAmount, countFromStart, fractionalTime) {
-        // если отсчитываем с начала, просто реверсируем функцию
-        return countFromStart ? 1.0 - steps(stepsAmount, countFromStart, 1.0 - fractionalTime) : Math.floor(stepsAmount * fractionalTime) / stepsAmount;
+    function Steps(stepsAmount, countFromStart) {
+        // количество ступеней - строго целочисленное
+        this.stepsAmount = stepsAmount | 0;
+        this.countFromStart = countFromStart;
     }
+
+    /**
+     * Количество ступеней
+     * @type {number}
+     * @private
+     */
+    Steps.prototype.stepsAmount = 0;
+
+    /**
+     * Отсчитывать ли ступени с конца (false) или с начала (true)
+     * @type {boolean}
+     * @private
+     */
+    Steps.prototype.countFromStart = true;
+
+    /**
+     * Вернёт значение ординаты ступенчатой функции при известной абсциссе x.
+     * @param {number} x
+     * @return {number}
+     */
+    Steps.prototype.calc = function (x) {
+        if (this.countFromStart) {
+            // если отсчитываем с начала, просто реверсируем функцию
+            return 1.0 - this.calc(1.0 - x);
+        } else {
+            return floor(this.stepsAmount * x) / this.stepsAmount;
+        }
+    };
 
     /**
      * Вернёт вычисленный стиль элемента
