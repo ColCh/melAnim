@@ -55,10 +55,10 @@
 <script>
     var PROFILE_ENABLED = 1;
 
-    var PROFILE_FPS = 1 && PROFILE_ENABLED;
-    var PROFILE_START = 1 && PROFILE_ENABLED;
-    var PROFILE_CONSTRUCTOR = 1 && PROFILE_ENABLED;
-    var PROFILE_SETUP = 1 && PROFILE_ENABLED;
+    var PROFILE_FPS = 0 && PROFILE_ENABLED;
+    var PROFILE_START = 0 && PROFILE_ENABLED;
+    var PROFILE_CONSTRUCTOR = 0 && PROFILE_ENABLED;
+    var PROFILE_SETUP = 0 && PROFILE_ENABLED;
     var PROFILE_PROCESS = 1 && PROFILE_ENABLED;
 
     if (PROFILE_START) console.profile("startup");
@@ -74,21 +74,22 @@
 
     if (PROFILE_SETUP) console.profile("setup");
     anim.element(document.querySelectorAll(".anim"));
-    anim.propAt("width", "100px", "50%");
-    anim.propAt("width", "300px", "90%");
-    anim.propAt("width", "550px", "100%");
+    anim.propAt("width", "100px", "from");
+    anim.propAt("width", "300px", "to");
+    //anim.propAt("width", "300px", "90%");
+    //anim.propAt("width", "550px", "100%");
 
-    anim.propAt("height", "50px", "0%");
-    anim.propAt("height", "250px", "100%");
+    //anim.propAt("height", "50px", "0%");
+    //anim.propAt("height", "250px", "90%");
 
-    anim.easing("linear");
+    anim.easing("ease");
     //anim.easing("ease-out", "30%");
 
     anim.direction("alternate");
 
-    anim.duration("3s");
+    anim.duration("2.5s");
 
-    anim.iterationCount("1.5");
+    anim.iterationCount("2");
 
     anim.delay("500ms");
 

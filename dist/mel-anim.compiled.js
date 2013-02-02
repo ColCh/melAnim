@@ -1,46 +1,136 @@
-/*! melAnim - v0.1.0 - 2013-01-08
+/*! melAnim - v0.1.0 - 2013-02-02
 * Copyright (c) 2013 ColCh; Licensed MIT */
 
-/*---------------------------------------*/
+
+	/*---------------------------------------*/
+
 (function (window) {
 	"use strict";
 
-/*---------------------------------------*/
+
+	/*---------------------------------------*/
+
     var
 
-        mel = "mel_animation_",
+        /**
+         * Префикс к разным строкам, которые не могут начинаться с числа
+         * @type {string}
+         * @const
+         * */
+        mel = "melAnimation",
 
+        /**
+         * Шорткат для document
+         * @type {Document}
+         * @const
+         * */
         document = window.document,
 
-        undefined;
+        /**
+         * Правильная undefined.
+         * @type {undefined}
+         * @const
+         */
+        undefined,
 
-    var ENABLE_DEBUG = true;
+        /**
+         * Разрешить ли вывод отладочных сообщений
+         * @type {boolean}
+         * @const
+         */
+        ENABLE_DEBUG = true,
 
-    var FRAMES_PER_SECOND = 60;
+        /**
+         * Шорткат для объекта отладочного вывода
+         * @inheritDoc
+         */
+        console = window.console,
 
-    var dummy = document.documentElement.style, prefix, lowPrefix;
+        /**
+         * Стиль, где можно смотреть CSS-свойства
+         * @type {CSSStyleDeclaration}
+         * @const
+         */
+        dummy = document.documentElement.style,
 
-    var cssNumericValueReg = /(-?\d*\.?\d+)(.*)/;
+        /**
+         * Вендорный префикс к текущему браузеру
+         * @type {string}
+         */
+        prefix,
 
-    var animCount = 0;
+        /**
+         * Вендорный префикс к текущему браузеру в нижнем регистре
+         * @type {string}
+         */
+        lowPrefix,
 
-    var noop = function () {};
+        /**
+         * Регвыр для выделения численного значения и размерности у значений CSS свойств
+         * @type {RegExp}
+         * @const
+         */
+        cssNumericValueReg = /(-?\d*\.?\d+)(.*)/,
 
-    var cubicBezierReg = /^cubic-bezier\(((?:\s*\d*\.?\d+\s*,\s*){3}\d*\.?\d+\s*)\)$/i;
+        /**
+         * Инкремент для генерации уникальной строки
+         * @type {number}
+         */
+        animCount = 0,
 
-    var stepsReg = /^steps\((\d+(?:,\s*(?:start|end))?)\)$/i;
+        /**
+         * Пустая функция
+         * @const
+         */
+        noop = function () {},
 
-    var style = document.createElement("style");
+        /**
+         * Регвыр для временной функции CSS кубической кривой Безье
+         * @type {RegExp}
+         * @const
+         */
+        cubicBezierReg = /^cubic-bezier\(((?:\s*\d*\.?\d+\s*,\s*){3}\d*\.?\d+\s*)\)$/i,
 
-    document.getElementsByTagName("head")[0].parentNode.appendChild(style);
+        /**
+         * Регвыр для временной функции CSS лестничной функции
+         * @type {RegExp}
+         * @const
+         */
+        stepsReg = /^steps\((\d+(?:,\s*(?:start|end))?)\)$/i,
 
-    var stylesheet = style.sheet || style.styleSheet;
+        /**
+         * Свой тег <style> для возможности CSS3 анимаций
+         * Используется так же в анимации на JavaScript для ускорения.
+         * @type {HTMLStyleElement}
+         * @const
+         */
+        style = document.getElementsByTagName("head")[0].parentNode.appendChild(document.createElement("style")),
 
-/*---------------------------------------*/
-function type(x) {
+        /**
+         * Каскадная таблица из тега <style>
+         * @type {CSSStyleSheet}
+         * @const
+         */
+        stylesheet = style.sheet || style.styleSheet;
+
+
+	/*---------------------------------------*/
+
+function instanceOf (x, constructor) {
+        return x instanceof constructor;
+    }
+
+    /**
+     * Вернёт строковое представление типа аргумента.
+     * При необходимости вернёт [[Class]] в нижнем регистре.
+     *
+     * @param {*} x
+     * @return {string}
+     */
+    function typeOf(x) {
         var type = typeof(x);
         if (type === "object") {
-            type = Object.prototype.toString.call(x).slice(8, -1).toLowerCase();
+            type = Object.prototype.toString.call(/** @type {Object} */ (x)).slice(8, -1).toLowerCase();
         }
         return type;
     }
@@ -48,21 +138,21 @@ function type(x) {
     /**
      * Проверит, является ли аргумент HTML элементом.
      *
-     * @param {?} x
+     * @param {*} x
      * @return {boolean}
      */
-    type.element = function (x) {
-        return "nodeType" in x;
+    typeOf.element = function (x) {
+        return "nodeType" in x && x.nodeType === Node.ELEMENT_NODE;
     };
 
     /**
      * Проверит, является ли аргумент функцией.
      *
-     * @param {Function=} x
+     * @param {*} x
      * @return {boolean}
      */
-    type.func = function (x) {
-        return type(x) === "function";
+    typeOf.func = function (x) {
+        return instanceOf(x, Function) || typeOf(x) === "function";
     };
 
     /**
@@ -70,8 +160,8 @@ function type(x) {
      * @param x
      * @return {boolean}
      */
-    type.array = function (x) {
-        return type(x) === "array";
+    typeOf.array = function (x) {
+        return instanceOf(x, Array) || typeOf(x) === "array";
     };
 
     /**
@@ -79,8 +169,8 @@ function type(x) {
      * @param x
      * @return {boolean}
      */
-    type.undefined = function (x) {
-        return type(x) === "undefined";
+    typeOf.undefined = function (x) {
+        return x === undefined || typeOf(x) === "undefined";
     };
 
     /**
@@ -88,8 +178,8 @@ function type(x) {
      * @param {*} x
      * @return {Boolean}
      */
-    type.number = function (x) {
-        return type(x) === "number";
+    typeOf.number = function (x) {
+        return instanceOf(x, Number) || typeOf(x) === "number";
     };
 
     /**
@@ -97,8 +187,8 @@ function type(x) {
      * @param x
      * @return {Boolean}
      */
-    type.string = function (x) {
-        return type(x) === "string";
+    typeOf.string = function (x) {
+        return instanceOf(x, String) || typeOf(x) === "string";
     };
 
     /**
@@ -106,16 +196,49 @@ function type(x) {
      * @param {*} x
      * @return {Boolean}
      */
-    type.object = function (x) {
-        return type(x) === "object";
+    typeOf.object = function (x) {
+        return instanceOf(x, Object) || typeOf(x) === "object";
     };
+
+    /**
+     * Шорткат для Math.floor
+     * @inheritDoc
+     */
+    var floor = Math.floor;
+
+    /**
+     * Шорткат для Math.ceil
+     * @inheritDoc
+     */
+    var ceil = Math.ceil;
+
+    /**
+     * Шорткат для Math.min
+     * @inheritDoc
+     */
+    var min = Math.min;
+
+    /**
+     * Шорткат для Math.max
+     * @inheritDoc
+     */
+    var max = Math.max;
+
+    /**
+     * Вернёт true, если число нечётное; и false, если чётное.
+     * @param number
+     * @return {boolean}
+     */
+    function isOdd (number) {
+        return (number & 1) === 1;
+    }
 
     /**
      * Проверит, принадлежит ли число диапазону
      * @param {number} num
-     * @param {number=} lowbound нижняя граница
-     * @param {number=} highbound верхняя граница
-     * @param {boolean} including включая ли границы
+     * @param {number} lowbound нижняя граница
+     * @param {number} highbound верхняя граница
+     * @param {boolean=} including включая ли границы
      * @return {boolean}
      */
     function inRange(num, lowbound, highbound, including) {
@@ -123,25 +246,11 @@ function type(x) {
     }
 
     /**
-     * Применит parseInt, а потом toString к аргументу
-     * @param {number} number
-     * @param {number} fromRadix второй аргумент для parseInt
-     * @param {number} toRadix аргумент для toString
-     */
-    function changeRadix(number, fromRadix, toRadix) {
-        return parseInt(number, fromRadix).toString(toRadix);
-    }
-
-    changeRadix.binToDec = function (num) {
-        return changeRadix(num, 2, 10);
-    };
-
-    /**
      * Сгенерирует уникальную строку.
      * @return {string}
      */
     function generateId() {
-        return /** @type {string} */ mel + animCount++;
+        return /** @type {string} */ (mel) + animCount++;
     }
 
     /**
@@ -160,6 +269,7 @@ function type(x) {
      * @return {Object}
      */
     function createObject(parent) {
+        /** @constructor */
         var F = noop;
         F.prototype = parent;
         return new F;
@@ -175,49 +285,50 @@ function type(x) {
         this.length = collection.length;
     }
 
-    merge(Iterator.prototype, /** @lends Iterator.prototype */({
+    /**
+     * Индекс текущего элемента в коллекции
+     * @type {number}
+     * @private
+     */
+    Iterator.prototype.index = -1;
 
-        /**
-         * Индекс текущего элемента в коллекции
-         */
-        index:0,
-        /**
-         * Запомненная длина коллекции
-         */
-        length:0,
-        /**
-         * Коллекция
-         */
-        collection:[],
-        /**
-         * Возвращается, если значения нет
-         * @see Iterator.next Iterator.previous
-         */
-        none:null,
+    /**
+     * Запомненная длина коллекции
+     * @type {number}
+     * @private
+     */
+    Iterator.prototype.length = -1;
 
-        /**
-         * Возвратит текущий элемент коллекции
-         * @return {*}
-         */
-        current:function () {
-            return this.collection[this.index];
-        },
-        /**
-         * Возвратит следующий элемент коллекции или значение по-умолчанию
-         * @return {*}
-         */
-        next:function () {
-            return this.index < this.length ? this.collection[this.index++] : this.none;
-        },
-        /**
-         * Возвратит предыдущий элемент коллекции или значение по-умолчанию
-         * @return {*}
-         */
-        previous:function () {
-            return this.index > 0 ? this.collection[this.index--] : this.none;
-        }
+    /**
+     * Коллекция
+     * @type {Array}
+     * @private
+     */
+    Iterator.prototype.collection = null;
 
-    }));
+    /**
+     * Возвратит текущий элемент коллекции
+     * @return {*}
+     */
+    Iterator.prototype.current = function () {
+        return this.collection[this.index];
+    };
+
+    /**
+     * Возвратит следующий элемент коллекции или значение по-умолчанию
+     * @return {*}
+     */
+    Iterator.prototype.next = function () {
+        return this.index < this.length ? this.collection[this.index++] : undefined;
+    };
+
+    /**
+     * Возвратит предыдущий элемент коллекции или значение по-умолчанию
+     * @return {*}
+     */
+    Iterator.prototype.previous = function () {
+        return this.index > 0 ? this.collection[this.index--] : undefined;
+    };
 
     /**
      * Сортировка массива методом пузырька
@@ -230,9 +341,9 @@ function type(x) {
 
         var i, j, cache;
 
-        if (!type.number(low)) low = 0;
-        if (!type.number(high)) high = array.length - 1;
-        if (!type.func(compare)) compare = compareNumbers;
+        if (!typeOf.number(low)) low = 0;
+        if (!typeOf.number(high)) high = array.length - 1;
+        if (!typeOf.func(compare)) compare = compareNumbers;
 
         for (j = low; j < high; j += 1) {
             for (i = low; i < high - j; i += 1) {
@@ -252,10 +363,10 @@ function type(x) {
      */
     function LinearSearch(arr, val) {
 
-        var callable = type.func(val),
+        var callable = typeOf.func(val),
             index, i, m, curr,
             native = Array.prototype.indexOf,
-            EQUALS = 0, NOT_FOUND = -1;
+            EQUALS = true, NOT_FOUND = -1;
 
         index = NOT_FOUND;
 
@@ -265,7 +376,7 @@ function type(x) {
             for (i = 0, m = arr.length; i < m && index === NOT_FOUND; i++) {
                 curr = arr[i];
                 if (callable) {
-                    if (val(curr, i, arr) === EQUALS) index = i;
+                    if (/** @type {Function} */(val)(curr, i, arr) === EQUALS) index = i;
                 } else {
                     if (val === curr) index = i;
                 }
@@ -273,16 +384,6 @@ function type(x) {
         }
 
         return index;
-    }
-
-    /**
-     * Вернёт 1, если число положительное
-     * 0, если оно равно 0, и
-     * -1, если оно отрицательное
-     * @param {number} number
-     */
-    function sign(number) {
-        return number === 0 ? 0 : number > 0 ? 1 : -1;
     }
 
     /**
@@ -298,8 +399,8 @@ function type(x) {
 
     /**
      * Сравнит 2 ключевых кадра по их ключам
-     * @param {keyframe} a
-     * @param {keyframe} b
+     * @param {Keyframe} a
+     * @param {Keyframe} b
      * @return {number} отрицальное число, если a < b, положительное число, если a > b, и 0, если они равны
      * @see compareNumbers
      */
@@ -322,10 +423,10 @@ function type(x) {
 
         var mid, comp;
 
-        if (!type.number(lowBound)) lowBound = 0;
-        if (!type.number(upperBound)) upperBound = array.length - 1;
+        if (!typeOf.number(lowBound)) lowBound = 0;
+        if (!typeOf.number(upperBound)) upperBound = array.length - 1;
 
-        compare = type.func(compare) ? compare : compareNumbers;
+        compare = typeOf.func(compare) ? compare : compareNumbers;
 
         do {
 
@@ -360,139 +461,31 @@ function type(x) {
      * @return {*}
      */
     function apply(func, args, ctx) {
-        return type.func(func) && func.apply(ctx, args);
+        return typeOf.func(func) && func.apply(ctx, args);
     }
 
     /**
-     * Вернёт функцию, которая применит список функций,
-     * до тех пор, пока они будут возвращать истинное значение
-     * при переданных аргументах
-     *
-     * альтернатива : f(x) && g(x) && ...
-     *
-     * @param {...Function} functions список функций
-     * @return {Function}
-     */
-    function and(functions) {
-
-        functions = slice(arguments);
-
-        return function (/* args */) {
-            var args = arguments;
-            return each(functions, function (func) {
-                return toBool(apply(func, args));
-            });
-        };
-    }
-
-    /**
-     * Частичное применение функции
-     * Аргументы можно пропускать, передав
-     * специальное значение "_"; при запуске
-     * пропущенные аргументы заполнятся
-     * слева направо.
+     * Частичное применение функции с возможностью привязывания контекста.
      *
      * @param {Function} fn функция
      * @param {Array} args аргументы
      * @param {Object=} ctx контекст исполнения функции
      * @return {Function} частично применённая функция
-     *
-     * @example
-     * var line = function (k, x, b) { return k * x + b; };
-     * var id = partial(line, [ 1, _, 0 ]);
-     * id(0);   // 0
-     * id(2);   // 2
-     * id(777); // 777
      */
     function partial(fn, args, ctx) {
-
-        function isHole(x) {
-            return x === partial.hole;
-        }
-
         return function () {
-
-            var fresh = new Iterator(arguments);
-            fresh.none = partial.defaultValue;
-
-            function filter(arg) {
-                return isHole(arg) ? fresh.next() : arg;
-            }
-
-            return apply(fn, map(args, filter).concat(slice(fresh.collection, fresh.index)), ctx);
+            return apply(fn, args.concat(slice(arguments)), ctx);
         };
     }
 
     /**
-     * Вернёт функцию, которая передаст первой функции только
-     * указанное количество аргументов
+     * Привяжет функцию к контексту
      * @param {Function} fn
-     * @param {number} num
-     * @return {Function}
-     */
-    function aritilize(fn, num) {
-        return function () {
-            return fn.apply(this, slice(arguments, 0, num));
-        }
-    }
-
-    /**
-     * Обратит порядок аргументов у функции
-     * @param {Function} fn
-     * @param {Object=} ctx Контекст исполнения
-     * @return {Function}
-     */
-    function reverse(fn, ctx) {
-        return function () {
-            apply(fn, slice(arguments).reverse(), ctx);
-        };
-    }
-
-    /**
-     * Аналог bind из ES5.
-     * @inheritDoc
+     * @param {Object} ctx
      */
     function bind(fn, ctx) {
         return function () {
-            return fn.call(ctx);
-        };
-    }
-
-    /**
-     * Значение для любого аргумента по-умолчанию
-     * @type {undefined}
-     * @private
-     */
-    partial.defaultValue = undefined;
-
-    /**
-     * Специальное значение "дырка", указывающее на то,
-     * что аргумент пропущен
-     * @type {Object}
-     * @private
-     * @see partial
-     */
-    var _ = partial.hole = {};
-
-    /**
-     * Вернёт функцию, которая последовательно
-     * применит список функций к аргуметам
-     *
-     * Альтернатива: f(g(x))
-     *
-     * @param {...Function} functions список функций
-     * @return {Function}
-     */
-    function compose(functions) {
-
-        functions = slice(arguments);
-
-        return function (/* args */) {
-            var args = slice(arguments);
-            each(functions, function (func) {
-                args = [ apply(func, args) ];
-            });
-            return args;
+            return fn.apply(ctx, arguments);
         };
     }
 
@@ -504,38 +497,31 @@ function type(x) {
      * @return {Array}
      */
     function slice(arrayLike, start, end) {
-        return Array.prototype.slice.call(arrayLike, type.number(start) ? start : 0, type.number(end) ? end : undefined);
-    }
-
-    /**
-     * Конвертирует аргумент к булеву типу
-     * @param {*} arg
-     * @return {Boolean}
-     */
-    function toBool(arg) {
-        return !!arg;
+        return Array.prototype.slice.call(arrayLike, start, end);
     }
 
     /**
      * Пройдётся по элементам массива или свойствам объекта.
      * Итерирование прервётся, если callback вернёт false.
      * @param {Array|Object} arg
-     * @param {function} callback
+     * @param {Function} callback
+     * @param {Object=} context контекст исполнения callback'а
      */
-    function each(arg, callback) {
+    function each(arg, callback, context) {
         var i, b;
-        if (type.array(arg)) {
+        context = context || window;
+        if (typeOf.array(arg)) {
             i = 0;
             b = arg.length;
-            while (i < b) {
-                if (callback(arg[i], i, arg) === false) {
+            while (i < b) if (i in arg) {
+                if (callback.call(context, arg[i], i, arg) === false) {
                     break;
                 }
                 i += 1;
             }
         } else {
             for (i in arg) if (arg.hasOwnProperty(i)) {
-                if (callback(arg[i], i, arg) === false) {
+                if (callback.call(context, arg[i], i, arg) === false) {
                     break;
                 }
             }
@@ -543,63 +529,26 @@ function type(x) {
     }
 
     /**
-     * Пройдётся по элементам массива\объекта,
-     * применит функцию к каждому; Если хотя бы
-     * одна функция возвратит ложное значение,
-     * перебор прерывается, и функция возвращает false.
-     * @param {array|object} arg
-     * @param {function} callback
-     * @return {boolean}
-     */
-    function every(arg, callback) {
-        return toBool(each(arg, partial(toBool)));
-    }
-
-    /**
      * Пройдётся по элементам массива \ объекта и соберёт новый
      * из возвращённых значений функции
      * @param {Array|Object} arg
-     * @param {Function(?, number|string, Object|Array): ?} callback
-     * @return {Array|Object}
+     * @param {Function} callback
+     * @param {Object=} ctx контекст callback'а
+     * @return {Array}
      */
-    function map(arg, callback) {
+    function map(arg, callback, ctx) {
         var accum = [];
-
         each(arg, function (value, index, object) {
-            accum.push(callback(value, index, object));
+            accum.push(callback.call(ctx, value, index, object));
         });
-
         return accum;
     }
 
     /**
-     * Создаст объект, где ключами будут переданные аргументы, а значениями - undefined
-     * @type {function(...[?])}
-     * @return {Object.<string, undefined>}
-     */
-    function generateDictionary(/* arguments */) {
-        var obj = {};
-        each(arguments, function (key) {
-            obj[key] = undefined;
-        });
-        return obj;
-    }
-
-    /**
-     * Пройдётся по объекту/массиву с помощью each и заменит
-     * значения в нём на результат функции
-     * @param {Array|Object} obj
-     * @param {function} callback
-     */
-    function eachReplace(obj, callback) {
-        each(obj, function (val, index, obj) {
-            obj[index] = callback(val, index, obj);
-        });
-    }
-
-    /**
+     * Приведёт аргумент к строковому типу
      * @param {*} x
      * @return {string}
+     * @inheritDoc
      */
     function toString(x) {
         return x + "";
@@ -607,24 +556,35 @@ function type(x) {
 
     /**
      * Преобразует строку в верхний регистр
+     * шорткат.
      * @param {string} str
      * @return {string}
      */
     function toUpperCase(str) {
-        return String.prototype.toUpperCase.call(toString(str));
+        return String.prototype.toUpperCase.call(/** @type {String} */(str));
     }
     /**
-     * Преобразует строку в нижний регистр
+     * Преобразует строку в нижний регистр.
+     * шорткат.
      * @param {string} str
      * @return {string}
      */
     function toLowerCase(str) {
-        return String.prototype.toLowerCase.call(toString(str));
+        return String.prototype.toLowerCase.call(/** @type {String} */(str));
     }
 
     /**
+     * Размерности для parseTimeString
+     * @type {Object}
+     */
+    var timeStringModificators = {
+        "ms": 1,
+        "s": 1e3
+    };
+
+    /**
      * Обработает строку времени вида %время%+%размерность%
-     * @param {string|number} timeString
+     * @param {(string|number)} timeString
      * @return {(number|undefined)} обработанное время в миллисекундах или undefined в случае неудачи
      */
     function parseTimeString(timeString) {
@@ -634,7 +594,7 @@ function type(x) {
 
         if (matched) {
             numeric = parseFloat(matched[1]);
-            coefficient = parseTimeString.modificators[ matched[2] ] || 1;
+            coefficient = timeStringModificators[ matched[2] ] || 1;
             return numeric * coefficient;
         }
 
@@ -642,98 +602,86 @@ function type(x) {
     }
 
     /**
-     * Размерности для parseTimeString
-     * @type {Object}
-     */
-    parseTimeString.modificators = {
-        "ms":1,
-        "s":1e3
-    };
-
-    function camelCase(string) {
-        return toString(string).replace(camelCase.reg, camelCase.callback);
-    }
-
-    /**
-     * Применит toUpperCase ко второму аргументу.
-     * @param {string} a Не используется
-     * @param {string} letter
+     * Заменит дефисы и следующие за ним символы
+     * в верхний регистр
+     *
+     * Для перевода строк CSS-правил к DOM-стилю.
+     * @param {string} string
      * @return {string}
      */
-    camelCase.callback = function (a, letter) {
-        return letter.toUpperCase();
-    };
-
-    /**
-     * Словит дефис и запомнит следующий за ним символ
-     * @type {RegExp}
-     */
-    camelCase.reg = /-(.)/g;
+    function camelCase(string) {
+        return toString(string).replace(/-[a-z]/g, function (match) {
+            return match.charAt(1).toUpperCase();
+        });
+    }
 
     /**
      * Попытается вернуть верное имя свойства, подобрав при возможности вендорный префикс.
      * Возвращает undefined в случае неудачи.
      *
      * @param {string} property Имя свойства.
-     * @param {boolean=|object=} target Где смотреть наличие свойств - в стилях при falsy (!), и в window при true, или в указанном объекте.
+     * @param {(Object|boolean)=} target Где смотреть наличие свойств - в стилях при falsy (!), и в window при true, или в указанном объекте.
      *
      * @return {string?}
      * */
     function getVendorPropName(property, target) {
-        var cache, result, camelCased;
+        var result, camelCased;
 
         target = !target ? dummy : (target === true ? window : target);
-        cache = getVendorPropName.cache;
 
-        if (property in target) {
-            return cache[property] = property;
-        }
-
-        if (cache[property] === undefined) {
+        if (property in gVPNCache) {
+            result = gVPNCache[property];
+        } else if (property in target) {
+            result = property;
+        } else {
             camelCased = camelCase(property);
+
             if (camelCased in target) {
-                return cache[property] = camelCased;
+                result = gVPNCache[property] = camelCased;
             } else {
                 camelCased = camelCased.charAt(0).toUpperCase() + camelCased.slice(1);
-                if (cache.prefix && cache.lowPrefix) {
-                    if (cache.prefix + camelCased in target) {
-                        cache[property] = cache.prefix + camelCased;
-                    } else if (cache.lowPrefix + camelCased in target) {
-                        cache[property] = cache.lowPrefix + camelCased;
+                if (prefix && lowPrefix) {
+                    if (prefix + camelCased in target) {
+                        result = gVPNCache[property] = prefix + camelCased;
+                    } else if (lowPrefix + camelCased in target) {
+                        result = gVPNCache[property] = lowPrefix + camelCased;
                     }
                 } else {
-                    each(getVendorPropName.prefixes, function (prefix) {
+                    each(vendorPrefixes, function (probePrefix) {
 
-                        var lowPrefix = prefix.toLowerCase();
+                        var probeLowPrefix = toLowerCase(probePrefix), STOP = false;
 
-                        if (prefix + camelCased in target) {
-                            cache.prefix = prefix;
-                            cache.lowPrefix = lowPrefix;
-                            cache[property] = prefix + camelCased;
-                        } else if (lowPrefix + camelCased in target) {
-                            cache.prefix = prefix;
-                            cache.lowPrefix = lowPrefix;
-                            cache[property] = lowPrefix + camelCased;
+                        if (probePrefix + camelCased in target) {
+                            prefix = probePrefix;
+                            lowPrefix = probeLowPrefix;
+                            result = gVPNCache[property] = probePrefix + camelCased;
+                            return STOP;
+                        } else if (probeLowPrefix + camelCased in target) {
+                            prefix = probePrefix;
+                            lowPrefix = probeLowPrefix;
+                            result = gVPNCache[property] = probeLowPrefix + camelCased;
+                            return STOP;
                         }
 
+                        return !STOP;
                     });
                 }
             }
         }
-        return cache[property];
+        return result;
     }
 
     /**
      * Какие префиксы будет пробовать getVendorPropName
-     * @type {Array}
+     * @type {Array.<string>}
      */
-    getVendorPropName.prefixes = "ms O Moz webkit".split(" ");
+    var vendorPrefixes = "ms O Moz webkit".split(" ");
 
     /**
-     * Где getVendorPropName запоминает результаты вычислений имени свойства
+     * Где getVendorPropName запоминает результаты вычислений имени свойства (кеш)
      * @type {Object}
      */
-    getVendorPropName.cache = {};
+    var gVPNCache = {};
 
     /**
      * Вернёт кол-во миллисекунд с 1 Января 1970 00:00:00 UTC
@@ -744,22 +692,52 @@ function type(x) {
     };
 
     /**
+     * Объект window.peformance
+     * @type {(undefined|Object)}
+     */
+    var performance = window[ getVendorPropName("performance", true) ];
+
+    /**
+     * Измерит и вернёт точное время, прошедшее с момента navigationStart.
+     * (если поддерживается)
+     * @type {(undefined|Function)}
+     */
+    var perfNow;
+
+    /**
+     * Время navigationStart
+     * @type {(undefined|number)}
+     */
+    var navigStart;
+
+    if (performance) {
+        perfNow = performance[ getVendorPropName("now", performance) ];
+        if (perfNow){
+            perfNow = bind(perfNow, performance);
+            navigStart = performance["timing"]["navigationStart"];
+            now = function () {
+                return perfNow() + navigStart;
+            };
+            if (ENABLE_DEBUG) {
+                console.log("DOMHighResTimeStamp support detected");
+            }
+        } else if (ENABLE_DEBUG) {
+            console.log('Found window.performance but no "now" method so DOMHighResTimeStamp isn\'t supported.');
+        }
+    } else if (ENABLE_DEBUG) {
+        console.log("Cannot find window.performance so DOMHighResTimeStamp isn't supported to. Using Date.now as usual.");
+    }
+
+    /**
      * Замена для requestAnimationFrame.
      * @param {function(number)} callback
      * @return {number} ID таймаута
      */
     function rAF_imitation(callback) {
-
-        var id = rAF_imitation.unique++,
-
-            info = {
-                id:id,
-                func:callback
-            };
+        var id = rAF_imitation.unique++;
 
         if (!rAF_imitation.timerID) rAF_imitation.timerID = setInterval(rAF_imitation.looper, 1e3 / FRAMES_PER_SECOND);
-
-        rAF_imitation.queue.push(info);
+        rAF_imitation.queue[id] = callback;
         return id;
     }
 
@@ -768,39 +746,31 @@ function type(x) {
      * @param {number} id
      */
     function rAF_imitation_dequeue(id) {
-
-        var index, queue, eq;
-
-        eq = function (/**@type {{id: number, func: Function}}*/val) {
-            return val.id === id;
-        };
-        queue = rAF_imitation.queue;
-        index = LinearSearch(/**@type {Array}*/(queue), eq);
-        if (index !== -1) {
-            // don't splice
-            queue[index] = null;
+        var queue = rAF_imitation.queue;
+        if (id in queue) {
+            delete queue[id];
         }
     }
 
     /**
      * ID таймаута "перерисовки"
-     * @type {number}
+     * @type {?number}
      * @private
      */
     rAF_imitation.timerID = null;
 
     /**
      * Для генерации ID таймаута.
-     * @type {Number}
+     * @type {number}
      */
     rAF_imitation.unique = 0;
 
     /**
      * Очередь обработчиков и их контекстов
-     * @type {Array.<{func: Function, id: number}>}
+     * @type {Object}
      * @const
      */
-    rAF_imitation.queue = [];
+    rAF_imitation.queue = {};
 
     /**
      * Таймер "отрисовки" - пройдется по обработчикам и повызывает их,
@@ -808,166 +778,168 @@ function type(x) {
      * @private
      */
     rAF_imitation.looper = function () {
-        var reflowTimeStamp = now(), queue = rAF_imitation.queue, info;
-        while (queue.length) {
-            info = queue.pop();
-            info && info.func.call(window, reflowTimeStamp);
-        }
+        var reflowTimeStamp = now();
+        each(rAF_imitation.queue, function (callback, id, queue) {
+            callback.call(window, reflowTimeStamp);
+            delete queue[id];
+        });
     };
+
+    /**
+     * Вернёт логарифм числа x по основанию 10 (десятичный логарифм)
+     * @param {number} x
+     * @return {number}
+     * */
+    function lg (x) {
+        return Math.log(x) * Math.LOG10E;
+    }
+
+    /**
+     * Округлит число до указанного знака
+     * @param {number} x число
+     * @param {number} digits количество знаков после запятой
+     * @return {number}
+     */
+    function round (x, digits) {
+        var factor = Math.pow(10, digits);
+        return Math.round( x * factor ) / factor;
+    }
 
     /**
      * Найдёт корень уравнения вида f(x)=val с указанной точностью итерационным способом
      * Если не указать сжимающее отображение, то будет использован метод хорд
-     * @param {function} F уравнение
+     * @param {Function} F уравнение
      * @param {number} Y значение уравнения в искомой точке
-     * @param {number=} X0 начальное приближение (или значение уравнения)
-     * @param {number=} epsilon минимальная разница между двумя приближениями (или 10^-6)
-     * @param {Function=} contraction сжимающее отображение метода (по умол. метод хорд)
-     * @param {Function=} derivative производная функции F (для метода касательных)
+     * @param {number} X0 начальное приближение (или значение уравнения)
+     * @param {number} X1 след. приближение
+     * @param {number} epsilon минимальная разница между двумя приближениями (или 10^-6)
+     * @param {Function} derivative производная функции F (для метода касательных)
      * @return {number} приближённое значение корня уравнения
      */
-    function findEquationRoot(F, Y, X0, epsilon, contraction, derivative) {
+    function findEquationRoot(F, Y, X0, X1, epsilon, derivative) {
 
+        var F1, F0, DELTA_X, DELTA_F, X0d;
         /**
          * Значение погрешности по умолчанию
          * @type {number}
          * @const
          */
         var DEFAULT_EPSILON = 1e-6;
+        var i, stopCondition, contraction, cache;
+        var savedX0, savedX1, deriv;
 
-        debugger
+        epsilon = typeOf.number(epsilon) ? epsilon : DEFAULT_EPSILON;
+        stopCondition = function (X0, X1) { return Math.abs(X0 - X1) <= epsilon; };
 
-        var X1, cache, stopCondition;
+        // сохраним для метода хорд
+        savedX0 = X0;
+        savedX1 = X1;
 
-        X1 = type.number(X1) ? X1 : Y;
-        epsilon = type.number(epsilon) ? epsilon : DEFAULT_EPSILON;
-        contraction = type.func(contraction) ? contraction : findEquationRoot.contractionSecant;
-        stopCondition = findEquationRoot.stopCondition;
+        // для начала пробуем метод касательных (метод Ньютона), у которого
+        // больше скорость сходимости, чем у метода хорд
+        X0 = Y;
+        // используем метод одной касательной
+        X0d = derivative(X0);
 
-        while (!stopCondition(X1, X0, epsilon)) {
-            cache = X0;
-            X0 = X0 - contraction(F, X1, X0, Y, derivative);
-            X1 = cache;
+        // ограничим количество итераций метода касательных
+        i = 8;
+
+        while (i-->0) {
+
+            X1 = X0 - ( (F(X0) - Y ) / X0d );
+
+            if (stopCondition(F(X1), Y)) {
+                return X1;
+            }
+
+            X0 = X1;
         }
 
-        return X0;
+        // теперь пробуем метод хорд
+        // без ограничений по количеству итераций
+        X0 = savedX0;
+        X1 = savedX1;
+
+        while (!stopCondition(X0, X1)) {
+            F1 = F(X1) - Y;
+            F0 = F(X0) - Y;
+
+            DELTA_X = X1 - X0;
+            DELTA_F = F1 - F0;
+
+            cache = X1;
+            X1 = X1 - F1 * DELTA_X / DELTA_F;
+            X0 = cache;
+        }
+
+        return X1;
     }
 
     /**
-     * Условие остановки итерационного метода
-     * @param {number} X0 начальное приближение
-     * @param {number} X1 следующее приближение
-     * @param {number} epsilon точность
-     * @return {boolean}
-     */
-    findEquationRoot.stopCondition = function (X0, X1, epsilon) {
-        return Math.abs(X0 - X1) <= epsilon;
-    };
-
-    /**
-     * Сжимающее отображение метода хорд
-     * @param {function} F функция
-     * @param {number} X0 предыдущее приближение
-     * @param {number} X1 текущее приближение
-     * @param {number} Y значение функции в искомой точке
-     * @param {Function} derivative производная функции F
-     * @return {number}
-     * @see findEquationRoot
-     */
-    findEquationRoot.contractionSecant = function (F, X0, X1, Y, derivative) {
-
-        var F1 = F(X1) - Y;
-        var F0 = F(X0) - Y;
-
-        var DELTA_X = X1 - X0;
-        var DELTA_F = F1 - F0;
-
-        return F1 * DELTA_X / DELTA_F;
-    };
-
-    /**
-     * Сжимающее отображение метода Ньютона (метода касательных)
-     * @param {function} F функция
-     * @param {number} X0 предыдущее приближение
-     * @param {number} X1 текущее приближение
-     * @param {number} Y значение функции в искомой точке
-     * @param {Function} derivative производная функции F
-     * @return {number}
-     * @see findEquationRoot
-     */
-    findEquationRoot.contractionNewton = function (F, X0, X1, Y, derivative) {
-        return F(X1) / derivative(X1);
-    };
-
-    /**
-     * Представление аналога временной функции transition-timing-function
-     * Кубическая кривая Безье.
-     *
+     * Представление кубической кривой Безье для смягчения анимации
+     * Считается, что P0 = (0;0) и P3 = (1;1)
      * @param {number} p1x
      * @param {number} p1y
      * @param {number} p2x
      * @param {number} p2y
-     * @param {number} fractionalTime Вход. Это X.
-     * @param {number=} epsilon Погрешность
-     * @return {number} Выходное значение - easing - Y.
+     * @constructor
      */
-    function cubicBezier(p1x, p1y, p2x, p2y, fractionalTime, epsilon) {
+    function CubicBezier (p1x, p1y, p2x, p2y) {
+        // Кривая записана в полиноминальной форме
+        this.cx = 3.0 * p1x;
+        this.bx = 3.0 * (p2x - p1x) - this.cx;
+        this.ax = 1.0 - this.cx - this.bx;
 
-        // вернёт значение X при передаваемом времени.
-        var B_bindedToX = function (t) {
-            return cubicBezier.B(p1x, p2x, t);
-        };
-        var derivative_X = function (t) { return cubicBezier.derivative(p1x, p2x, t); };
-
-        var X0 = 0, X1 = 1;
-
-        // находим время t, при котором кубическая кривая принимает значение X.
-        var bezierTime = findEquationRoot(B_bindedToX, fractionalTime, (1 + fractionalTime) * 0.5, epsilon, findEquationRoot.contractionNewton, derivative_X);
-
-        // вычисляем по этому времени Y.
-        var bezierFunctionValue = cubicBezier.B(p1y, p2y, bezierTime);
-
-        return bezierFunctionValue;
+        this.cy = 3.0 * p1y;
+        this.by = 3.0 * (p2y - p1y) - this.cy;
+        this.ay = 1.0 - this.cy - this.by;
     }
 
     /**
-     * Вычислит значение кубической кривой Безье при переданном t
-     * Считается, что P0 = (0;0) и P3 = (1;1)
-     * @param {number} coord1
-     * @param {number} coord2
+     * Вернёт значение кривой в координатах x,t при переданном t.
      * @param {number} t
      * @return {number}
+     * @private
      */
-    cubicBezier.B = function (coord1, coord2, t) {
-
-        var B1 = function (t) { return 3 * t * (1 - t) * (1 - t); };
-        var B2 = function (t) { return 3 * t * t * (1 - t); };
-        var B3 = function (t) { return t * t * t; };
-
-        return B1(t) * coord1 + B2(t) * coord2 + B3(t);
+    CubicBezier.prototype.B_absciss = function (t) {
+        return ((this.ax * t + this.bx) * t + this.cx) * t;
     };
 
     /**
-     * Посчитает значение производной кубической кривой Безье
-     * при прогрессе t
-     * Считается, что P0 = (0;0) и P3 = (1;1)
-     * @param t
+     * Вернёт значение производной в координатах x,t при переданном времени t.
+     * @param {number} t
+     * @return {number}
+     * @private
      */
-    cubicBezier.derivative = function (coord1, coord2, t) {
-        var B1d = function (t) { return 3 * ( (1 - t) * (1 - t) + t * 2 * (- 1) * (1 - t) ) };
-        var B2d = function (t) { return 3 * ( 2 * t * (1 - t) + t * t * (- 1) ) };
-        var B3d = function (t) { return 3 * t * t; };
-
-        return B1d(t) * coord1 + B2d(t) * coord2 + B3d(t);
+    CubicBezier.prototype.B_derivative_absciss = function (t) {
+        return (3.0 * this.ax * t + 2.0 * this.bx) * t + this.cx;
     };
 
     /**
-     * Вычислит требуемую точность вычислений, исходя из длительности анимации
-     * @param {number} duration
+     * Вернёт значение кривой в координатах y,t при переданном времени t.
+     * @param {number} t
+     * @return {number}
+     * @private
+     */
+    CubicBezier.prototype.B_ordinate = function (t) {
+        return ((this.ay * t + this.by) * t + this.cy) * t;
+    };
+
+    /**
+     * Вычислит значение ординаты (Y) кубической кривой при известной абсциссе (X)
+     * @param {number} x
      * @return {number}
      */
-    cubicBezier.solveEpsilon = function (duration) {
-        return 1.0 / (200.0 * duration);
+    CubicBezier.prototype.calc = function (x) {
+
+        var B_bindedToX = bind(this.B_absciss, this);
+        var derivative_X = bind(this.B_derivative_absciss, this);
+
+        var t = findEquationRoot(B_bindedToX, x, 0, 1, 1e-5, derivative_X);
+
+        var y = this.B_ordinate(t);
+
+        return y;
     };
 
     /**
@@ -975,35 +947,40 @@ function type(x) {
      * Ступени отсчитываются с конца, или с начала.
      * @param {number} stepsAmount Количество ступеней
      * @param {boolean} countFromStart Отсчитывать с начала (true) или с конца (false).
-     * @param {number} fractionalTime
+     * @constructor
      */
-    function steps(stepsAmount, countFromStart, fractionalTime) {
-        // если отсчитываем с начала, просто реверсируем функцию
-        return countFromStart ? 1.0 - steps(stepsAmount, countFromStart, 1.0 - fractionalTime) : Math.floor(stepsAmount * fractionalTime) / stepsAmount;
+    function Steps(stepsAmount, countFromStart) {
+        // количество ступеней - строго целочисленное
+        this.stepsAmount = stepsAmount | 0;
+        this.countFromStart = countFromStart;
     }
 
     /**
-     * Известная всем функция для прототипного наследования.
-     * @param {Object} child Кто наследует
-     * @param {Object} parent Что наследует
+     * Количество ступеней
+     * @type {number}
+     * @private
      */
-    function inherit(child, parent) {
-        var F = noop;
-        F.prototype = parent.prototype;
-        child.prototype = new F;
-        child.prototype.constructor = child;
-    }
+    Steps.prototype.stepsAmount = 0;
 
     /**
-     * Скопирует свойства одного объекта в другой.
-     * @param {Object|Function} target
-     * @param {Object} source
+     * Отсчитывать ли ступени с конца (false) или с начала (true)
+     * @type {boolean}
+     * @private
      */
-    function merge(target, source) {
-        each(source, function (propertyValue, property) {
-            target[property] = propertyValue;
-        });
-    }
+    Steps.prototype.countFromStart = true;
+
+    /**
+     * Вернёт значение ординаты ступенчатой функции при известной абсциссе x.
+     * @param {number} x
+     * @return {number}
+     */
+    Steps.prototype.calc = function (x) {
+        if (this.countFromStart) {
+            return min(1.0, ceil(this.stepsAmount * x) / this.stepsAmount);
+        } else {
+            return floor(this.stepsAmount * x) / this.stepsAmount;
+        }
+    };
 
     /**
      * Вернёт вычисленный стиль элемента
@@ -1011,7 +988,7 @@ function type(x) {
      * @return {CSSStyleDeclaration}
      */
     function getComputedStyle(element) {
-        return window.getComputedStyle ? window.getComputedStyle(element) : element.currentStyle;
+        return window.getComputedStyle ? window.getComputedStyle(element, null) : element.currentStyle;
     }
 
     /**
@@ -1045,15 +1022,15 @@ function type(x) {
     /**
      * Пропустит ключ через все фильтры и вернёт его
      * численное представление в процентах или undefined.
-     * @param {string|number} key
-     * @return {key}
+     * @param {(string|number)} key
+     * @return {number}
      */
     function normalizeKey(key) {
-        if (type.string(key)) {
-            key = !type.undefined(keyAliases[key]) ? keyAliases[key] : key;
-            key = parseInt(key, 10);
+        var numericKey;
+        if (typeOf.string(key)) {
+            numericKey = key in keyAliases ? keyAliases[key] : parseInt(key, 10);
         }
-        return inRange(key, 0, 100, true) ? key : undefined;
+        return inRange(numericKey, 0, 100, true) ? numericKey : undefined;
     }
 
     /**
@@ -1081,7 +1058,7 @@ function type(x) {
 
     /**
      * Добавит указанный класс элементу
-     * @param {Element} elem
+     * @param {HTMLElement} elem
      * @param {string} value
      */
     function addClass(elem, value) {
@@ -1104,102 +1081,85 @@ function type(x) {
     /**
      * Установит значение стиля элементу, либо получит текущее
      * значение свойства, при необходимости конвертируя вывод.
-     * @param {Element} element Элемент
+     * @param {(HTMLElement|CSSStyleDeclaration)} element Элемент
      * @param {string} propertyName Имя свойства
-     * @param {string=} propertyValue Значение свойства. Если пропустить (undefined) - функция
+     * @param {(Array|string|number)=} propertyValue Значение свойства.
      *
-     * @return {string=}
+     * @return {string}
      * */
     function css(element, propertyName, propertyValue) {
 
-        var getting = type.undefined(propertyValue);
+        var getting = typeOf.undefined(propertyValue);
         var action = getting ? "get" : "set";
-        var hooks = css.hooks;
-        var hookVal;
-        var vendorizedPropertyName;
+        var hookVal, vendorizedPropertyName;
+        var stringValue;
 
-        // нечему устанавливать\неоткуда получать
-        if (!element) return null;
+        if (element) {
+            vendorizedPropertyName = getVendorPropName(propertyName);
 
-        vendorizedPropertyName = getVendorPropName(propertyName);
+            if (propertyName in cssHooks && action in cssHooks[propertyName]) {
+                hookVal = cssHooks[propertyName][action](element, vendorizedPropertyName, propertyValue);
+            }
 
-        if (propertyName in hooks && action in hooks[propertyName]) {
-            hookVal = hooks[propertyName][action](element, vendorizedPropertyName, propertyValue);
+            if (getting) {
+
+                if (typeOf.undefined(hookVal)) {
+                    stringValue = getComputedStyle(/** @type {HTMLElement} */(element))[vendorizedPropertyName];
+                } else {
+                    stringValue = hookVal;
+                }
+
+            } else {
+
+                if (typeOf.string(propertyValue)) {
+                    stringValue = propertyValue;
+                } else {
+                    stringValue = normalize(/** @type {HTMLElement} */(element), propertyName, /** @type {(Array|number)} */(propertyValue), true);
+                }
+
+                if (typeOf.element(element)) {
+                    /** @type {HTMLElement} */(element).style[vendorizedPropertyName] = stringValue;
+                } else {
+                    /** @type {CSSStyleDeclaration} */(element)[vendorizedPropertyName] = stringValue;
+                }
+
+            }
         }
 
-        if (getting) {
-
-            if (type.undefined(hookVal)) {
-                //TODO нормализацию значений \ конвертацию.
-                propertyValue = getComputedStyle(element)[vendorizedPropertyName];
-            } else {
-                propertyValue = hookVal;
-            }
-
-        } else {
-
-            if (!type.string(propertyValue)) {
-                propertyValue = normalize(element, propertyName, propertyValue, true);
-            }
-
-            if (type.element(element)) {
-                element.style[vendorizedPropertyName] = propertyValue;
-            } else {
-                // CSSStyleDeclaration
-                element[vendorizedPropertyName] = propertyValue;
-            }
-
-        }
-
-        return propertyValue;
-    }
-    ;
+        return stringValue;
+    };
 
     /**
      * Хуки для получения\установки значения свойства.
-     * @type {Object.<string, Object.<string, function>>}
+     * @type {Object.<string, Object.<string, Function>>}
      */
-    css.hooks = {};
+    var cssHooks = {};
 
     /**
-     * Преобразует строкое представление значения в численное и наоборот
-     * @param {Element} element элемент (для относительных значений)
+     * Преобразует строкое представление значения в численное или наоборот
+     * @param {HTMLElement} element элемент (для относительных значений)
      * @param {string} propertyName имя свойства
-     * @param {string=} propertyValue значение свойства
-     * @param {boolean=} toString к строке (true) или к числу (false)
+     * @param {(string|Array|number)} propertyValue значение свойства
+     * @param {boolean=} toString к строке (true) или к числовому значению (false)
      * @return {Array|number|undefined}
      */
     function normalize(element, propertyName, propertyValue, toString) {
-        var hooks = normalize.hooks;
-        var units = normalize.units;
         var normalized;
         var unit;
         var vendorizedPropertyName;
 
         vendorizedPropertyName = getVendorPropName(propertyName);
 
-        if (type.undefined(propertyValue)) {
-            propertyValue = css(element, propertyName);
-        }
-
-        if (hooks[propertyName]) {
-            normalized = hooks[propertyName](element, vendorizedPropertyName, propertyValue, toString);
-        }
-
-        if (type.undefined(normalized)) {
-
+        if (propertyName in normalizeHooks) {
+            normalized = normalizeHooks[propertyName](element, vendorizedPropertyName, propertyValue, toString);
+        } else {
             if (toString) {
-                if (type.number(propertyValue) && !normalize.nopx[propertyName]) {
+                if (typeOf.number(propertyValue) && !(propertyName in nopx)) {
                     normalized = propertyValue + "px";
                 }
-            } else if (!type.number(propertyValue)) {
-                unit = propertyValue.match(cssNumericValueReg)[2];
-
-                if (units[unit]) {
-                    normalized = units[unit](element, vendorizedPropertyName, propertyValue);
-                }
             } else {
-                normalized = propertyValue;
+                unit = propertyValue.match(cssNumericValueReg)[2];
+                normalized = normalizeUnits[unit](element, vendorizedPropertyName, propertyValue);
             }
         }
 
@@ -1212,15 +1172,15 @@ function type(x) {
      * Второй - имя свойства
      * Третий - значение
      * Червёртый - приводим к строке (true) или к числу (false)
-     * @type {Object.<string, function>}
+     * @type {Object.<string, Function>}
      */
-    normalize.hooks = {};
+    var normalizeHooks = {};
 
     /**
      * Хуки для преобразования из исходных единиц измерения к абсолютным
-     * @type {Object.<string, function>}
+     * @type {Object.<string, Function>}
      */
-    normalize.units = {
+    var normalizeUnits = {
         // это и есть абсолютное значение
         "px":function (element, propName, propVal) {
             // просто возвращаем число без "px"
@@ -1231,9 +1191,9 @@ function type(x) {
     /**
      * Список свойств, к которым не надо добавлять "PX"
      * при переводе из числа в строку.
-     * @enum {undefined}
+     * @enum {boolean}
      */
-    normalize.nopx = {
+    var nopx = {
         "fill-opacity":true,
         "font-weight":true,
         "line-height":true,
@@ -1248,18 +1208,25 @@ function type(x) {
      * Вычисление значения между двумя точками
      * для анимируемого свойства
      * @param {string} propertyName Имя свойства
-     * @param {number} from Имя меньшей точки
-     * @param {number} to Имя большей точки
+     * @param {(Array|number)} from Значение меньшей точки
+     * @param {(Array|number)} to Значение большей точки
+     * @param {number} digits точность значения в количестве знакв после запятой
      * @param {number} timingFunctionValue Значение прогресса между ними
      * @return {number|Array} Вычисленное значение
      */
-    function blend(propertyName, from, to, timingFunctionValue) {
+    function blend(propertyName, from, to, timingFunctionValue, digits) {
+
+        /** @type {(Array|number)} */
+        var value;
 
         if (propertyName in blend.hooks) {
-            return blend.hooks[propertyName](from, to, timingFunctionValue);
+            value = blend.hooks[propertyName](from, to, timingFunctionValue, digits);
+        } else {
+            value = /** @type {number} */ ((to - from) * timingFunctionValue + from);
+            value = round(value, digits);
         }
 
-        return (to - from) * timingFunctionValue + from;
+        return value;
     }
 
     /**
@@ -1267,7 +1234,6 @@ function type(x) {
      * transform или crop, к примеру
      * @type {Object}
      * @private
-     * @static
      */
     blend.hooks = {};
 
@@ -1276,8 +1242,6 @@ function type(x) {
      * передав её текущую отметку времени
      * Оригинальная функция
      * @type {Function}
-     * @param {Function}
-        * @return {number} номер таймера
      */
     var rAF = window[getVendorPropName("requestAnimationFrame", window)];
 
@@ -1285,17 +1249,22 @@ function type(x) {
      * Исполнит функцию перед отрисовкой, передав ей отметку времени
      * (обёртка)
      * @type {Function}
-     * @param {Function} callback
-     * @return {number} ID таймера для его отмены
      */
     var requestAnimationFrame = rAF ? rAF : rAF_imitation;
 
     /**
      * Отменит исполнение функции перед отрисовкой
      * @type {Function}
-     * @param {number} id ID таймаута
      */
     var cancelRequestAnimationFrame = rAF ? window[getVendorPropName("cancelRequestAnimationFrame", window)] : rAF_imitation_dequeue;
+
+    if (ENABLE_DEBUG) {
+        if (rAF) {
+            console.log("detected native requestAnimationFrame support");
+        } else {
+            console.log("requestAnimationFrame is not found. Using imitation.");
+        }
+    }
 
     /**
      * Таймер для анимации
@@ -1304,83 +1273,65 @@ function type(x) {
      * @constructor
      */
     function ReflowLooper(callback, context) {
-        this.callback = callback;
-        this.context = context;
+
+        if (typeOf.func(callback)) {
+            this.callback = /** @type {Function} */(callback);
+        }
+
+        if (typeOf.object(context)) {
+            this.context = /** @type {Object} */(context);
+        }
+
         this.looper = bind(this.looper, this);
     }
 
-    merge(ReflowLooper.prototype, /** @lends ReflowLooper.prototype */ ({
-
-        /**
-         * Функция будет исполняться циклически по таймеру
-         * @type {Function}
-         * @private
-         */
-        callback:null,
-
-        /**
-         * Контекст функции
-         * @type {Object}
-         * @private
-         */
-        context:null,
-
-        /**
-         * ID таймаута
-         * @type {number}
-         * @private
-         */
-        timeoutID:null,
-
-        /**
-         * Запуск таймера
-         */
-        start:function () {
-            this.timeoutID = requestAnimationFrame(this.looper);
-        },
-
-        /**
-         * Остановка таймера
-         */
-        stop:function () {
-            cancelRequestAnimationFrame(this.timeoutID);
-            this.timeoutID = null;
-        },
-
-        /**
-         * Враппер вызова функции с контекстом
-         * @private
-         */
-        looper:function (timeStamp) {
-            this.timeoutID = requestAnimationFrame(this.looper);
-            timeStamp = timeStamp || now();
-            this.callback.call(this.context, timeStamp);
-        }
-
-    }));
+    /**
+     * Функция будет исполняться циклически по таймеру
+     * @type {Function}
+     * @private
+     */
+    ReflowLooper.prototype.callback = null;
 
     /**
-     * Нужно ли обратить прогресс анимации,
-     * в зависимости от направления и номера текущей итерации
-     * @param {string} direction
-     * @param {number} iterationNumber
-     * @return {Boolean}
+     * Контекст функции
+     * @type {Object}
+     * @private
      */
-    function needsReverse(direction, iterationNumber) {
+    ReflowLooper.prototype.context = null;
 
-        var needsReverse, iterationIsOdd;
+    /**
+     * ID таймаута
+     * @type {number}
+     * @private
+     */
+    ReflowLooper.prototype.timeoutID = -1;
 
-        // аналогично операции NUM % 2
-        // т.е. является ли число нечётным
-        iterationIsOdd = iterationNumber & 1;
+    /**
+     * Запуск таймера
+     */
+    ReflowLooper.prototype.start = function () {
+        this.timeoutID = requestAnimationFrame(this.looper);
+    };
 
-        needsReverse = direction === DIRECTION_REVERSE;
-        needsReverse |= direction === DIRECTION_ALTERNATE && iterationIsOdd;
-        needsReverse |= direction === DIRECTION_ALTERNATE_REVERSE && !iterationIsOdd;
+    /**
+     * Остановка таймера
+     */
+    ReflowLooper.prototype.stop = function () {
+        cancelRequestAnimationFrame(this.timeoutID);
+        delete this.timeoutID;
+    };
 
-        return needsReverse;
-    }
-/*---------------------------------------*/
+    /**
+     * Враппер вызова функции с контекстом
+     * @private
+     */
+    ReflowLooper.prototype.looper = function (timeStamp) {
+        this.timeoutID = requestAnimationFrame(this.looper);
+        this.callback.call(this.context, timeStamp);
+    };
+
+	/*---------------------------------------*/
+
 var DIRECTION_NORMAL = "normal";
     /**
      * Обратное направление анимации:
@@ -1469,29 +1420,45 @@ var DIRECTION_NORMAL = "normal";
      * @const
      */
     var CSSANIMATIONS_SUPPORTED = !!getVendorPropName("animation");
-/*---------------------------------------*/
+
+    /**
+     * Идеальное количество кадров для анимации на JavaScript.
+     * @type {number}
+     * @const
+     */
+    var FRAMES_PER_SECOND = 60;
+
+    /**
+     * Число-предел, ограничивающее обычные отметки времени от Date.now и новые высокочувствительные таймеры
+     * @type {number}
+     * @const
+     */
+    var HIGHRESOLUTION_TIMER_BOUND = 1e12;
+
+	/*---------------------------------------*/
+
 var aliases = {};
 
     /**
      * Алиасы для значений ключевых кадров
      * @enum {number}
      */
-    var keyAliases = aliases["keys"] = {
+    var keyAliases = {
         "from": 0,
         "to": 100
     };
 
     /**
      * Алиасы для временных функций
-     * @enum {object}
+     * @enum {Object}
      */
-    var easingAliases =  aliases["easing"] = {};
+    var easingAliases = {};
 
     /**
      * Временные функции для CSS3 анимаций
-     * @enum {array}
+     * @enum {Array}
      */
-    var cubicBezierAliases = aliases["cubicBezier"] = {
+    var cubicBezierAliases = {
 
         // встроенные
         "linear": [0.0, 0.0, 1.0, 1.0],
@@ -1503,8 +1470,9 @@ var aliases = {};
         "stepEnd": [1, false],
 
         // дополненные
-        "swing": [0.02, 0.01, 0.47, 1],
+        "swing": [0.02, 0.01, 0.47, 1]//,
 
+        /*
         // взято с
         // github.com/matthewlein/Ceaser
         "easeInCubic":[0.55, .055, .675, .19],
@@ -1549,24 +1517,25 @@ var aliases = {};
         // TODO
         //"easeInBounce": [],
         //"easeOutBounce": [],
-        //"easeInOutBounce": []
+        //"easeInOutBounce": []*/
     };
 
     /**
      * Плиближения для кубических кривых
-     * @enum {function}
+     * @enum {Function}
      */
-    var cubicBezierApproximations = cubicBezierAliases["approximations"] = {
+    var cubicBezierApproximations = {
 
-        linear: function (x) { return x; },
+       "linear": function (x) { return x; },
 
         // взято с jQuery
-        swing: function (p) {
+        "swing": function (p) {
             return 0.5 - Math.cos( p * Math.PI ) / 2;
-        },
+        }/*,
 
         // взято с
         // Query plugin from GSGD
+        /*
         easeInCubic: function (x, t, b, c, d) {
             return c*(t/=d)*t*t + b;
         },
@@ -1704,7 +1673,9 @@ var aliases = {};
         */
     };
 
-/*---------------------------------------*/
+
+	/*---------------------------------------*/
+
     //TODO удалить, т.к. директивы определены в animate_wrap.js
     var DEFAULT_DURATION = "400ms";
     var DEFAULT_EASING = "ease";
@@ -1715,452 +1686,801 @@ var aliases = {};
     var DEFAULT_HANDLER = noop;
     var DEFAULT_PLAYINGSTATE = "paused";
 
-    // TODO animation-fill-mode
-    // TODO multiply elements
-    // TODO REFACTORING
+    /**
+     * Количество знаков после запятой для значений
+     * @type {number}
+     * @const
+     */
+    var DEFAULT_DIGITS_ROUND = 5;
+    /**
+     * Имя атрибута для связывания элемента и
+     * данных, связанных с ним
+     * @type {string}
+     * @const
+     */
+    var DATA_ATTR_NAME = mel + "-data-id";
+    /**
+     * Специальное значение свойства, указывающее
+     * на то, что нужно брать запомненное исходное
+     * значение свойства для элемента
+     * @type {null}
+     * @const
+     */
+    var SPECIAL_VALUE = null;
+    /**
+     * Для перевода из проценты в доли
+     * @type {number}
+     * @const
+     */
+    var PERCENT_TO_FRACTION = 1 / 100;
+    /**
+     * Максимальный прогресс по проходу, в долях
+     * @const
+     * */
+    var MAXIMAL_PROGRESS = 1.0;
+    /**
+     * Разрешено ли KeyframeAnimation.prototype.fetch использовать кеш для вычислений
+     * @type {boolean}
+     * @const
+     */
+    var FETCH_USE_CACHE = false;
+
+    function easingSearchCallback (fractionalTime, firstKeyframe, index, keyframes) {
+        var secondKeyframe = keyframes[ index + 1];
+        // для навигации в бинарном поиске
+        var MOVE_RIGHT = 1, MOVE_LEFT = -1, STOP = 0;
+
+        if (!secondKeyframe) return MOVE_LEFT;
+        if (firstKeyframe.key > fractionalTime) return MOVE_LEFT;
+        if (secondKeyframe.key <= fractionalTime) return MOVE_RIGHT;
+
+        return STOP;
+    }
 
     /**
-     * Конструктор анимаций с ключевыми кадрами
-     * отличается от обычной тем, что
-     * есть возможность установить значение
-     * для свойства, или определённое смягчение
-     * при указанном прогрессе анимации
+     * Конструктор ключевых кадров.
+     * @constructor
+     * @param {number} key
+     * @param {Object=} properties
+     * @param {Function=} easing
+     */
+    function Keyframe (key, properties, easing) {
+        if (typeOf.number(key)) {
+            this.key = /** @type {number} */ (key);
+        }
+        if (typeOf.object(properties)) {
+            this.properties = /** @type {Object} */ (properties);
+        } else {
+            this.properties = new Object();
+        }
+        if (typeOf.func(easing)) {
+            this.easing = /** @type {Function} */(easing);
+        }
+    }
+
+    /**
+     * Прогресс, к которому относится ключевой кадр (в долях)
+     * @type {number}
+     */
+    Keyframe.prototype.key = 0.00;
+
+    /**
+     * Смягчение ключевого кадра
+     * @type {(Function|CubicBezier|Steps)}
+     */
+    Keyframe.prototype.easing = noop;
+
+    /**
+     * Значения свойств для этого ключевого кадра.
+     * @type {Object}
+     */
+    Keyframe.prototype.properties = new Object();
+
+    /**
+     * Конструктор анимаций с ключевыми кадрами на JavaScript.
      * @constructor
      */
     function KeyframeAnimation() {
-        this.name = generateId();
-        /** @type KeyframeAnimation.prototype.keyframes */
-        this.keyframes = [];
-        this.specialEasing = {};
+        this.targets = new Array();
+        this.startingValues = new Object();
+        this.currentValues = new Object();
+        this.cache = new Object();
+        this.animationName = generateId();
+        this.keyframes = new Array();
+        this.specialEasing = new Object();
         this.iterations = 1;
-        this.rule = addRule("." + this.name, "");
-        this.intrinsic = {};
+        this.rulesList = new Object();
+        this.animatedProperties = new Object();
         // начальный и конечный ключевые кадры
         // их свойства наследуют вычисленные
-        this.addKeyframe(0, createObject(this.intrinsic));
-        this.addKeyframe(1, createObject(this.intrinsic));
+        this.addKeyframe(0.0, createObject(this.animatedProperties));
+        this.addKeyframe(1.0, createObject(this.animatedProperties));
         this.timer = new ReflowLooper(this.tick, this);
+        return this;
     }
 
-    merge(KeyframeAnimation.prototype, /** @lends {KeyframeAnimation.prototype} */{
+    /*
+    *   Наследуемые свойства.
+    * */
 
-        /**
-         * Имя анимации
-         * @type {string}
-         * @private
-         */
-        name:undefined,
+    /**
+     * Время отложенного запуска, в миллисекундах
+     * Значение устанавливается методом
+     * @see KeyframeAnimation.delay
+     * @type {number}
+     * @private
+     */
+    KeyframeAnimation.prototype.delayTime = /** @type {number} */ (parseTimeString(DEFAULT_DELAY));
 
-        /**
-         * Анимируемый элемент
-         * @private
-         * @type {Element}
-         */
-        target:undefined,
+    /**
+     * Режим заливки свойств, устанавливается методом
+     * @see KeyframeAnimation.fillMode
+     * @type {string}
+     * @private
+     */
+    KeyframeAnimation.prototype.fillingMode = DEFAULT_FILLMODE;
 
-        /**
-         * CSS-правило, в котором анимация будет отрисовываться
-         * @type {CSSRule}
-         */
-        rule:undefined,
+    /**
+     * Продолжительность одного прохода, в миллисекундах
+     * Значение устанавливается методом.
+     * @see KeyframeAnimation.duration
+     * @private
+     * @type {number}
+     */
+    KeyframeAnimation.prototype.animationTime = /** @type {number} */ (parseTimeString(DEFAULT_DURATION));
 
-        /**
-         * Отсортированный массив ключевых кадров
-         * @private
-         * @typedef Array.{{key: number, properties: Object.<string, number>, easing: Function}}
-         */
-        keyframes:undefined,
+    /**
+     * Число проходов;
+     * Значение устанавливается методом iterationCount.
+     * @type {number}
+     * @private
+     */
+    KeyframeAnimation.prototype.iterations = parseInt(DEFAULT_ITERATIONCOUNT, 10);
 
-        /**
-         * Значения вычисленного стиля.
-         * Родитель значений свойств
-         * для первого (0%) и последнего (100%) ключевых кадров
-         * @type {Object}
-         * @private
-         */
-        intrinsic:undefined,
+    /**
+     * Челосисленное число проходов;
+     * Значение устанавливается методом iterationCount.
+     * @type {number}
+     * @private
+     */
+    KeyframeAnimation.prototype.integralIterations = floor(DEFAULT_ITERATIONCOUNT);
 
-        /**
-         * Число проходов (по умол. 1)
-         * @type {number}
-         * @private
-         */
-        iterations:undefined,
+    /**
+     * Направление анимации.
+     * Значение устанавливается методом direction.
+     * @type {string}
+     * @private
+     */
+    KeyframeAnimation.prototype.animationDirection = DEFAULT_DIRECTION;
 
-        /**
-         * Направление анимации
-         * @type {string}
-         * @private
-         */
-        animationDirection: undefined,
+    /**
+     * Смягчение всей анимации
+     * @type {(Function|CubicBezier|Steps)}
+     * @private
+     */
+    KeyframeAnimation.prototype.smoothing = cubicBezierApproximations[ DEFAULT_EASING ];
 
-        /**
-         * Объект с особыми смягчениями для свойств
-         * Ключ - имя свойства, Значение - функция смягчения
-         * @type {Object.<string, Function>}
-         */
-        specialEasing:undefined,
+    /**
+     * Обработчик завершения анимации
+     * @private
+     * @type {Function}
+     */
+    KeyframeAnimation.prototype.oncomplete = noop;
 
-        /**
-         * Продолжительность анимации
-         * @private
-         * @type {number}
-         */
-        animationTime:undefined,
+    /**
+     * Обработчик завершения прохода
+     * @type {Function}
+     * @private
+     */
+    KeyframeAnimation.prototype.oniteration = noop;
 
-        /**
-         * Обработчик завершения анимации
-         * @private
-         * @type {Function}
-         */
-        oncomplete:undefined,
+     /**
+     * Функция будет выполняться на каждом тике (tick) анимации
+     * @private
+     * @type {Function}
+     */
+    KeyframeAnimation.prototype.onstep = noop;
 
-        /**
-         * Обработчик завершения прохода
-         * @type {Function}
-         * @private
-         */
-        oniteration:undefined,
+    /**
+     * Количество знаков после запятой для прогресса и свойств.
+     * @type {number}
+     * @private
+     */
+    KeyframeAnimation.prototype.digits = DEFAULT_DIGITS_ROUND;
 
-        /**
-         * Временная метка старта
-         * @type {number}
-         * @private
-         */
-        started:undefined,
+    /*
+    *   Индивидуальные свойства
+    * */
 
-        /**
-         * Смягчение анимации
-         * @type {Function}
-         * @private
-         */
-        smoothing:undefined,
+    /**
+     * Объект с временными данными.
+     * @type {Object}
+     * @private
+     */
+    KeyframeAnimation.prototype.cache = null;
 
-        /**
-         * Таймер отрисовки
-         * @type {ReflowLooper}
-         * @private
-         */
-        timer:undefined,
+    /**
+     * Объект с текущими значениями свойств
+     * @type {Object.<string, Object.<string, (number|Array)>>}
+     * @private
+     */
+    KeyframeAnimation.prototype.currentValues = null;
 
-        /**
-         * Время отложенного запуска (временная строка)
-         * @see parseTimeString
-         * @private
-         * @type {number}
-         */
-        delayTime: undefined,
+    /**
+     * Объект со стартовыми значениями свойств
+     * @type {Object.<string, Object.<string, (number|Array)>>}
+     * @private
+     */
+    KeyframeAnimation.prototype.startingValues = null;
 
-        /**
-         * Режим заливки свойств
-         * @type {string}
-         * @private
-         */
-        fillingMode: undefined,
+    /**
+     * Уникальная строка - имя анимации.
+     * Создаётся автоматически.
+     * @type {string}
+     * @private
+     */
+    KeyframeAnimation.prototype.animationName = "";
 
-        /**
-         * Установит анимируемый элемент
-         * @param {Element} elem Элемент
-         */
-        element:function (elem) {
-            addClass(elem, this.name);
-            this.target = elem;
-        },
+    /**
+     * Коллекция элементов, учавствующих в анимации.
+     * Заполняется сеттером "element"
+     * @private
+     * @type {Array.<Element>}
+     */
+    KeyframeAnimation.prototype.targets = null;
 
-        /**
-         * Установка продолжительности анимации
-         * @param duration
-         */
-        "duration":function (duration) {
-            this.animationTime = duration;
-        },
+    /**
+     * Объект с CSS-правилами, в котором будут отрисовываться свойства.
+     * Ключ - ID элемента, значение - CSS правило.
+     * @type {Object.<string, CSSRule>}
+     */
+    KeyframeAnimation.prototype.rulesList = null;
 
-        /**
-         * Установка обработчика
-         * завершения анимации
-         * @param {Function} callback
-         */
-        "onComplete":function (callback) {
+    /**
+     * Отсортированный по возрастанию свойства "key" массив ключевых кадров.
+     * @private
+     * @typedef Array.{{key: number, properties: Object.<string, number>, easing: Function}}
+     */
+    KeyframeAnimation.prototype.keyframes = null;
+
+    /**
+     * Словарь, содержащий все анимируемые свойства.
+     * Заполняется из метода установки значений свойств по прогрессу (propAt)
+     * Нужен для первого (0%) и последнего (100%) ключевых кадров.
+     * @type {Object}
+     * @private
+     */
+    KeyframeAnimation.prototype.animatedProperties = null;
+
+    /**
+     * Объект с особыми смягчениями для свойств
+     * Ключ - имя свойства, Значение - функция смягчения
+     * Значения устанавливаются методом easing
+     * @type {Object.<string, (Function|CubicBezier|Steps)>}
+     */
+    KeyframeAnimation.prototype.specialEasing = null;
+
+    /**
+     * Временная метка старта
+     * @type {number}
+     * @private
+     */
+    KeyframeAnimation.prototype.started = 0;
+
+    /**
+     * Номер текущей итерации
+     * @type {number}
+     * @private
+     * */
+    KeyframeAnimation.prototype.currentIteration = 0;
+
+    /**
+     * Прошедшее со старта время
+     * @type {number}
+     * @private
+     */
+    KeyframeAnimation.prototype.elapsedTime = 0;
+
+    /**
+     * Текущий прогресс по проходу
+     * @type {number}
+     * @private
+     */
+    KeyframeAnimation.prototype.fractionalTime = 0.0;
+
+    /**
+     * Прогресс относительно первой итерации
+     * @type {number}
+     * @private
+     */
+    KeyframeAnimation.prototype.animationProgress = 0.0;
+
+    /**
+     * Таймер отрисовки
+     * @type {ReflowLooper}
+     * @private
+     */
+    KeyframeAnimation.prototype.timer = null;
+
+    /*
+    * Публичные методы
+    * */
+
+    /**
+     * Добавит элемент(-ы) в коллекцию анимируемых.
+     * @param {(HTMLElement|Array.<HTMLElement>)} elem Элемент
+     */
+    KeyframeAnimation.prototype.element = function (elem) {
+        var id, elements;
+        if (typeOf.element(elem)) {
+            id = generateId();
+            this.rulesList[id] = addRule("." + id);
+            addClass(/** @type {HTMLElement} */(elem), id);
+            elem.setAttribute(DATA_ATTR_NAME, id);
+            this.cache[id] = new Object();
+            this.startingValues[id] = new Object();
+            this.currentValues[id] = new Object();
+            this.targets.push(elem);
+        } else {
+            elements = slice(elem);
+            each(elements, this.element, this);
+        }
+    };
+
+    /**
+     * Установка продолжительности прохода анимации.
+     * Отрицательные значения считаются за нулевое.
+     * Нулевое значение соответствует мгновенному проходу анимации, при этом
+     * все события (конца прохода и конца анимации) возникают так же, как и при положительной продолжительности прохода
+     * и режим заполнения (fillMode) работает так же, как и при положительной продолжительности прохода
+     * @param {string} duration
+     */
+    KeyframeAnimation.prototype.duration = function (duration) {
+        var numericDuration = parseTimeString(duration);
+        if (typeOf.number(numericDuration)) {
+            this.animationTime = /** @type {number} */ (numericDuration);
+            this.digits = floor(lg(this.animationTime * FRAMES_PER_SECOND)) - 2.0;
+            if (ENABLE_DEBUG) {
+                console.log('duration: computed epsilon is "' + this.digits + '" digits');
+            }
+        } else if (ENABLE_DEBUG) {
+            console.warn('duration: bad value "'+ duration +'"');
+        }
+    };
+
+    /**
+     * Установка обработчика завершения анимации
+     * @param {Function} callback
+     */
+    KeyframeAnimation.prototype.onComplete = function (callback) {
+        if (typeOf.func(callback)) {
             this.oncomplete = callback;
-        },
+        } else if (ENABLE_DEBUG) {
+            console.warn("onComplete: callback is not a function : %o", callback);
+        }
+    };
+
+    /**
+     * Установка смягчения анимации при прогрессе.
+     * Возможно установить особое смягчение для свойства (на протяжении всей анимации).
+     *
+     * Установленное смягчение будет использовано,
+     * если прогресс по проходу будет соответствовать неравенству:
+     * ТЕКУЩИЙ_КЛЮЧЕВОЙ_КАДР <= ПРОГРЕСС_ПО_ПРОХОДУ < СЛЕДУЮЩИЙ_КЛЮЧЕВОЙ_КАДР
+     * Метод устанавливает смягчение для "текущего" (см. неравенство) ключевого кадра.
+     *
+     * При установке смягчения для свойства параметр прогресса игнорируется.
+     * (!) Абсциссы первой и второй точек для кубической кривой должны принадлежать промежутку [0, 1].
+     * @param {(Function|string)} timingFunction временная функция CSS, JS функция или алиас смягчения
+     * @param {(number|string)=} position прогресс по проходу в процентах (по умол. не зваисит от прогресса)
+     * @param {string=} property для какого свойства устанавливается (по умол. для всех)
+     * @see cubicBezierAliases
+     * @see cubicBezierApproximations
+     */
+    KeyframeAnimation.prototype.easing = function (timingFunction, position, property) {
 
         /**
-         * Установка смягчения анимации при прогрессе (в долях)
-         * возможно установить особое смягчение для свойства
-         * При установке смягчения для свойства параметр прогресса игнорируется
-         * @param {(Function|string)} easing временная функция CSS, функция или алиас смягчения
-         * @param {number=} position прогресс в долях (по умол. для всей анимации)
-         * @param {string=} property для какого свойства устанавливается (по умол. для всех)
-         * @see cubicBezierApproximations
+         * Временной кадр, если указываем смягчение для него
+         * @type {{key: number, properties: Object, easing: Function}}
+         * */
+        var keyframe;
+        /**
+         * Функция смягчения
+         * @type {(Function|CubicBezier|Steps)}
          */
-        "easing":function (easing, position, property) {
-            var keyframe;
+        var easing;
+        /**
+         * Аргументы к временной функции
+         * @type {Array}
+         */
+        var points;
+        /**
+         * для выделения алиасов
+         * ease-in -> easeIn
+         * @type {string}
+         */
+        var camelCased;
+        /**
+         * строка временной функции css без пробелов
+         * @type {string}
+         */
+        var trimmed;
+        /**
+         * Количество ступеней лестничной функции
+         * @type {number}
+         */
+        var stepsAmount;
+        /**
+         * Отсчитывать ли ступени лестничной функции от старта (или с конца)
+         * @type {boolean}
+         */
+        var countFromStart;
+        /**
+         * Числовое представление прогресса
+         * @type {number}
+         */
+        var key;
 
-            if (type.string(property)) {
-                this.specialEasing[property] = easing;
+        if (typeOf.func(timingFunction)) {
+            easing = /** @type {Function} */ (timingFunction);
+        } else if (typeOf.string(timingFunction)) {
+            // alias или CSS timing-function
+
+            trimmed = trim(/** @type {string} */ (timingFunction) );
+            camelCased = camelCase(trimmed);
+
+            if (camelCased in cubicBezierApproximations) {
+                // алиас функции приближения
+                easing = cubicBezierApproximations[camelCased];
+            } else if (camelCased in cubicBezierAliases) {
+                // алиас к точкам
+                points = cubicBezierAliases[camelCased];
             } else {
-                if (type.undefined(position)) {
+                // строка временной функции css
+                if (cubicBezierReg.test(trimmed)) {
+                    points = trimmed.match(cubicBezierReg)[1].split(",");
+                } else if (stepsReg.test(trimmed)) {
+                    points = trimmed.match(stepsReg)[1].split(",");
+                }
+            }
+
+            if (points) {
+                // переданы аргументы к временным функциям.
+                if (points.length === 4) {
+                    // 4 аргумента - это кубическая кривая Безье
+                    points = map(points, parseFloat);
+                    // абсциссы точек должны лежать в [0, 1]
+                    if (inRange(points[0], 0, 1, true) && inRange(points[2], 0, 1, true)) {
+                        easing = new CubicBezier(points[0], points[1], points[2], points[3]);
+                    }
+                } else if (points.length === 2) {
+                    // 2 аргумента - лестничная функция
+                    stepsAmount = parseInt(points[0], 10);
+                    countFromStart = points[1] === "start";
+                    if (typeOf.number(stepsAmount)) {
+                        easing = new Steps(stepsAmount, countFromStart);
+                    }
+                }
+            }
+
+        }
+
+        if (typeOf.func(easing) || instanceOf(easing, CubicBezier) || instanceOf(easing, Steps)) {
+            if (typeOf.string(property)) {
+                this.specialEasing[/** @type {string} */(property)] = easing;
+            } else {
+                if (typeOf.undefined(position)) {
                     this.smoothing = easing;
                 } else {
-                    position = normalizeKey(position);
-                }
-                if (type.number(position)) {
-                    keyframe = this.lookupKeyframe(position) || this.addKeyframe(position);
-                    keyframe.easing = easing;
+                    key = normalizeKey(/** @type {(number|string)} */(position));
+                    if (typeOf.number(key)) {
+                        // указываем в процентах, используем в долях.
+                        key *= PERCENT_TO_FRACTION;
+                        keyframe = this.lookupKeyframe(key) || this.addKeyframe(key);
+                        keyframe.easing = easing;
+                    }
                 }
             }
-        },
+        } else if (ENABLE_DEBUG) {
+            console.warn('easing: cannot form a function from arguments %o', timingFunction);
+        }
+    };
 
-        /**
-         * Установка направления анимации
-         * Допустимые значения см. в документации к CSS3 анимациям
-         * @param {string} animationDirection
-         */
-        "direction":function (animationDirection) {
+    /**
+     * Установка направления анимации
+     * Значение "normal" соответствует возрастанию прогресса от 0 до 1 при каждом проходе
+     * Значение "reverse" соответствует убыванию прогресса от 1 до 0 при каждом проходе
+     * Значение "alternate" соответствует направлению "normal" для нечётных проходов и "reverse" для чётных
+     * Значение "alternate-reverse" соответствует направлению "reverse" для нечётных проходов и "normal" для чётных
+     * @see DEFAULT_DIRECTION
+     * @param {string} animationDirection
+     */
+    KeyframeAnimation.prototype.direction = function (animationDirection) {
+
+        if (animationDirection === DIRECTION_NORMAL ||
+            animationDirection === DIRECTION_REVERSE ||
+            animationDirection === DIRECTION_ALTERNATE ||
+            animationDirection === DIRECTION_ALTERNATE_REVERSE) {
+
             this.animationDirection = animationDirection;
-        },
 
-        "delay": function (delay) {
-            delay = parseTimeString(delay);
-            this.delayTime = delay;
-        },
+        } else if (ENABLE_DEBUG) {
+            console.warn('direction: invalid value "%s"', animationDirection);
+        }
+    };
 
-        "fillMode": function (fillMode) {
+    /**
+     * Установка задержки старта
+     * Если значение положительное, старт анимации будет отложен на численное представление.
+     * Если отрицательное, то будет считаться, что прошло уже столько времени со старта.
+     * @param {(number|string)} delay
+     */
+    KeyframeAnimation.prototype.delay = function (delay) {
+        var numericDelay = parseTimeString(delay);
+        if (typeOf.number(numericDelay)) {
+            this.delayTime =/** @type {number} */ (numericDelay);
+        } else if (ENABLE_DEBUG) {
+            console.warn('delay: cannot parse value "%s"', delay);
+        }
+    };
+
+    /**
+     * Установка режима заполнения
+     * Значение "backwards" соответствует отрисовке значений
+     * начального ключевого кадра сразу после старта (и перед самим анимированием)
+     * Значение "forwards" соответствует отрисовке значений
+     * конечного ключевого кадра после окончания анимации.
+     * Значение "none" не соответствует ни одному из значений;
+     * Значение "both" соответствует и первому, и второму одновременно.
+     * @param {string} fillMode
+     * @see DEFAULT_FILLMODE
+     */
+    KeyframeAnimation.prototype.fillMode = function (fillMode) {
+
+        if (fillMode === FILLMODE_FORWARDS ||
+            fillMode === FILLMODE_BACKWARDS ||
+            fillMode === FILLMODE_BOTH ||
+            fillMode === FILLMODE_NONE) {
+
             this.fillingMode = fillMode;
-        },
 
-        "iterationCount": function (iterations) {
-            this.iterations = iterations;
-        },
+        } else if (ENABLE_DEBUG) {
+            console.warn('fillMode: invalid value "%s"', fillMode);
+        }
+    };
+
+    /**
+     * Установка количества проходов цикла анимации.
+     * Значение "infinite" соответствует бесконечному числу повторений анимации.
+     * Дробные значения соответствуют конечному значению прогресса по проходу.
+     * Отрицательные числовые значения игнорируются.
+     * @param {string} iterations
+     * @see DEFAULT_ITERATIONCOUNT
+     */
+    KeyframeAnimation.prototype.iterationCount = function (iterations) {
 
         /**
-         * Добавит ключевой кадр на указанном прогрессе
-         * и вернёт его
-         * @param {key} position
-         * @param {Object=} properties
-         * @param {Function=} easing
-         * @private
+         * Числовое представление
+         * @type {number}
          */
-        addKeyframe:function (position, properties, easing) {
+        var numericIterations;
 
-            var keyframe, keyframes;
-            var key, properties, easing;
+        // исключение составляет специальное значение
+        if (iterations === ITERATIONCOUNT_INFINITE) {
+            numericIterations = Number.POSITIVE_INFINITY;
+        } else {
+            numericIterations = parseFloat(iterations);
+            if (!isFinite(numericIterations) || numericIterations < 0) {
+                if (ENABLE_DEBUG) {
+                    console.warn('iterationCount: passed iterations is not a number or is negative "%s"', iterations);
+                }
+                return;
+            }
+        }
 
-            position = normalizeKey(position);
+        this.iterations = numericIterations;
+        this.integralIterations = floor(numericIterations);
+    };
 
-            if (!type.number(position)) return;
+    /**
+     * Старт анимации
+     */
+    KeyframeAnimation.prototype.start = function () {
 
-            /** @typedef {number} */
-            key = position;
-            /** @typedef {Object.<string, number>} */
-            properties = properties || {};
-            /** @typedef {Function} */
-            easing = easing || null;
+        if (this.delayTime > 0) {
+            if (ENABLE_DEBUG) {
+                console.log('start: ' + this.animationName + ' has positite delay "' + this.delayTime + '" ms');
+            }
+            setTimeout(bind(this.timer.start, this.timer), this.delayTime);
+        } else {
+            if (ENABLE_DEBUG) {
+                console.log('start: ' + this.animationName + ' has non-positite delay "' + this.delayTime + '" so starting right now.');
+            }
+            this.timer.start();
+        }
 
-            /** @typedef {{key: key, properties: properties, easing: easing}} */
-            keyframe = {
-                key:key,
-                properties:properties,
-                easing:easing
-            };
+        // запоминаем текущие значения анимируемых свойств для каждого элемента
+        each(this.targets, function (element) {
 
-            /** @type {Array.<keyframe>} */
+            var id = element.getAttribute(DATA_ATTR_NAME);
+            var startingValues = this.startingValues[id];
+
+            each(this.animatedProperties, function (special_value, propertyName) {
+                var currentPropertyValue = css(element, propertyName);
+                startingValues[propertyName] = normalize(element, propertyName, currentPropertyValue, false);
+            }, this);
+
+        }, this);
+
+        this.started = now();
+        this.tick(this.started);
+
+        if (ENABLE_DEBUG) {
+            console.log('start: animation "' + this.animationName + '" started');
+        }
+    };
+
+    /**
+     * Остановка анимации
+     */
+    KeyframeAnimation.prototype.stop = function () {
+
+        var fillsForwards, endFractionalTime;
+
+        this.timer.stop();
+
+        fillsForwards = this.fillingMode === FILLMODE_FORWARDS ||this.fillingMode === FILLMODE_BOTH;
+
+        if (fillsForwards) {
+            endFractionalTime = this.needsReverse(this.iterations) ? 1.0 : 0.0;
+            if (ENABLE_DEBUG) {
+                console.log('stop: animation fills forwards and has direction "' + this.animationDirection + '" and iteration count "' + this.iterations + '" so fetching with keyframe "' + endFractionalTime + '"');
+            }
+            this.fetch(endFractionalTime);
+            this.render(true);
+        }
+        // очистка css правил
+        each(this.rulesList, function (rule) {
+            rule.style.cssText = "";
+        });
+        if (ENABLE_DEBUG) {
+            console.log('stop: CSSRules are cleared.');
+        }
+        if (ENABLE_DEBUG) {
+            console.log('stop: animation "' + this.animationName + '" stopped');
+        }
+
+    };
+
+     /**
+     * Установка функции, которая будет выполняться на каждом шаге анимации
+     * @param {Function} callback
+     */
+    KeyframeAnimation.prototype.step = function (callback) {
+       if (typeOf.func(callback)) {
+           this.onstep = callback;
+       }
+    };
+
+    /**
+     * Установка значения свойства при указанном прогрессе
+     * Для установки смягчения используется метод easing
+     * @param {string} name имя свойства
+     * @param {string} value значение свойства
+     * @param {(number|string)=} position строка прогресса в процентах (по умол. 100%)
+     * @see KeyframeAnimation.easing
+     */
+    KeyframeAnimation.prototype.propAt = function (name, value, position) {
+
+        var keyframe;
+        var keyframes;
+        /** @type {(number|string)} */
+        var key;
+        var startingKeyframe, endingKeyframe;
+
+        keyframes = this.keyframes;
+
+        key = typeOf.undefined(position) ? keyAliases["to"] : position;
+        key = normalizeKey(key);
+        // в долях
+        key *= PERCENT_TO_FRACTION;
+
+        if (!typeOf.number(key)) {
+            if (ENABLE_DEBUG) {
+                console.warn('propAt: passed keyframe key is invalid "%s"', position);
+            }
+            return;
+        }
+
+        keyframe = this.lookupKeyframe(key) || this.addKeyframe(key);
+        this.animatedProperties[name] = SPECIAL_VALUE;
+        keyframe.properties[name] = value;
+    };
+
+    /*
+    *   Приватные методы.
+    * */
+
+    /**
+     * Добавит ключевой кадр на указанном прогрессе по проходу в долях и вернёт его
+     * @param {number} position
+     * @param {Object=} properties
+     * @param {Function=} easing
+     * @private
+     */
+    KeyframeAnimation.prototype.addKeyframe = function (position, properties, easing) {
+
+        var keyframe;
+        var keyframes;
+
+        if (typeOf.number(position)) {
+            keyframe = new Keyframe(position, properties, easing);
             keyframes = this.keyframes;
             keyframes.push(keyframe);
-            bubbleSort(keyframes, compareKeyframes);
+            bubbleSort(/** @type {Array} */(keyframes), compareKeyframes);
+        }
 
-            return keyframe;
-        },
+        return keyframe;
+    };
+
+    /**
+     * Попытается найти в коллекции ключевой кадр
+     * с указанным прогрессом по проходу (в долях)
+     * @param {number} position
+     * @return {Object}
+     * @private
+     */
+    KeyframeAnimation.prototype.lookupKeyframe = function (position) {
+        var keyframe, index;
+        index = binarySearch(/** @type {Array} */(this.keyframes), position, function (key, keyframe) {
+            return key - keyframe.key;
+        });
+        keyframe = this.keyframes[index];
+        return keyframe;
+    };
+
+    /**
+     * Высчитает значения свойств при указанном прогрессе про проходу
+     * @param {number} fractionalTime прогресс по проходу ( [0, 1] )
+     * @return {undefined}
+     * @private
+     */
+    KeyframeAnimation.prototype.fetch = function (fractionalTime) {
+
+        var keyframes, globalFetch, fetchedProperties, firstKeyframe, secondKeyframe, from, to, propertyName;
+        var element;
+        var offset, scale;
+        var timingFunction, specialEasing, index, easing, epsilon;
+        keyframes = this.keyframes;
+
+        epsilon = Math.pow(10, - this.digits);
+        /*
+         * Поиск функции смягчения для текущего ключевого кадра
+         */
+        timingFunction = this.smoothing;
+
+        index = binarySearch(/**@type {Array}*/(keyframes), fractionalTime, easingSearchCallback);
+
+        if (index !== -1 && keyframes[index].easing !== noop) {
+            timingFunction = keyframes[index].easing;
+        }
 
         /**
-         * Попытается найти в коллекции
-         * ключевой кадр с указанным прогрессом
-         * @param {number} position
-         * @return {Object}
-         * @private
-         */
-        lookupKeyframe:function (position) {
-            var keyframe, index;
-            index = binarySearch(this.keyframes, position, function (key, keyframe) {
-                return key - keyframe.key;
-            });
-            keyframe = this.keyframes[index];
-            return keyframe;
-        },
+         *  информация о вычисленных значениях
+         *  для каждого элемента
+         *  */
+        each(this.targets, function (element) {
 
-        /**
-         * Старт анимации или её продолжение после паузы
-         * @param {boolean=} keepOn Продолжить ли предыдущие значения (установка в FALSY запускает заново)
-         */
-        "start":function (keepOn) {
+            var id, elementData, startingValues, currentValues;
 
-            var prop, delay, numericDefaultDelay, fillsBackwards, fillMode;
+            id = element.getAttribute(DATA_ATTR_NAME);
+            elementData = this.cache[id];
+            startingValues = this.startingValues[id];
+            currentValues = this.currentValues[id];
 
-            numericDefaultDelay = parseTimeString(DEFAULT_DELAY);
+            each(this.animatedProperties, function (_, propertyName) {
 
-            fillMode = this.fillingMode || DEFAULT_FILLMODE;
-            fillsBackwards = fillMode === FILLMODE_BACKWARDS;
-            fillsBackwards |= fillMode === FILLMODE_BOTH;
-
-
-            if (!keepOn) {
-                this.started = now();
-            }
-
-            delay = parseTimeString(this.delayTime);
-            delay = type.number(delay) ? delay : numericDefaultDelay;
-
-            setTimeout(bind(this.timer.start, this.timer), delay);
-
-            for (prop in this.intrinsic) {
-                this.intrinsic[prop] = normalize(this.target, prop);
-            }
-
-            if ((fillsBackwards && delay > 0) || delay <= 0) {
-                this.render(this.fetch(0));
-            }
-        },
-
-        /**
-         * Остановка анимации
-         */
-        "stop":function () {
-
-            var fillsForwards, fillMode;
-
-            this.timer.stop();
-
-            fillMode = this.fillingMode || DEFAULT_FILLMODE;
-            fillsForwards = fillMode === FILLMODE_FORWARDS;
-            fillsForwards |= fillMode === FILLMODE_BOTH;
-
-            if (fillsForwards) {
-                this.render(this.fetch(1), true);
-            }
-
-            type.func(this.oncomplete) && this.oncomplete();
-
-        },
-
-        /**
-         * Установка значения свойства при указанном прогрессе
-         * Для установки смягчения см. метод easing
-         * @param {string} name имя свойства
-         * @param {string|number} value значение свойства
-         * @param {(string|number)=} position позиция, в долях. (по умол. 1)
-         * @see KeyframeAnimation.easing
-         */
-        "propAt":function (name, value, position) {
-
-            /**
-             * Ключевой кадр, имеющий свои свойства и своё смягчение
-             * @typedef {{key: number, properties: Object.<string, number>, easing: Function}}
-             * */
-            var keyframe, keyframes;
-            var startingKeyframe, endingKeyframe;
-
-            /**
-             * @type {Array.<keyframe>}
-             */
-            keyframes = this.keyframes;
-
-            if (type.undefined(position)) position = keyAliases["to"];
-            position = normalizeKey(position);
-            // в долях
-            position /= 100;
-
-            if (!type.number(position)) return;
-
-            keyframe = this.lookupKeyframe(position) || this.addKeyframe(position);
-
-            this.intrinsic[name] = css(this.target, name);
-
-            keyframe.properties[name] = value;
-        },
-
-        /**
-         * Высчитает значения свойств при указанном прогрессе
-         * @param {number} fractionalTime прогресс по итерации
-         * @return {Object}
-         * @private
-         */
-        fetch:function (fractionalTime) {
-
-            var camelCased;
-            var countFromStart;
-            var stepsAmount;
-            var leftBracketIndex;
-            var rightBracketIndex;
-            var points;
-            var i;
-            var keyframes, fetchedProperties, firstKeyframe, secondKeyframe, from, to, propertyName;
-            var element;
-            var fractionalTime, offset, scale;
-            var easing, timingFunction, index;
-
-            element = this.target;
-            keyframes = this.keyframes;
-
-            /*
-             * Поиск функции смягчения для текущего ключевого кадра
-             */
-            timingFunction = this.smoothing;
-
-            index = binarySearch(keyframes, fractionalTime, function (fractionalTime, firstKeyframe, index, keyframes) {
-                var secondKeyframe = keyframes[ index + 1];
-                var MOVE_RIGHT = 1, MOVE_LEFT = -1, STOP = 0;
-
-                if (!secondKeyframe) return MOVE_LEFT;
-                if (firstKeyframe.key > fractionalTime) return MOVE_LEFT;
-                if (secondKeyframe <= fractionalTime) return MOVE_RIGHT;
-
-                return STOP;
-            });
-
-            timingFunction = keyframes[index].easing ? keyframes[index].easing : timingFunction;
-
-            if (type.string(timingFunction)) {
-                // alias или CSS timing-function
-
-                timingFunction = trim(timingFunction);
-                camelCased = camelCase(timingFunction);
-                easing = cubicBezierApproximations[camelCased] || cubicBezierAliases[camelCased] || easing;
-
-                if (type.func(easing)) {
-                    timingFunction = easing;
-                } else if (type.array(easing)) {
-                    points = easing;
-                } else if (cubicBezierReg.test(easing)) {
-                    leftBracketIndex = easing.indexOf("(");
-                    rightBracketIndex = easing.indexOf(")", leftBracketIndex);
-                    points = easing.slice(leftBracketIndex, rightBracketIndex);
-                    points = map(points.split(","), parseFloat);
-                } else if (stepsReg.test(easing)) {
-                    leftBracketIndex = easing.indexOf("(");
-                    rightBracketIndex = easing.indexOf(")", leftBracketIndex);
-                    points = easing.slice(leftBracketIndex, rightBracketIndex);
-                    points = points.split(",");
-                }
-
-                if (points.length === 4) {
-                    timingFunction = function (fractionalTime) {
-                        return cubicBezier(points[0], points[1], points[2], points[3], fractionalTime);
-                    };
-                } else if (points.length === 2) {
-                    stepsAmount = parseInt(points[0], 10);
-                    countFromStart = trim(points[1]) === "start";
-                    timingFunction = function (fractionalTime) {
-                        return steps(stepsAmount, countFromStart, fractionalTime);
-                    };
-                }
-            }
-
-            timingFunction = type.func(timingFunction) ? timingFunction : cubicBezierApproximations[ DEFAULT_EASING ];
-
-            fetchedProperties = {};
-
-            // в intrinsic находятся начальные значения всех анимируемых свойств
-            for (propertyName in this.intrinsic) {
+                var value, individualFractionalTime;
 
                 /*
                  * Поиск двух ближайших ключевых кадров
@@ -2170,165 +2490,233 @@ var aliases = {};
                 secondKeyframe = keyframes[keyframes.length - 1];
 
                 //TODO было бы неплохо заменить линейный поиск на бинарный
-                for (i = 1; i < keyframes.length - 1; i++) {
-                    if (propertyName in keyframes[i].properties) {
-                        if (fractionalTime <= keyframes[i].key) {
-                            secondKeyframe = keyframes[i];
-                            break;
+                each(keyframes, function (keyframe) {
+                    // специальное значение для прекращения обхода
+                    var STOP_ITERATION = false;
+                    if (propertyName in keyframe.properties) {
+                        if (fractionalTime < keyframe.key || (fractionalTime === 1.0 && keyframe.key === 1.0)) {
+                            secondKeyframe = keyframe;
+                            return STOP_ITERATION;
                         }
-                        firstKeyframe = keyframes[i];
+                        firstKeyframe = keyframe;
                     }
-                }
+                    return !STOP_ITERATION;
+                });
 
-                // смещение первого ключевого кадра относительно начала анимации
                 offset = firstKeyframe.key;
-                // масштаб для сплющивания прогресса
                 scale = 1.0 / (secondKeyframe.key - firstKeyframe.key);
+                individualFractionalTime = (fractionalTime - offset) * scale;
 
-                easing = timingFunction((fractionalTime - offset) * scale);
-
-                from = normalize(element, propertyName, firstKeyframe.properties[propertyName]);
-                to = normalize(element, propertyName, secondKeyframe.properties[propertyName]);
-
-                fetchedProperties[propertyName] = blend(propertyName, from, to, easing);
-            }
-
-            return fetchedProperties;
-        },
-
-        /**
-         * Отрисует высчитанные значения свойств
-         * @param {Object} fetchedProperties
-         * @param {boolean=} direct отрисовывать ли напрямую в стили элементов
-         * @private
-         */
-        render:function (fetchedProperties, direct) {
-            var buffer, property, name, value, element;
-
-            var index, NOT_FOUND, colonIndex, semiIndex;
-
-            NOT_FOUND = -1;
-
-            element = this.target;
-
-            if (direct) {
-                buffer = element.style.cssText + ';';
-            } else {
-                buffer = this.rule.style.cssText + ';';
-            }
-
-            for (property in fetchedProperties) {
-
-                name = getVendorPropName.cache[property] || getVendorPropName(property);
-                value = normalize(element, property, fetchedProperties[property], true);
-
-                index = buffer.indexOf(name, 0);
-                index = index === NOT_FOUND ? buffer.indexOf(property, 0) : index;
-
-                if (index === NOT_FOUND) {
-                    buffer += name + ":" + value + ";";
+                if (instanceOf(timingFunction, CubicBezier)) {
+                    easing = /** @type {CubicBezier} */(timingFunction).calc(individualFractionalTime);
+                } else if (instanceOf(timingFunction, Steps)) {
+                    easing = /** @type {Steps} */(timingFunction).calc(individualFractionalTime);
                 } else {
-                    colonIndex = buffer.indexOf(":", index);
-                    semiIndex = buffer.indexOf(";", colonIndex);
-                    buffer = buffer.slice(0, colonIndex + 1) + value + buffer.slice(semiIndex);
+                    easing = timingFunction(individualFractionalTime);
                 }
-            }
+                easing = round(easing, this.digits);
 
-            //TODO Rules vs style проверка производительности
-            if (direct) {
-                element.style.cssText = buffer;
-            } else {
-                this.rule.style.cssText = buffer;
-            }
-        },
-
-        /**
-         * Тик анимации
-         * просчитывание и отрисовка
-         * @param {number=} timeStamp временная метка (или текущее время)
-         * @private
-         */
-        tick:function (timeStamp) {
-
-            var duration, elapsedTime, progr, fractionalTime;
-            var iterations, integralIterations, currentIteration, iterationIsOdd, MAX_PROGR;
-            var fetchedProperties;
-            var delay, numericDefaultDelay;
-
-            MAX_PROGR = 1;
-            numericDefaultDelay = parseTimeString(DEFAULT_DELAY);
-
-            /*
-             * Вычисление прогресса по итерации
-             * */
-            elapsedTime = timeStamp - this.started;
-
-
-            delay = parseTimeString(this.delayTime);
-            delay = type.number(delay) ? delay : numericDefaultDelay;
-
-            elapsedTime += -1 * delay;
-
-            if (elapsedTime < 0) elapsedTime = 0;
-
-            duration = parseTimeString(this.animationTime);
-            duration = type.number(duration) ? duration : parseTimeString(DEFAULT_DURATION);
-
-            // прогресс относительно первой итерации
-            progr = elapsedTime / duration;
-
-            currentIteration = Math.floor(progr);
-
-            iterations = this.iterations;
-
-            // исключение составляет специальное значение
-            if (iterations === ITERATIONCOUNT_INFINITE) {
-                iterations = Number.POSITIVE_INFINITY;
-            } else {
-                iterations = parseFloat(iterations);
-                if (!isFinite(iterations) || iterations < 0) {
-                    // установлено неприемлимое значение для кол-ва итераций
-                    // откатываемся к значению по умолчанию
-                    iterations = DEFAULT_ITERATIONCOUNT;
+                if (firstKeyframe.properties[propertyName] === SPECIAL_VALUE) {
+                    from = startingValues[propertyName];
+                } else {
+                    from = firstKeyframe.properties[propertyName];
+                    from = normalize(element, propertyName, from, false);
                 }
+
+                if (secondKeyframe.properties[propertyName] === SPECIAL_VALUE) {
+                    to = startingValues[propertyName];
+                } else {
+                    to = secondKeyframe.properties[propertyName];
+                    to = normalize(element, propertyName, to, false);
+                }
+
+                value = blend(propertyName, /** @type {(Array|number)} */ (from), /** @type {(Array|number)} */(to), easing, this.digits);
+
+                currentValues[propertyName] = value;
+
+            }, this); // end properties loop
+
+        }, this); // end targets loop
+
+        return globalFetch;
+    };
+
+    /**
+     * Отрисует высчитанные значения свойств
+     * @param {boolean} direct НЕ (!) использовать ли правило в таблице стилей для отрисовки одинаковых для элементов значений
+     * @see KeyframeAnimation.fetch
+     * @private
+     */
+    KeyframeAnimation.prototype.render = function (direct) {
+        each(this.targets, function (element) {
+
+            var id, elementData, startingValues, currentValues;
+            var elementStyle;
+            var rule, ruleStyle;
+            var destinationStyle;
+
+            id = element.getAttribute(DATA_ATTR_NAME);
+            rule = this.rulesList[id];
+            elementData = this.cache[id];
+            currentValues = this.currentValues[id];
+
+            elementStyle = element.style;
+            ruleStyle = rule.style;
+
+            destinationStyle = direct ? elementStyle : ruleStyle;
+
+            each(currentValues, function (propertyValue, propertyName) {
+                css(destinationStyle, propertyName, propertyValue);
+            }, this);
+        }, this);
+    };
+
+    /**
+     * Тик анимации
+     * просчитывание и отрисовка (fetch & render)
+     * @param {number} timeStamp временная метка
+     * @private
+     */
+    KeyframeAnimation.prototype.tick = function (timeStamp) {
+
+        var iterationCount, animationProgress;
+        var previousIteration, currentIteration;
+
+        iterationCount = this.iterations;
+        previousIteration = this.currentIteration;
+
+        animationProgress = this.animationProgress = this.computeProgress(timeStamp);
+        currentIteration = this.currentIteration = this.computeIteration(this.animationProgress);
+        this.fractionalTime = this.computeFractionalTime(this.animationProgress, this.currentIteration);
+
+        if (currentIteration !== previousIteration) {
+            // Условие завершения итерации
+            if (ENABLE_DEBUG) {
+                console.log('tick: "' + this.animationName + '" - iteration "' + currentIteration + '" of total "' + iterationCount + '"');
             }
-
-            integralIterations = Math.floor(iterations);
-
-            // прогресс относительно текущего прохода
-            fractionalTime = progr - Math.min(currentIteration, integralIterations);
-
-            if (fractionalTime > MAX_PROGR) fractionalTime = MAX_PROGR;
-
-            /*
-             * Условие завершения итерации
-             */
-            if (fractionalTime === MAX_PROGR && currentIteration < iterations) {
-                type.func(this.oniteration) && this.oniteration();
-            }
-
-            /*
-             * Условие завершения анимации
-             */
-            if (progr > iterations) {
-                this.stop();
-            }
-
-            // аналогично операции NUM % 2, т.е. является ли число нечётным
-            iterationIsOdd = currentIteration & 1;
-
-            if (needsReverse(this.animationDirection, currentIteration)) {
-                fractionalTime = MAX_PROGR - fractionalTime;
-            }
-
-            fetchedProperties = this.fetch(fractionalTime);
-            this.render(fetchedProperties);
+            this.oniteration();
+        } else if (animationProgress >= iterationCount) {
+            // Условие завершения анимации
+            this.stop();
+            this.oncomplete();
+            // метод stop сам отрисует конечный кадр, т.к. он зависит от параметра fill-mode
+            return;
+        } else {
+            this.onstep();
         }
 
-    });
+        this.fetch(this.fractionalTime);
+        this.render(false);
+    };
 
+    /***
+     * Вычислит и вернёт прогресс анимации относительно первой итерации
+     * @param {number} timeStamp временная метка
+     * @return {number} прогресс анимации относительно первой итерации
+     * @private
+     */
+    KeyframeAnimation.prototype.computeProgress = function (timeStamp) {
+
+        var animationProgress;
+
+        animationProgress = this.computeElapsedTime(timeStamp) / this.animationTime;
+        animationProgress = round(animationProgress, this.digits);
+
+        return animationProgress;
+    };
+
+    /**
+     * Вычислит номер текущей итерации из прогресса.
+     * @param {number} animationProgress прогресс относительно первого прохода
+     * @return {number}
+     * @private
+     */
+    KeyframeAnimation.prototype.computeIteration = function (animationProgress) {
+        var currentIteration;
+        currentIteration = floor(animationProgress);
+        return min(currentIteration, this.integralIterations);
+    };
+
+    /***
+     * Вычислит и вернёт прогресс анимации относительно текущей итерации
+     * @param {number} animationProgress прогресс относительно первой итерации
+     * @param {number} currentIteration номер итерации из прогресса
+     * @return {number} прогресс анимации относительно текущей итерации
+     * @private
+     */
+    KeyframeAnimation.prototype.computeFractionalTime = function (animationProgress, currentIteration) {
+
+        var iterationProgress, iterationCount;
+
+        iterationCount = this.iterations;
+
+        iterationProgress = animationProgress - currentIteration;
+        iterationProgress = min(iterationProgress, MAXIMAL_PROGRESS);
+
+        if (this.needsReverse(currentIteration)) {
+            iterationProgress = MAXIMAL_PROGRESS - iterationProgress;
+        }
+
+        return iterationProgress;
+    };
+
+    /**
+     * Вычислит прошедшее со старта время до временной метки
+     * @param {number} timeStamp временная метка
+     * @return {number}
+     * @private
+     */
+    KeyframeAnimation.prototype.computeElapsedTime = function (timeStamp) {
+        var elapsedTime;
+
+        if (timeStamp < HIGHRESOLUTION_TIMER_BOUND) {
+            // высокоточный таймер
+            timeStamp += navigStart;
+        }
+
+        elapsedTime = timeStamp - this.started;
+        elapsedTime += -1 * this.delayTime;
+        elapsedTime = max(elapsedTime, 0);
+        return elapsedTime;
+    };
+
+    /**
+     * Нужно ли обратить прогресс анимации, в зависимости от направления и номера текущей итерации
+     * @param {number} iterationNumber
+     * @return {boolean}
+     * @private
+     */
+    KeyframeAnimation.prototype.needsReverse = function (iterationNumber) {
+
+        var needsReverse, iterationIsOdd, direction;
+
+        direction = this.animationDirection;
+        iterationIsOdd = isOdd(iterationNumber);
+
+        needsReverse = direction === DIRECTION_REVERSE;
+        needsReverse = needsReverse || direction === DIRECTION_ALTERNATE && iterationIsOdd;
+        needsReverse = needsReverse || direction === DIRECTION_ALTERNATE_REVERSE && !iterationIsOdd;
+
+        return needsReverse;
+    };
+
+    /* Экспорты */
+    KeyframeAnimation.prototype["element"] = KeyframeAnimation.prototype.element;
+    KeyframeAnimation.prototype["delay"] = KeyframeAnimation.prototype.delay;
+    KeyframeAnimation.prototype["duration"] = KeyframeAnimation.prototype.duration;
+    KeyframeAnimation.prototype["direction"] = KeyframeAnimation.prototype.direction;
+    KeyframeAnimation.prototype["easing"] = KeyframeAnimation.prototype.easing;
+    KeyframeAnimation.prototype["fillMode"] = KeyframeAnimation.prototype.fillMode;
+    KeyframeAnimation.prototype["iterationCount"] = KeyframeAnimation.prototype.iterationCount;
+    KeyframeAnimation.prototype["onComplete"] = KeyframeAnimation.prototype.onComplete;
+    KeyframeAnimation.prototype["propAt"] = KeyframeAnimation.prototype.propAt;
+    KeyframeAnimation.prototype["start"] = KeyframeAnimation.prototype.start;
+    KeyframeAnimation.prototype["stop"] = KeyframeAnimation.prototype.stop;
+
+    /** @export */
     window["KeyframeAnimation"] = KeyframeAnimation;
 
-/*---------------------------------------*/
+	/*---------------------------------------*/
+
 
 })(window);
