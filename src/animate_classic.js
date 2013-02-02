@@ -1,613 +1,1029 @@
-    var requestAnimationFrame = window[getVendorPropName("requestAnimationFrame", window)] || rAF_imitation;
+    /**
+     * Количество знаков после запятой для значений
+     * @type {number}
+     * @const
+     */
+    var DEFAULT_DIGITS_ROUND = 5;
+    /**
+     * Имя атрибута для связывания элемента и
+     * данных, связанных с ним
+     * @type {string}
+     * @const
+     */
+    var DATA_ATTR_NAME = mel + "-data-id";
+    /**
+     * Специальное значение свойства, указывающее
+     * на то, что нужно брать запомненное исходное
+     * значение свойства для элемента
+     * @type {null}
+     * @const
+     */
+    var SPECIAL_VALUE = null;
+    /**
+     * Для перевода из проценты в доли
+     * @type {number}
+     * @const
+     */
+    var PERCENT_TO_FRACTION = 1 / 100;
+    /**
+     * Максимальный прогресс по проходу, в долях
+     * @const
+     * */
+    var MAXIMAL_PROGRESS = 1.0;
+    /**
+     * Разрешено ли KeyframeAnimation.prototype.fetch использовать кеш для вычислений
+     * @type {boolean}
+     * @const
+     */
+    var FETCH_USE_CACHE = false;
 
-    function animateClassic (id, elements, keyframes, duration, easing, fillMode, delay, direction, iterationCount, state, complete, start, iteration) {
+    function easingSearchCallback (fractionalTime, firstKeyframe, index, keyframes) {
+        var secondKeyframe = keyframes[ index + 1];
+        // для навигации в бинарном поиске
+        var MOVE_RIGHT = 1, MOVE_LEFT = -1, STOP = 0;
 
-        var startedTime, prevIteration = 0;
+        if (!secondKeyframe) return MOVE_LEFT;
+        if (firstKeyframe.key > fractionalTime) return MOVE_LEFT;
+        if (secondKeyframe.key <= fractionalTime) return MOVE_RIGHT;
 
-        //debugger;
-
-        keyframes = normalizeKeyframes(keyframes);
-
-        // обёртка даёт возможность менять смягчение после старта
-        function timingFunction (fractionalTime) {
-            if (typeOf.func(easing)) {
-                return easing(fractionalTime);
-            } else {
-                // TODO остальные смягчения
-                console.error("easing!")
-            }
-        }
-
-
-        function onAnimationEnd () {}
-
-        // тик по времени
-        function tick (currentTime) {
-
-            var totalDuration;
-            var elapsedTime;
-            var currentIteration;
-            var progr;
-            var iterationProgr;
-            var needsReverse;
-            var iterationIsOdd;
-            var isOnEnd;
-            var fillsForwards;
-
-
-            elapsedTime = currentTime - startedTime - delay;
-
-            if (elapsedTime < 0) {
-                if (ENABLE_DEBUG) {
-                    console.warn("Прошедшее со старта время меньше нуля");
-                }
-                elapsedTime = 0;
-            }
-
-            // относительно первого прохода.
-            progr = elapsedTime / duration;
-
-            // номер текущего прохода
-            currentIteration = Math.floor(progr);
-
-            // прогресс по текущему проходу
-            iterationProgr = progr - Math.min(currentIteration, iterationCount - 1);
-
-            console.log("%d -> progr: %d, iteration: %d, iterationProgr: %d", elapsedTime.toFixed(2), progr.toFixed(2), currentIteration, iterationProgr.toFixed(2));
-
-            if (iterationProgr > 1) {
-                iterationProgr = 1;
-                if (ENABLE_DEBUG) {
-                    console.warn("Прогресс прохода больше единицы");
-                }
-            }
-
-            iterationIsOdd = currentIteration & 1;
-
-            needsReverse = direction === DIRECTION_REVERSE;
-            needsReverse |= direction === DIRECTION_ALTERNATE && iterationIsOdd;
-            needsReverse |= direction === DIRECTION_ALTERNATE_REVERSE && !iterationIsOdd;
-
-            if (needsReverse) {
-                iterationProgr = 1 - iterationProgr;
-            }
-
-            each(keyframes.properties, function (propertyName) {
-
-                var prevKeyframe, nextKeyframe;
-                var timingFunctionValue, scale, offset;
-
-                each(keyframes, function (currentKeyframe) {
-                    if (propertyName in currentKeyframe.properties || currentKeyframe.key === 0 || currentKeyframe.key === 1) {
-                        prevKeyframe = nextKeyframe;
-                        nextKeyframe = currentKeyframe;
-                        return !(nextKeyframe.key > iterationProgr);
-                    }
-                });
-
-                offset = prevKeyframe.key;
-                scale = 1.0 / (nextKeyframe.key - prevKeyframe.key);
-                timingFunctionValue = timingFunction((iterationProgr - offset) * scale);
-
-                blendAndRender(propertyName, prevKeyframe.properties[propertyName], nextKeyframe.properties[propertyName], timingFunctionValue);
-            });
-
-            isOnEnd = !(isFinite(iterationCount) && elapsedTime < duration * iterationCount);
-
-            if (isOnEnd) {
-
-                fillsForwards = fillMode === FILLMODE_FORWARDS || fillMode === FILLMODE_BOTH;
-
-                if (fillsForwards) {
-                    //null;
-                }
-
-                complete();
-
-            } else {
-                if (currentIteration !== prevIteration) {
-                    iteration();
-                    prevIteration = currentIteration;
-                }
-            }
-
-            return !isOnEnd;
-        }
-
-        function blendAndRender (property, from, to, easing) {
-            each(elements, function (element) {
-
-                // преобразование к абсолютным значениям.
-                var normalizedFrom = normalize(element, property, from);
-                var normalizedTo = normalize(element, property, to);
-
-                var blended = (normalizedTo - normalizedFrom) * easing + normalizedFrom;
-
-                css(element, property, blended);
-            });
-        }
-
-        /** @param {number=} now */
-        function loop (now) {
-            tick(now) && requestAnimationFrame(loop);
-        }
-
-        return {
-
-            addElement: noop,
-            addProperty: noop,
-
-            start: function () {
-                startedTime = now() - delay;
-
-                var fillsBackwards = fillMode === FILLMODE_BACKWARDS || fillMode === FILLMODE_BOTH;
-                var startIsDelayed = delay > 0;
-
-                if ( !(startIsDelayed && !fillsBackwards)  ) {
-                    tick(startedTime);
-                }
-
-                requestAnimationFrame(loop);
-            },
-
-            pause: noop,
-            resume: noop,
-
-            setDuration: noop,
-            setDelay: noop,
-            setEasing: noop,
-            setFillMode: noop,
-            setDirection: noop,
-            setIterationCount: noop
-
-        };
+        return STOP;
     }
 
     /**
-     * Проверка ключевых кадров
-     * @param {Object} keyframes
-     * @return {Object}
+     * Конструктор ключевых кадров.
+     * @constructor
+     * @param {number} key
+     * @param {Object=} properties
+     * @param {Function=} easing
      */
-    function normalizeKeyframes (keyframes) {
-
-        var // массив ключевых кадров.
-            keyframesList = [],
-            // список анимируемых свойств.
-            animatableProperties = {};
-
-        var sortedKeys = getKeys(keyframes).sort(function (firstKey, secondKey) { return normalizeKey(firstKey) - normalizeKey(secondKey); });
-
-        each(sortedKeys, function (key) {
-
-            var properties = keyframes[key];
-
-            var keyframe = {};
-
-            var props = keyframe.properties = {};
-
-            key = normalizeKey(key);
-
-            if (isFinite(key)) {
-
-                key /= 100; // в долях.
-
-                each(properties, function (value, name) {
-                    // просто копируем
-                    props[name] = value;
-                    // собираем список анимируемых во всех
-                    // ключевых кадрах свойств
-                    // даёт возможность указывать непересекающиеся значения.
-                    animatableProperties[name] = null;
-                });
-
-                keyframe.key = key;
-
-                // т.к. ключи отсортированы, то мы уже
-                // проходим ключевые кадры по возрастанию
-                keyframesList.push(keyframe);
-
-            } else if (ENABLE_DEBUG) {
-                console.warn("Пропускается ключ %d", key);
-            }
-
-        });
-
-        // проходить его будем каждый кадр
-        animatableProperties = map(animatableProperties, function (ignored, propertyName) { return propertyName; });
-
-        keyframesList.properties = animatableProperties;
-
-        return keyframesList;
+    function Keyframe (key, properties, easing) {
+        if (typeOf.number(key)) {
+            this.key = /** @type {number} */ (key);
+        }
+        if (typeOf.object(properties)) {
+            this.properties = /** @type {Object} */ (properties);
+        } else {
+            this.properties = new Object();
+        }
+        if (typeOf.func(easing)) {
+            this.easing = /** @type {Function} */(easing);
+        }
     }
 
+    /**
+     * Прогресс, к которому относится ключевой кадр (в долях)
+     * @type {number}
+     */
+    Keyframe.prototype.key = 0.00;
 
-    animateClassic.prototype.start = function () {
-        this.elapsedTime -= this.delay;
-        this.loop();
+    /**
+     * Смягчение ключевого кадра
+     * @type {(Function|CubicBezier|Steps)}
+     */
+    Keyframe.prototype.easing = noop;
 
-        if (this.delay <= 0 || (this.fillsBackwards && this.delay > 0)) {
-            this.setState("waitingtobackwardsfill");
+    /**
+     * Значения свойств для этого ключевого кадра.
+     * @type {Object}
+     */
+    Keyframe.prototype.properties = new Object();
+
+    /**
+     * Конструктор анимаций с ключевыми кадрами на JavaScript.
+     * @constructor
+     */
+    function ClassicAnimation() {
+        this.targets = new Array();
+        this.startingValues = new Object();
+        this.currentValues = new Object();
+        this.cache = new Object();
+        this.animationName = generateId();
+        this.keyframes = new Array();
+        this.specialEasing = new Object();
+        this.iterations = 1;
+        this.rulesList = new Object();
+        this.animatedProperties = new Object();
+        // начальный и конечный ключевые кадры
+        // их свойства наследуют вычисленные
+        this.addKeyframe(0.0, createObject(this.animatedProperties));
+        this.addKeyframe(1.0, createObject(this.animatedProperties));
+        this.timer = new ReflowLooper(this.tick, this);
+        return this;
+    }
+
+    /*
+    *   Наследуемые свойства.
+    * */
+
+    /**
+     * Время отложенного запуска, в миллисекундах
+     * Значение устанавливается методом
+     * @see ClassicAnimation.delay
+     * @type {number}
+     * @private
+     */
+    ClassicAnimation.prototype.delayTime = /** @type {number} */ (parseTimeString(DEFAULT_DELAY));
+
+    /**
+     * Режим заливки свойств, устанавливается методом
+     * @see ClassicAnimation.fillMode
+     * @type {string}
+     * @private
+     */
+    ClassicAnimation.prototype.fillingMode = DEFAULT_FILLMODE;
+
+    /**
+     * Продолжительность одного прохода, в миллисекундах
+     * Значение устанавливается методом.
+     * @see ClassicAnimation.duration
+     * @private
+     * @type {number}
+     */
+    ClassicAnimation.prototype.animationTime = /** @type {number} */ (parseTimeString(DEFAULT_DURATION));
+
+    /**
+     * Число проходов;
+     * Значение устанавливается методом iterationCount.
+     * @type {number}
+     * @private
+     */
+    ClassicAnimation.prototype.iterations = parseInt(DEFAULT_ITERATIONCOUNT, 10);
+
+    /**
+     * Челосисленное число проходов;
+     * Значение устанавливается методом iterationCount.
+     * @type {number}
+     * @private
+     */
+    ClassicAnimation.prototype.integralIterations = floor(DEFAULT_ITERATIONCOUNT);
+
+    /**
+     * Направление анимации.
+     * Значение устанавливается методом direction.
+     * @type {string}
+     * @private
+     */
+    ClassicAnimation.prototype.animationDirection = DEFAULT_DIRECTION;
+
+    /**
+     * Смягчение всей анимации
+     * @type {(Function|CubicBezier|Steps)}
+     * @private
+     */
+    ClassicAnimation.prototype.smoothing = cubicBezierApproximations[ DEFAULT_EASING ];
+
+    /**
+     * Обработчик завершения анимации
+     * @private
+     * @type {Function}
+     */
+    ClassicAnimation.prototype.oncomplete = noop;
+
+    /**
+     * Обработчик завершения прохода
+     * @type {Function}
+     * @private
+     */
+    ClassicAnimation.prototype.oniteration = noop;
+
+     /**
+     * Функция будет выполняться на каждом тике (tick) анимации
+     * @private
+     * @type {Function}
+     */
+    ClassicAnimation.prototype.onstep = noop;
+
+    /**
+     * Количество знаков после запятой для прогресса и свойств.
+     * @type {number}
+     * @private
+     */
+    ClassicAnimation.prototype.digits = DEFAULT_DIGITS_ROUND;
+
+    /*
+    *   Индивидуальные свойства
+    * */
+
+    /**
+     * Объект с временными данными.
+     * @type {Object}
+     * @private
+     */
+    ClassicAnimation.prototype.cache = null;
+
+    /**
+     * Объект с текущими значениями свойств
+     * @type {Object.<string, Object.<string, (number|Array)>>}
+     * @private
+     */
+    ClassicAnimation.prototype.currentValues = null;
+
+    /**
+     * Объект со стартовыми значениями свойств
+     * @type {Object.<string, Object.<string, (number|Array)>>}
+     * @private
+     */
+    ClassicAnimation.prototype.startingValues = null;
+
+    /**
+     * Уникальная строка - имя анимации.
+     * Создаётся автоматически.
+     * @type {string}
+     * @private
+     */
+    ClassicAnimation.prototype.animationName = "";
+
+    /**
+     * Коллекция элементов, учавствующих в анимации.
+     * Заполняется сеттером "element"
+     * @private
+     * @type {Array.<Element>}
+     */
+    ClassicAnimation.prototype.targets = null;
+
+    /**
+     * Объект с CSS-правилами, в котором будут отрисовываться свойства.
+     * Ключ - ID элемента, значение - CSS правило.
+     * @type {Object.<string, CSSRule>}
+     */
+    ClassicAnimation.prototype.rulesList = null;
+
+    /**
+     * Отсортированный по возрастанию свойства "key" массив ключевых кадров.
+     * @private
+     * @typedef Array.{{key: number, properties: Object.<string, number>, easing: Function}}
+     */
+    ClassicAnimation.prototype.keyframes = null;
+
+    /**
+     * Словарь, содержащий все анимируемые свойства.
+     * Заполняется из метода установки значений свойств по прогрессу (propAt)
+     * Нужен для первого (0%) и последнего (100%) ключевых кадров.
+     * @type {Object}
+     * @private
+     */
+    ClassicAnimation.prototype.animatedProperties = null;
+
+    /**
+     * Объект с особыми смягчениями для свойств
+     * Ключ - имя свойства, Значение - функция смягчения
+     * Значения устанавливаются методом easing
+     * @type {Object.<string, (Function|CubicBezier|Steps)>}
+     */
+    ClassicAnimation.prototype.specialEasing = null;
+
+    /**
+     * Временная метка старта
+     * @type {number}
+     * @private
+     */
+    ClassicAnimation.prototype.started = 0;
+
+    /**
+     * Номер текущей итерации
+     * @type {number}
+     * @private
+     * */
+    ClassicAnimation.prototype.currentIteration = 0;
+
+    /**
+     * Прошедшее со старта время
+     * @type {number}
+     * @private
+     */
+    ClassicAnimation.prototype.elapsedTime = 0;
+
+    /**
+     * Текущий прогресс по проходу
+     * @type {number}
+     * @private
+     */
+    ClassicAnimation.prototype.fractionalTime = 0.0;
+
+    /**
+     * Прогресс относительно первой итерации
+     * @type {number}
+     * @private
+     */
+    ClassicAnimation.prototype.animationProgress = 0.0;
+
+    /**
+     * Таймер отрисовки
+     * @type {ReflowLooper}
+     * @private
+     */
+    ClassicAnimation.prototype.timer = null;
+
+    /*
+    * Публичные методы
+    * */
+
+    /**
+     * Добавит элемент(-ы) в коллекцию анимируемых.
+     * @param {(HTMLElement|Array.<HTMLElement>)} elem Элемент
+     */
+    ClassicAnimation.prototype.element = function (elem) {
+        var id, elements;
+        if (typeOf.element(elem)) {
+            id = generateId();
+            this.rulesList[id] = addRule("." + id);
+            addClass(/** @type {HTMLElement} */(elem), id);
+            elem.setAttribute(DATA_ATTR_NAME, id);
+            this.cache[id] = new Object();
+            this.startingValues[id] = new Object();
+            this.currentValues[id] = new Object();
+            this.targets.push(elem);
         } else {
-            this.setState("waitingtostart");
+            elements = slice(elem);
+            each(elements, this.element, this);
         }
     };
 
-    animateClassic.prototype.animationEnded = function () {
-        this.info("Анимация %o закончена", this);
-
-        if (!this.fillsForwards) {
-
-            var i, elemClass, property;
-
-            for (i = 0; i < this.elements.length; i++) {
-
-                elemClass = this.elements[i];
-
-                for (property in elemClass.computedPropValues) {
-                    this.css(elemClass.element, property, elemClass.computedPropValues[property]);
-                }
-
+    /**
+     * Установка продолжительности прохода анимации.
+     * Отрицательные значения считаются за нулевое.
+     * Нулевое значение соответствует мгновенному проходу анимации, при этом
+     * все события (конца прохода и конца анимации) возникают так же, как и при положительной продолжительности прохода
+     * и режим заполнения (fillMode) работает так же, как и при положительной продолжительности прохода
+     * @param {string} duration
+     */
+    ClassicAnimation.prototype.duration = function (duration) {
+        var numericDuration = parseTimeString(duration);
+        if (typeOf.number(numericDuration)) {
+            this.animationTime = /** @type {number} */ (numericDuration);
+            this.digits = floor(lg(this.animationTime * FRAMES_PER_SECOND)) - 2.0;
+            if (ENABLE_DEBUG) {
+                console.log('duration: computed epsilon is "' + this.digits + '" digits');
             }
+        } else if (ENABLE_DEBUG) {
+            console.warn('duration: bad value "'+ duration +'"');
         }
-
-        this.setState("complete");
-        this.oncomplete();
     };
 
-
-    /* НИЗКОУРОВНЕВЫЕ МЕТОДЫ */
-
-    animateClassic.prototype.convertElementsToClasses = function (elements) {
-
-        var elementClassesArray = [];
-
-        for(var i = 0; i < elements.length; i++) {
-            elementClassesArray.push({
-                element: elements[i],
-                computedPropValues: {},
-                currentValues: {}
-            });
+    /**
+     * Установка обработчика завершения анимации
+     * @param {Function} callback
+     */
+    ClassicAnimation.prototype.onComplete = function (callback) {
+        if (typeOf.func(callback)) {
+            this.oncomplete = callback;
+        } else if (ENABLE_DEBUG) {
+            console.warn("onComplete: callback is not a function : %o", callback);
         }
-
-        return elementClassesArray;
     };
 
+    /**
+     * Установка смягчения анимации при прогрессе.
+     * Возможно установить особое смягчение для свойства (на протяжении всей анимации).
+     *
+     * Установленное смягчение будет использовано,
+     * если прогресс по проходу будет соответствовать неравенству:
+     * ТЕКУЩИЙ_КЛЮЧЕВОЙ_КАДР <= ПРОГРЕСС_ПО_ПРОХОДУ < СЛЕДУЮЩИЙ_КЛЮЧЕВОЙ_КАДР
+     * Метод устанавливает смягчение для "текущего" (см. неравенство) ключевого кадра.
+     *
+     * При установке смягчения для свойства параметр прогресса игнорируется.
+     * (!) Абсциссы первой и второй точек для кубической кривой должны принадлежать промежутку [0, 1].
+     * @param {(Function|string)} timingFunction временная функция CSS, JS функция или алиас смягчения
+     * @param {(number|string)=} position прогресс по проходу в процентах (по умол. не зваисит от прогресса)
+     * @param {string=} property для какого свойства устанавливается (по умол. для всех)
+     * @see cubicBezierAliases
+     * @see cubicBezierApproximations
+     */
+    ClassicAnimation.prototype.easing = function (timingFunction, position, property) {
 
+        /**
+         * Временной кадр, если указываем смягчение для него
+         * @type {{key: number, properties: Object, easing: Function}}
+         * */
+        var keyframe;
+        /**
+         * Функция смягчения
+         * @type {(Function|CubicBezier|Steps)}
+         */
+        var easing;
+        /**
+         * Аргументы к временной функции
+         * @type {Array}
+         */
+        var points;
+        /**
+         * для выделения алиасов
+         * ease-in -> easeIn
+         * @type {string}
+         */
+        var camelCased;
+        /**
+         * строка временной функции css без пробелов
+         * @type {string}
+         */
+        var trimmed;
+        /**
+         * Количество ступеней лестничной функции
+         * @type {number}
+         */
+        var stepsAmount;
+        /**
+         * Отсчитывать ли ступени лестничной функции от старта (или с конца)
+         * @type {boolean}
+         */
+        var countFromStart;
+        /**
+         * Числовое представление прогресса
+         * @type {number}
+         */
+        var key;
 
-    var relativeValueReg = /^([+\-])=/;
+        if (typeOf.func(timingFunction)) {
+            easing = /** @type {Function} */ (timingFunction);
+        } else if (typeOf.string(timingFunction)) {
+            // alias или CSS timing-function
 
-    // TODO остальные относительные изменения.
-    var relativeOperations = {
+            trimmed = trim(/** @type {string} */ (timingFunction) );
+            camelCased = camelCase(trimmed);
 
-        "+": function (beginValue, relativeValue) {
-
-        }
-
-    };
-
-
-
-    animateClassic.prototype.addProperty = function (property, keyframes) {
-        var key, keyVal;
-
-        if (typeof keyframes === "string") {
-            if (relativeValueReg.test(keyframes)) {
-                this.error("Относительное изменение не поддерживается");
-                return; // TODO!!!!
-                // передано относительное изменение
-
-                var sign = keyframes.match(relativeValueReg)[1];
-
-                var computedValue = this.css();
-
-                var relativeValue = parseFloat(keyframes);
-
-                keyframes = {
-                }
+            if (camelCased in cubicBezierApproximations) {
+                // алиас функции приближения
+                easing = cubicBezierApproximations[camelCased];
+            } else if (camelCased in cubicBezierAliases) {
+                // алиас к точкам
+                points = cubicBezierAliases[camelCased];
             } else {
-                // передано конечное значение
-                keyframes = { "100%": keyframes };
-            }
-        }
-
-        for (key in keyframes) {
-
-            keyVal = keyframes[key];
-            key = this.keyframeAliases[key] || key;
-            key = key.match(keyReg);
-            key = parseInt(key, 10);
-            if (isNaN(key) || key < 0 || key > 100) {
-                this.warn("Ключ %d не соответствует стандарту", key);
-                continue;
+                // строка временной функции css
+                if (cubicBezierReg.test(trimmed)) {
+                    points = trimmed.match(cubicBezierReg)[1].split(",");
+                } else if (stepsReg.test(trimmed)) {
+                    points = trimmed.match(stepsReg)[1].split(",");
+                }
             }
 
-            key /= 100;
-
-            if (this.keyframes[key] === undefined) {
-                this.keyframes[key] = {};
-                this.keys.push(key);
+            if (points) {
+                // переданы аргументы к временным функциям.
+                if (points.length === 4) {
+                    // 4 аргумента - это кубическая кривая Безье
+                    points = map(points, parseFloat);
+                    // абсциссы точек должны лежать в [0, 1]
+                    if (inRange(points[0], 0, 1, true) && inRange(points[2], 0, 1, true)) {
+                        easing = new CubicBezier(points[0], points[1], points[2], points[3]);
+                    }
+                } else if (points.length === 2) {
+                    // 2 аргумента - лестничная функция
+                    stepsAmount = parseInt(points[0], 10);
+                    countFromStart = points[1] === "start";
+                    if (typeOf.number(stepsAmount)) {
+                        easing = new Steps(stepsAmount, countFromStart);
+                    }
+                }
             }
 
-            keyVal = keyVal.match(cssValueReg);
-            this.keyframes[key][property] = parseFloat(keyVal[1]);
-
         }
 
-        this.properties.push(property);
-
-        for (var i = 0; i < this.elements.length; i++) {
-            this.elements[i].computedPropValues[property] = this.css(this.elements[i].element, property);
+        if (typeOf.func(easing) || instanceOf(easing, CubicBezier) || instanceOf(easing, Steps)) {
+            if (typeOf.string(property)) {
+                this.specialEasing[/** @type {string} */(property)] = easing;
+            } else {
+                if (typeOf.undefined(position)) {
+                    this.smoothing = easing;
+                } else {
+                    key = normalizeKey(/** @type {(number|string)} */(position));
+                    if (typeOf.number(key)) {
+                        // указываем в процентах, используем в долях.
+                        key *= PERCENT_TO_FRACTION;
+                        keyframe = this.lookupKeyframe(key) || this.addKeyframe(key);
+                        keyframe.easing = easing;
+                    }
+                }
+            }
+        } else if (ENABLE_DEBUG) {
+            console.warn('easing: cannot form a function from arguments %o', timingFunction);
         }
-
     };
 
+    /**
+     * Установка направления анимации
+     * Значение "normal" соответствует возрастанию прогресса от 0 до 1 при каждом проходе
+     * Значение "reverse" соответствует убыванию прогресса от 1 до 0 при каждом проходе
+     * Значение "alternate" соответствует направлению "normal" для нечётных проходов и "reverse" для чётных
+     * Значение "alternate-reverse" соответствует направлению "reverse" для нечётных проходов и "normal" для чётных
+     * @see DEFAULT_DIRECTION
+     * @param {string} animationDirection
+     */
+    ClassicAnimation.prototype.direction = function (animationDirection) {
 
+        if (animationDirection === DIRECTION_NORMAL ||
+            animationDirection === DIRECTION_REVERSE ||
+            animationDirection === DIRECTION_ALTERNATE ||
+            animationDirection === DIRECTION_ALTERNATE_REVERSE) {
 
-    animateClassic.prototype.getFractionalTime = function () {
+            this.animationDirection = animationDirection;
 
-        var fractionalTime = this.duration ? this.elapsedTime / this.duration : 1.0;
-
-        if (fractionalTime < 0) {
-            fractionalTime = 0;
+        } else if (ENABLE_DEBUG) {
+            console.warn('direction: invalid value "%s"', animationDirection);
         }
-
-        // текущая итерация
-        // 1.3 -> 1
-        var integralTime = Math.floor(fractionalTime);
-        // кол-во итераций вообще
-        // 1.7 -> 1
-        var integralIterations = Math.floor(this.iterationCount);
-        // является ли кол-во итераций дробным числом
-        var iterationsHasFractional = this.iterationCount - integralIterations;
-
-        if (this.iterationCount !== "infinite" && !iterationsHasFractional){
-            console.log(integralTime, integralIterations);
-            integralTime = Math.min(integralTime, integralIterations - 1);
-        }
-
-        // прогресс без учета итерации
-        fractionalTime -= integralTime;
-
-        if (fractionalTime > 1) {
-            fractionalTime = 1;
-        }
-
-        if ((this.direction == "alternate" && integralTime & 1)
-            || (this.direction == "alternate-reverse" && !integralTime & 1)
-            || this.direction == "reverse") {
-            fractionalTime = 1 - fractionalTime;
-        }
-
-        return fractionalTime;
     };
 
-
-    animateClassic.prototype.getAnimationProgress = function (scale, offset) {
-
-        if (!this.duration) {
-            this.info("У анимации %o нулевая продолжительность цикла", this);
-            return 1.0;
+    /**
+     * Установка задержки старта
+     * Если значение положительное, старт анимации будет отложен на численное представление.
+     * Если отрицательное, то будет считаться, что прошло уже столько времени со старта.
+     * @param {(number|string)} delay
+     */
+    ClassicAnimation.prototype.delay = function (delay) {
+        var numericDelay = parseTimeString(delay);
+        if (typeOf.number(numericDelay)) {
+            this.delayTime =/** @type {number} */ (numericDelay);
+        } else if (ENABLE_DEBUG) {
+            console.warn('delay: cannot parse value "%s"', delay);
         }
+    };
 
-        var elapsedTime = this.elapsedTime;
+    /**
+     * Установка режима заполнения
+     * Значение "backwards" соответствует отрисовке значений
+     * начального ключевого кадра сразу после старта (и перед самим анимированием)
+     * Значение "forwards" соответствует отрисовке значений
+     * конечного ключевого кадра после окончания анимации.
+     * Значение "none" не соответствует ни одному из значений;
+     * Значение "both" соответствует и первому, и второму одновременно.
+     * @param {string} fillMode
+     * @see DEFAULT_FILLMODE
+     */
+    ClassicAnimation.prototype.fillMode = function (fillMode) {
 
-        if (this.iterationCount > 0 && elapsedTime >= this.totalDuration) {
-            // 2.78 -> 2.0
-            var integralIterationCount = Math.floor(this.iterationCount);
-            // 0.78
-            var iterationCountHasFractional = this.iterationCount - integralIterationCount;
-            return integralIterationCount % 2 || iterationCountHasFractional ? 1.0 : 0.0;
+        if (fillMode === FILLMODE_FORWARDS ||
+            fillMode === FILLMODE_BACKWARDS ||
+            fillMode === FILLMODE_BOTH ||
+            fillMode === FILLMODE_NONE) {
+
+            this.fillingMode = fillMode;
+
+        } else if (ENABLE_DEBUG) {
+            console.warn('fillMode: invalid value "%s"', fillMode);
         }
+    };
 
-        var fractionalTime = this.fractionalTime;
+    /**
+     * Установка количества проходов цикла анимации.
+     * Значение "infinite" соответствует бесконечному числу повторений анимации.
+     * Дробные значения соответствуют конечному значению прогресса по проходу.
+     * Отрицательные числовые значения игнорируются.
+     * @param {string} iterations
+     * @see DEFAULT_ITERATIONCOUNT
+     */
+    ClassicAnimation.prototype.iterationCount = function (iterations) {
 
-        if (scale !== 1 || offset) {
-            fractionalTime = (fractionalTime - offset) * scale;
-        }
+        /**
+         * Числовое представление
+         * @type {number}
+         */
+        var numericIterations;
 
-        if (this.easing instanceof CubicBezier || this.easing instanceof  Steps) {
-            return this.easing.solve(fractionalTime, this.duration);
-        } else if (typeof this.easing === "function") {
-            return this.easing(fractionalTime, this.duration);
+        // исключение составляет специальное значение
+        if (iterations === ITERATIONCOUNT_INFINITE) {
+            numericIterations = Number.POSITIVE_INFINITY;
         } else {
-            return fractionalTime;
-        }
-    };
-
-
-
-    animateClassic.prototype.fetchValues = function () {
-
-        var keys;
-
-        var fromKey;
-        var toKey;
-
-        var fromKeyframe;
-        var toKeyframe;
-
-        var offset, scale;
-
-        var timingFunctionValue;
-
-        var fractionalTime = this.fractionalTime;
-
-        var property, i, b;
-
-        for(i = 0, b = this.properties.length; i < b; i++) {
-
-            property = this.properties[i];
-
-            keys = this.getCurrentKeys(fractionalTime, property);
-
-            fromKey = keys[0];
-            toKey = keys[1];
-
-            fromKeyframe = this.keyframes[fromKey];
-            toKeyframe = this.keyframes[toKey];
-
-            offset = fromKey;
-            scale = 1.0 / (toKey - fromKey);
-
-            timingFunctionValue = this.getAnimationProgress(scale, offset);
-
-            if (property in fromKeyframe && property in toKeyframe && fromKeyframe[property] !== SPECIAL) {
-
-                this.currentValues[property] = this.blend(fromKeyframe[property], toKeyframe[property], timingFunctionValue);
-
-            } else {
-
-                this.currentValues[property] = SPECIAL;
-
-                if (keys[0] === 0 && fromKeyframe[property] === undefined) {
-                    for (var j = 0; j < this.elements.length; j++) {
-                        this.elements[j].currentValues[property] = this.blend(this.elements[j].computedPropValues[property], toKeyframe[property], timingFunctionValue);
-                    }
-                }  else if (keys[1] === 100 && toKeyframe[property] === undefined) {
-                    for (var j = 0; j < this.elements.length; j++) {
-                        this.elements[j].currentValues[property] = this.blend(fromKeyframe[property], this.elements[j].computedPropValues[property], timingFunctionValue);
-                    }
+            numericIterations = parseFloat(iterations);
+            if (!isFinite(numericIterations) || numericIterations < 0) {
+                if (ENABLE_DEBUG) {
+                    console.warn('iterationCount: passed iterations is not a number or is negative "%s"', iterations);
                 }
-
+                return;
             }
         }
 
+        this.iterations = numericIterations;
+        this.integralIterations = floor(numericIterations);
     };
 
+    /**
+     * Старт анимации
+     */
+    ClassicAnimation.prototype.start = function () {
 
-
-    animateClassic.prototype.renderValues = function () {
-        var propertyName, propertyValue, i, isSpecial;
-
-        for (propertyName in this.currentValues) {
-
-            propertyValue = this.currentValues[propertyName];
-            isSpecial = propertyValue === SPECIAL;
-
-            for (i = 0; i < this.elements.length; i++) {
-
-                if (isSpecial) {
-                    propertyValue = this.elements[i].currentValues[propertyName];
-                }
-
-                this.css(this.elements[i].element, propertyName, propertyValue);
+        if (this.delayTime > 0) {
+            if (ENABLE_DEBUG) {
+                console.log('start: ' + this.animationName + ' has positite delay "' + this.delayTime + '" ms');
             }
+            setTimeout(bind(this.timer.start, this.timer), this.delayTime);
+        } else {
+            if (ENABLE_DEBUG) {
+                console.log('start: ' + this.animationName + ' has non-positite delay "' + this.delayTime + '" so starting right now.');
+            }
+            this.timer.start();
+        }
+
+        // запоминаем текущие значения анимируемых свойств для каждого элемента
+        each(this.targets, function (element) {
+
+            var id = element.getAttribute(DATA_ATTR_NAME);
+            var startingValues = this.startingValues[id];
+
+            each(this.animatedProperties, function (special_value, propertyName) {
+                var currentPropertyValue = css(element, propertyName);
+                startingValues[propertyName] = normalize(element, propertyName, currentPropertyValue, false);
+            }, this);
+
+        }, this);
+
+        this.started = now();
+        this.tick(this.started);
+
+        if (ENABLE_DEBUG) {
+            console.log('start: animation "' + this.animationName + '" started');
         }
     };
 
+    /**
+     * Остановка анимации
+     */
+    ClassicAnimation.prototype.stop = function () {
 
+        var fillsForwards, endFractionalTime;
 
-    animateClassic.prototype.blend = function (from, to, progress) {
-        return (to - from) * progress + from;
-    };
+        this.timer.stop();
 
+        fillsForwards = this.fillingMode === FILLMODE_FORWARDS ||this.fillingMode === FILLMODE_BOTH;
 
-
-    animateClassic.prototype.sortKeys = function (low, high) {
-        var bearing = this.keys[ low + high >> 1 ];
-        var i, j;
-        var temp;
-
-        if (low === undefined && high  === undefined) {
-            low = 0;
-            high = this.keys.length - 1;
+        if (fillsForwards) {
+            endFractionalTime = this.needsReverse(this.iterations) ? 1.0 : 0.0;
+            if (ENABLE_DEBUG) {
+                console.log('stop: animation fills forwards and has direction "' + this.animationDirection + '" and iteration count "' + this.iterations + '" so fetching with keyframe "' + endFractionalTime + '"');
+            }
+            this.fetch(endFractionalTime);
+            this.render(true);
         }
-
-        i = low;
-        j = high;
-
-        do {
-            while(this.keys[i] < bearing) ++i;
-            while(this.keys[j] > bearing) --j;
-            if (i <= j) {
-                temp = this.keys[i];
-                this.keys[i] = this.keys[j];
-                this.keys[j] = temp;
-                i++; j--;
-            }
-        } while (i <= j);
-
-        if (low < j) this.sortKeys(low, j);
-        if (i < high) this.sortKeys(i, high);
-    };
-
-
-
-    animateClassic.prototype.getCurrentKeys = function (fractionalTime, property) {
-
-        var nextIndex = -1, prevIndex = -1;
-
-        for ( var i = 0, b = this.keys.length, key; i < b; i++) {
-            key = this.keys[i];
-
-            if (property && this.keyframes[key][property] === undefined) {
-                continue;
-            }
-
-            if (fractionalTime < key) {
-                nextIndex = i;
-                break;
-            }
-
-            prevIndex = i;
-
-        }
-
-        if (prevIndex === - 1) {
-            prevIndex = 0;
-        }
-
-        if (nextIndex === - 1) {
-            nextIndex = this.keys.length - 1;
-        }
-
-        var prevKey = this.keys[prevIndex];
-        var nextKey = this.keys[nextIndex];
-
-        return [ prevKey, nextKey ];
-    };
-
-
-
-    animateClassic.prototype.loop = function () {
-        var self = this;
-
-        requestAnimationFrame(function (now) {
-
-            self.elapsedTime += now - (self.previousFetch || now);
-            self.previousFetch = now;
-
-            if (self.state ===  "waitingtobackwardsfill") {
-                self.info("У анимации %o значения заполнены из нулевого кадра", self);
-                self.fractionalTime = 0;
-                self.tick();
-                self.setState("waitingtostart");
-            }
-
-            if (self.elapsedTime >= 0 && self.state === "waitingtostart") {
-                self.onstart();
-                self.info("Анимация %o стартовала", self);
-                self.setState("looping");
-            }
-
-            if (self.state === "looping") {
-                self.assert(self.elapsedTime >= 0, "Анимирование с отрицательным временем со старта");
-                self.fractionalTime = self.getFractionalTime();
-                self.tick();
-
-                if (self.elapsedTime < self.totalDuration) {
-                    if (self.fractionalTime === 1) {
-                        self.info("%o : итерация %i из %i", self, Math.floor(self.totalDuration / self.elapsedTime), self.iterationCount);
-                        self.oniteration();
-                    }
-                }
-
-            }
-
-            if (self.elapsedTime < self.totalDuration) {
-                self.loop();
-            } else {
-                self.animationEnded();
-            }
+        // очистка css правил
+        each(this.rulesList, function (rule) {
+            rule.style.cssText = "";
         });
+        if (ENABLE_DEBUG) {
+            console.log('stop: CSSRules are cleared.');
+        }
+        if (ENABLE_DEBUG) {
+            console.log('stop: animation "' + this.animationName + '" stopped');
+        }
+
     };
+
+     /**
+     * Установка функции, которая будет выполняться на каждом шаге анимации
+     * @param {Function} callback
+     */
+    ClassicAnimation.prototype.step = function (callback) {
+       if (typeOf.func(callback)) {
+           this.onstep = callback;
+       }
+    };
+
+    /**
+     * Установка значения свойства при указанном прогрессе
+     * Для установки смягчения используется метод easing
+     * @param {string} name имя свойства
+     * @param {string} value значение свойства
+     * @param {(number|string)=} position строка прогресса в процентах (по умол. 100%)
+     * @see ClassicAnimation.easing
+     */
+    ClassicAnimation.prototype.propAt = function (name, value, position) {
+
+        var keyframe;
+        var keyframes;
+        /** @type {(number|string)} */
+        var key;
+        var startingKeyframe, endingKeyframe;
+
+        keyframes = this.keyframes;
+
+        key = typeOf.undefined(position) ? keyAliases["to"] : position;
+        key = normalizeKey(key);
+        // в долях
+        key *= PERCENT_TO_FRACTION;
+
+        if (!typeOf.number(key)) {
+            if (ENABLE_DEBUG) {
+                console.warn('propAt: passed keyframe key is invalid "%s"', position);
+            }
+            return;
+        }
+
+        keyframe = this.lookupKeyframe(key) || this.addKeyframe(key);
+        this.animatedProperties[name] = SPECIAL_VALUE;
+        keyframe.properties[name] = value;
+    };
+
+    /*
+    *   Приватные методы.
+    * */
+
+    /**
+     * Добавит ключевой кадр на указанном прогрессе по проходу в долях и вернёт его
+     * @param {number} position
+     * @param {Object=} properties
+     * @param {Function=} easing
+     * @private
+     */
+    ClassicAnimation.prototype.addKeyframe = function (position, properties, easing) {
+
+        var keyframe;
+        var keyframes;
+
+        if (typeOf.number(position)) {
+            keyframe = new Keyframe(position, properties, easing);
+            keyframes = this.keyframes;
+            keyframes.push(keyframe);
+            bubbleSort(/** @type {Array} */(keyframes), compareKeyframes);
+        }
+
+        return keyframe;
+    };
+
+    /**
+     * Попытается найти в коллекции ключевой кадр
+     * с указанным прогрессом по проходу (в долях)
+     * @param {number} position
+     * @return {Object}
+     * @private
+     */
+    ClassicAnimation.prototype.lookupKeyframe = function (position) {
+        var keyframe, index;
+        index = binarySearch(/** @type {Array} */(this.keyframes), position, function (key, keyframe) {
+            return key - keyframe.key;
+        });
+        keyframe = this.keyframes[index];
+        return keyframe;
+    };
+
+    /**
+     * Высчитает значения свойств при указанном прогрессе про проходу
+     * @param {number} fractionalTime прогресс по проходу ( [0, 1] )
+     * @return {undefined}
+     * @private
+     */
+    ClassicAnimation.prototype.fetch = function (fractionalTime) {
+
+        var keyframes, globalFetch, fetchedProperties, firstKeyframe, secondKeyframe, from, to, propertyName;
+        var element;
+        var offset, scale;
+        var timingFunction, specialEasing, index, easing, epsilon;
+        keyframes = this.keyframes;
+
+        epsilon = Math.pow(10, - this.digits);
+        /*
+         * Поиск функции смягчения для текущего ключевого кадра
+         */
+        timingFunction = this.smoothing;
+
+        index = binarySearch(/**@type {Array}*/(keyframes), fractionalTime, easingSearchCallback);
+
+        if (index !== -1 && keyframes[index].easing !== noop) {
+            timingFunction = keyframes[index].easing;
+        }
+
+        /**
+         *  информация о вычисленных значениях
+         *  для каждого элемента
+         *  */
+        each(this.targets, function (element) {
+
+            var id, elementData, startingValues, currentValues;
+
+            id = element.getAttribute(DATA_ATTR_NAME);
+            elementData = this.cache[id];
+            startingValues = this.startingValues[id];
+            currentValues = this.currentValues[id];
+
+            each(this.animatedProperties, function (_, propertyName) {
+
+                var value, individualFractionalTime;
+
+                /*
+                 * Поиск двух ближайших ключевых кадров
+                 * для которых задано значение свойства
+                 */
+                firstKeyframe = keyframes[0];
+                secondKeyframe = keyframes[keyframes.length - 1];
+
+                //TODO было бы неплохо заменить линейный поиск на бинарный
+                each(keyframes, function (keyframe) {
+                    // специальное значение для прекращения обхода
+                    var STOP_ITERATION = false;
+                    if (propertyName in keyframe.properties) {
+                        if (fractionalTime < keyframe.key || (fractionalTime === 1.0 && keyframe.key === 1.0)) {
+                            secondKeyframe = keyframe;
+                            return STOP_ITERATION;
+                        }
+                        firstKeyframe = keyframe;
+                    }
+                    return !STOP_ITERATION;
+                });
+
+                offset = firstKeyframe.key;
+                scale = 1.0 / (secondKeyframe.key - firstKeyframe.key);
+                individualFractionalTime = (fractionalTime - offset) * scale;
+
+                if (instanceOf(timingFunction, CubicBezier)) {
+                    easing = /** @type {CubicBezier} */(timingFunction).calc(individualFractionalTime);
+                } else if (instanceOf(timingFunction, Steps)) {
+                    easing = /** @type {Steps} */(timingFunction).calc(individualFractionalTime);
+                } else {
+                    easing = timingFunction(individualFractionalTime);
+                }
+                easing = round(easing, this.digits);
+
+                if (firstKeyframe.properties[propertyName] === SPECIAL_VALUE) {
+                    from = startingValues[propertyName];
+                } else {
+                    from = firstKeyframe.properties[propertyName];
+                    from = normalize(element, propertyName, from, false);
+                }
+
+                if (secondKeyframe.properties[propertyName] === SPECIAL_VALUE) {
+                    to = startingValues[propertyName];
+                } else {
+                    to = secondKeyframe.properties[propertyName];
+                    to = normalize(element, propertyName, to, false);
+                }
+
+                value = blend(propertyName, /** @type {(Array|number)} */ (from), /** @type {(Array|number)} */(to), easing, this.digits);
+
+                currentValues[propertyName] = value;
+
+            }, this); // end properties loop
+
+        }, this); // end targets loop
+
+        return globalFetch;
+    };
+
+    /**
+     * Отрисует высчитанные значения свойств
+     * @param {boolean} direct НЕ (!) использовать ли правило в таблице стилей для отрисовки одинаковых для элементов значений
+     * @see ClassicAnimation.fetch
+     * @private
+     */
+    ClassicAnimation.prototype.render = function (direct) {
+        each(this.targets, function (element) {
+
+            var id, elementData, startingValues, currentValues;
+            var elementStyle;
+            var rule, ruleStyle;
+            var destinationStyle;
+
+            id = element.getAttribute(DATA_ATTR_NAME);
+            rule = this.rulesList[id];
+            elementData = this.cache[id];
+            currentValues = this.currentValues[id];
+
+            elementStyle = element.style;
+            ruleStyle = rule.style;
+
+            destinationStyle = direct ? elementStyle : ruleStyle;
+
+            each(currentValues, function (propertyValue, propertyName) {
+                css(destinationStyle, propertyName, propertyValue);
+            }, this);
+        }, this);
+    };
+
+    /**
+     * Тик анимации
+     * просчитывание и отрисовка (fetch & render)
+     * @param {number} timeStamp временная метка
+     * @private
+     */
+    ClassicAnimation.prototype.tick = function (timeStamp) {
+
+        var iterationCount, animationProgress;
+        var previousIteration, currentIteration;
+
+        iterationCount = this.iterations;
+        previousIteration = this.currentIteration;
+
+        animationProgress = this.animationProgress = this.computeProgress(timeStamp);
+        currentIteration = this.currentIteration = this.computeIteration(this.animationProgress);
+        this.fractionalTime = this.computeFractionalTime(this.animationProgress, this.currentIteration);
+
+        if (currentIteration !== previousIteration) {
+            // Условие завершения итерации
+            if (ENABLE_DEBUG) {
+                console.log('tick: "' + this.animationName + '" - iteration "' + currentIteration + '" of total "' + iterationCount + '"');
+            }
+            this.oniteration();
+        } else if (animationProgress >= iterationCount) {
+            // Условие завершения анимации
+            this.stop();
+            this.oncomplete();
+            // метод stop сам отрисует конечный кадр, т.к. он зависит от параметра fill-mode
+            return;
+        } else {
+            this.onstep();
+        }
+
+        this.fetch(this.fractionalTime);
+        this.render(false);
+    };
+
+    /***
+     * Вычислит и вернёт прогресс анимации относительно первой итерации
+     * @param {number} timeStamp временная метка
+     * @return {number} прогресс анимации относительно первой итерации
+     * @private
+     */
+    ClassicAnimation.prototype.computeProgress = function (timeStamp) {
+
+        var animationProgress;
+
+        animationProgress = this.computeElapsedTime(timeStamp) / this.animationTime;
+        animationProgress = round(animationProgress, this.digits);
+
+        return animationProgress;
+    };
+
+    /**
+     * Вычислит номер текущей итерации из прогресса.
+     * @param {number} animationProgress прогресс относительно первого прохода
+     * @return {number}
+     * @private
+     */
+    ClassicAnimation.prototype.computeIteration = function (animationProgress) {
+        var currentIteration;
+        currentIteration = floor(animationProgress);
+        return min(currentIteration, this.integralIterations);
+    };
+
+    /***
+     * Вычислит и вернёт прогресс анимации относительно текущей итерации
+     * @param {number} animationProgress прогресс относительно первой итерации
+     * @param {number} currentIteration номер итерации из прогресса
+     * @return {number} прогресс анимации относительно текущей итерации
+     * @private
+     */
+    ClassicAnimation.prototype.computeFractionalTime = function (animationProgress, currentIteration) {
+
+        var iterationProgress, iterationCount;
+
+        iterationCount = this.iterations;
+
+        iterationProgress = animationProgress - currentIteration;
+        iterationProgress = min(iterationProgress, MAXIMAL_PROGRESS);
+
+        if (this.needsReverse(currentIteration)) {
+            iterationProgress = MAXIMAL_PROGRESS - iterationProgress;
+        }
+
+        return iterationProgress;
+    };
+
+    /**
+     * Вычислит прошедшее со старта время до временной метки
+     * @param {number} timeStamp временная метка
+     * @return {number}
+     * @private
+     */
+    ClassicAnimation.prototype.computeElapsedTime = function (timeStamp) {
+        var elapsedTime;
+
+        if (timeStamp < HIGHRESOLUTION_TIMER_BOUND) {
+            // высокоточный таймер
+            timeStamp += navigStart;
+        }
+
+        elapsedTime = timeStamp - this.started;
+        elapsedTime += -1 * this.delayTime;
+        elapsedTime = max(elapsedTime, 0);
+        return elapsedTime;
+    };
+
+    /**
+     * Нужно ли обратить прогресс анимации, в зависимости от направления и номера текущей итерации
+     * @param {number} iterationNumber
+     * @return {boolean}
+     * @private
+     */
+    ClassicAnimation.prototype.needsReverse = function (iterationNumber) {
+
+        var needsReverse, iterationIsOdd, direction;
+
+        direction = this.animationDirection;
+        iterationIsOdd = isOdd(iterationNumber);
+
+        needsReverse = direction === DIRECTION_REVERSE;
+        needsReverse = needsReverse || direction === DIRECTION_ALTERNATE && iterationIsOdd;
+        needsReverse = needsReverse || direction === DIRECTION_ALTERNATE_REVERSE && !iterationIsOdd;
+
+        return needsReverse;
+    };
+
+    /* Экспорты */
+    ClassicAnimation.prototype["element"] = ClassicAnimation.prototype.element;
+    ClassicAnimation.prototype["delay"] = ClassicAnimation.prototype.delay;
+    ClassicAnimation.prototype["duration"] = ClassicAnimation.prototype.duration;
+    ClassicAnimation.prototype["direction"] = ClassicAnimation.prototype.direction;
+    ClassicAnimation.prototype["easing"] = ClassicAnimation.prototype.easing;
+    ClassicAnimation.prototype["fillMode"] = ClassicAnimation.prototype.fillMode;
+    ClassicAnimation.prototype["iterationCount"] = ClassicAnimation.prototype.iterationCount;
+    ClassicAnimation.prototype["onComplete"] = ClassicAnimation.prototype.onComplete;
+    ClassicAnimation.prototype["propAt"] = ClassicAnimation.prototype.propAt;
+    ClassicAnimation.prototype["start"] = ClassicAnimation.prototype.start;
+    ClassicAnimation.prototype["stop"] = ClassicAnimation.prototype.stop;
+
+    /** @export */
+    window["ClassicAnimation"] = ClassicAnimation;

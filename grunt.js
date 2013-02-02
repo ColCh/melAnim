@@ -25,14 +25,19 @@ module.exports = function (grunt) {
                     '<file_strip_banner:src/start.js>',
 
                     '<file_strip_banner:src/begin.js>',
+
                     '<file_strip_banner:src/utils.js>',
+                    '<file_strip_banner:src/hooks.js>',
+
                     '<file_strip_banner:src/constants.js>',
                     '<file_strip_banner:src/aliases.js>',
 
-                    '<file_strip_banner:src/keyframe_animation.js>',
+                    '<file_strip_banner:src/animate_wrap.js>',
+
+                    '<file_strip_banner:src/animate_css.js>',
+                    '<file_strip_banner:src/animate_classic.js>',
 
                     '<file_strip_banner:src/end.js>'
-
                 ]
             }
         },
