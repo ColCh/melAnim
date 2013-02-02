@@ -143,7 +143,7 @@
      * @const
      * */
     var MAXIMAL_PROGRESS = 1.0;
-    
+
     /**
      * Разрешено ли KeyframeAnimation.prototype.fetch использовать кеш для вычислений
      * @type {boolean}

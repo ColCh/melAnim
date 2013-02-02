@@ -1,10 +1,57 @@
+    /**
+     * Время анимации поумолчанию
+     * @type {string}
+     * @const
+     */
     var DEFAULT_DURATION = "400ms";
+
+    /**
+     * Смягчение анимации по умолчанию
+     * @type {string}
+     * @const
+     */
     var DEFAULT_EASING = "ease";
+
+    /**
+     * Режим заполнения свойств по умолчанию
+     * @type {string}
+     * @const
+     */
     var DEFAULT_FILLMODE = "forwards";
+
+    /**
+     * Задежка перед началом после старта в мсек. по умолчанию
+     * @type {number}
+     * @const
+     */
     var DEFAULT_DELAY = 0;
+
+    /**
+     * "Направление" анимации по умолчанию
+     * @type {string}
+     * @const
+     */
     var DEFAULT_DIRECTION = "normal";
+
+    /**
+     * Количество проходов анимации по умолчанию
+     * @type {number}
+     * @const
+     */
     var DEFAULT_ITERATIONCOUNT = 1;
+
+    /**
+     * Обработчик событий по умолчанию (пустая функция)
+     * @type {Function}
+     * @const
+     */
     var DEFAULT_HANDLER = noop;
+
+    /**
+     * Состояние проигрывания анимации при  её создании через конструктор
+     * @type {string}
+     * @const
+     */
     var DEFAULT_PLAYINGSTATE = "paused";
 
     /*
@@ -36,7 +83,7 @@
             aliases;
 
         // если передан объект с расширенными опциями; разворачиваем его.
-        if (typeOf(duration) === "object" && arguments.length === 3) {
+        if (typeOf.object(duration) && arguments.length === 3) {
             classicMode = duration["classicMode"];
             direction = duration["direction"];
             start = duration["start"];
