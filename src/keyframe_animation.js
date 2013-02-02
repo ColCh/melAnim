@@ -363,7 +363,7 @@
             this.animationTime = /** @type {number} */ (numericDuration);
             this.digits = floor(lg(this.animationTime * FRAMES_PER_SECOND)) - 2.0;
             if (ENABLE_DEBUG) {
-                console.log('duration: computed epsilon is "%d" digits', this.digits);
+                console.log('duration: computed epsilon is "' + this.digits + '" digits');
             }
         } else if (ENABLE_DEBUG) {
             console.warn('duration: bad value "'+ duration +'"');
@@ -610,8 +610,14 @@
     KeyframeAnimation.prototype.start = function () {
 
         if (this.delayTime > 0) {
+            if (ENABLE_DEBUG) {
+                console.log('start: ' + this.animationName + ' has positite delay "' + this.delayTime + '" ms');
+            }
             setTimeout(bind(this.timer.start, this.timer), this.delayTime);
         } else {
+            if (ENABLE_DEBUG) {
+                console.log('start: ' + this.animationName + ' has non-positite delay "' + this.delayTime + '" so starting right now.');
+            }
             this.timer.start();
         }
 
@@ -632,7 +638,7 @@
         this.tick(this.started);
 
         if (ENABLE_DEBUG) {
-            console.log('start: animation "%s" started', this.animationName);
+            console.log('start: animation "' + this.animationName + '" started');
         }
     };
 
@@ -901,13 +907,14 @@
         if (currentIteration !== previousIteration) {
             // Условие завершения итерации
             if (ENABLE_DEBUG) {
-                console.log('tick: %s - iteration %d of total %d', this.animationName, currentIteration, iterationCount);
+                console.log('tick: "' + this.animationName + '" - iteration "' + currentIteration + '" of total "' + iterationCount + '"');
             }
             this.oniteration();
         } else if (animationProgress >= iterationCount) {
             // Условие завершения анимации
             this.stop();
             this.oncomplete();
+            // метод stop сам отрисует конечный кадр, т.к. он зависит от параметра fill-mode
             return;
         } else {
             this.onstep();
