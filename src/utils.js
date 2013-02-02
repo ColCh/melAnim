@@ -95,6 +95,12 @@
     var floor = Math.floor;
 
     /**
+     * Шорткат для Math.ceil
+     * @inheritDoc
+     */
+    var ceil = Math.ceil;
+
+    /**
      * Шорткат для Math.min
      * @inheritDoc
      */
@@ -858,8 +864,7 @@
      */
     Steps.prototype.calc = function (x) {
         if (this.countFromStart) {
-            // если отсчитываем с начала, просто реверсируем функцию
-            return 1.0 - this.calc(1.0 - x);
+            return min(1.0, ceil(this.stepsAmount * x) / this.stepsAmount);
         } else {
             return floor(this.stepsAmount * x) / this.stepsAmount;
         }
