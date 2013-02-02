@@ -106,3 +106,47 @@
      * @const
      */
     var HIGHRESOLUTION_TIMER_BOUND = 1e12;
+
+    /**
+     * Количество знаков после запятой для значений
+     * @type {number}
+     * @const
+     */
+    var DEFAULT_DIGITS_ROUND = 5;
+
+    /**
+     * Имя атрибута для связывания элемента и
+     * данных, связанных с ним
+     * @type {string}
+     * @const
+     */
+    var DATA_ATTR_NAME = mel + "-data-id";
+
+    /**
+     * Специальное значение свойства, указывающее
+     * на то, что нужно брать запомненное исходное
+     * значение свойства для элемента
+     * @type {null}
+     * @const
+     */
+    var SPECIAL_VALUE = null;
+
+    /**
+     * Для перевода из проценты в доли
+     * @type {number}
+     * @const
+     */
+    var PERCENT_TO_FRACTION = 1 / 100;
+
+    /**
+     * Максимальный прогресс по проходу, в долях
+     * @const
+     * */
+    var MAXIMAL_PROGRESS = 1.0;
+    
+    /**
+     * Разрешено ли KeyframeAnimation.prototype.fetch использовать кеш для вычислений
+     * @type {boolean}
+     * @const
+     */
+    var FETCH_USE_CACHE = false;
