@@ -50,10 +50,10 @@
 <div id="fps" style="position: absolute; top: 0; left: 0; font-size: 22px; color: red;">FPS HERE</div>
 
 <div style="top: 10%;" class="anim css">Anim me ONE!</div>
-<div style="top: 20%;" class="anim js">Anim me TWO!</div>
+<div style="top: 20%;" class="anim js" id="js">Anim me TWO!</div>
 
 <script>
-    var PROFILE_ENABLED = 1;
+    var PROFILE_ENABLED = 0;
 
     var PROFILE_FPS = 0 && PROFILE_ENABLED;
     var PROFILE_START = 0 && PROFILE_ENABLED;
@@ -69,11 +69,11 @@
     if (PROFILE_START) console.profileEnd("startup");
 
     if (PROFILE_CONSTRUCTOR) console.profile("constructor");
-    var anim = new ClassicAnimation();
+    var anim = new melAnim.CSSAnimation();
     if (PROFILE_CONSTRUCTOR) console.profileEnd("constructor");
 
     if (PROFILE_SETUP) console.profile("setup");
-    anim.element(document.querySelectorAll(".anim"));
+    anim.addElement(document.getElementById("js"));
     anim.propAt("width", "100px", "from");
     anim.propAt("width", "300px", "to");
     //anim.propAt("width", "300px", "90%");

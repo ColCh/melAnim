@@ -283,7 +283,7 @@
      * Добавит элемент(-ы) в коллекцию анимируемых.
      * @param {(HTMLElement|Array.<HTMLElement>)} elem Элемент
      */
-    ClassicAnimation.prototype.element = function (elem) {
+    ClassicAnimation.prototype.addElement = function (elem) {
         var id, elements;
         if (typeOf.element(elem)) {
             id = generateId();
@@ -302,15 +302,21 @@
 
     /**
      * Установка продолжительности прохода анимации.
-     * Отрицательные значения считаются за нулевое.
+     * Отрицательные значения считаются за нулевые.
      * Нулевое значение соответствует мгновенному проходу анимации, при этом
      * все события (конца прохода и конца анимации) возникают так же, как и при положительной продолжительности прохода
      * и режим заполнения (fillMode) работает так же, как и при положительной продолжительности прохода
-     * @param {string} duration
+     * @param {(string|number)} duration
      */
     ClassicAnimation.prototype.duration = function (duration) {
-        var numericDuration = parseTimeString(duration);
+        var numericDuration = typeOf.number(duration) ? duration : parseTimeString(duration);
         if (typeOf.number(numericDuration)) {
+            if (numericDuration < 0) {
+                if (ENABLE_DEBUG) {
+                    console.log('duration: argument has a negative value "' + numericDuration + '" so setting it to "0"');
+                }
+                numericDuration = 0;
+            }
             this.animationTime = /** @type {number} */ (numericDuration);
             this.digits = floor(lg(this.animationTime * FRAMES_PER_SECOND)) - 2.0;
             if (ENABLE_DEBUG) {
@@ -478,7 +484,7 @@
             this.animationDirection = animationDirection;
 
         } else if (ENABLE_DEBUG) {
-            console.warn('direction: invalid value "%s"', animationDirection);
+            console.log('direction: invalid value "' + animationDirection + '"');
         }
     };
 
@@ -518,7 +524,7 @@
             this.fillingMode = fillMode;
 
         } else if (ENABLE_DEBUG) {
-            console.warn('fillMode: invalid value "%s"', fillMode);
+            console.log('fillMode: invalid value "' + fillMode + '"');
         }
     };
 
@@ -545,7 +551,7 @@
             numericIterations = parseFloat(iterations);
             if (!isFinite(numericIterations) || numericIterations < 0) {
                 if (ENABLE_DEBUG) {
-                    console.warn('iterationCount: passed iterations is not a number or is negative "%s"', iterations);
+                    console.log('iterationCount: passed iterations is not a number or is negative "' + iterations + '"');
                 }
                 return;
             }
@@ -974,7 +980,7 @@
     };
 
     /* Экспорты */
-    ClassicAnimation.prototype["element"] = ClassicAnimation.prototype.element;
+    ClassicAnimation.prototype["addElement"] = ClassicAnimation.prototype.addElement;
     ClassicAnimation.prototype["delay"] = ClassicAnimation.prototype.delay;
     ClassicAnimation.prototype["duration"] = ClassicAnimation.prototype.duration;
     ClassicAnimation.prototype["direction"] = ClassicAnimation.prototype.direction;
@@ -985,6 +991,3 @@
     ClassicAnimation.prototype["propAt"] = ClassicAnimation.prototype.propAt;
     ClassicAnimation.prototype["start"] = ClassicAnimation.prototype.start;
     ClassicAnimation.prototype["stop"] = ClassicAnimation.prototype.stop;
-
-    /** @export */
-    window["ClassicAnimation"] = ClassicAnimation;
