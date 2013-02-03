@@ -12,7 +12,7 @@
          * @type {Document}
          * @const
          * */
-        document = window.document,
+        doc = window.document,
 
         /**
          * Правильная undefined.
@@ -37,10 +37,9 @@
         /**
          * Шорткат для корневого элемента html
          * для делегирования событий анимации.
-         * @type {HTMLElement}
          * @const
          */
-        rootElement = document.documentElement,
+        rootElement = doc.documentElement,
 
         /**
          * Стиль, где можно смотреть CSS-свойства
@@ -100,7 +99,7 @@
          * @type {HTMLStyleElement}
          * @const
          */
-        style = document.getElementsByTagName("head")[0].parentNode.appendChild(document.createElement("style")),
+        style = doc.getElementsByTagName("head")[0].parentNode.appendChild(doc.createElement("style")),
 
         /**
          * Каскадная таблица из тега <style>

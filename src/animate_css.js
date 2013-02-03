@@ -27,7 +27,7 @@
      * т.к. обработчики установлены на все события, которые могут никогда и не исполниться
      * (например, у webkit никогда не будет события с вендорным префиксом "ms")
      * то лучше убрать остальные мусорные обработчики и оставить один.
-     * @param {AnimationEvent} event
+     * @param {(AnimationEvent|Event)} event
      */
     function exclusiveHandler (event) {
         var eventName = event.type, lowerCased = toLowerCase(eventName);
@@ -100,7 +100,7 @@
 
     /**
      * Функция будет ловить все поступающих события конца анимации
-     * @param {AnimationEvent} event
+     * @param {(AnimationEvent|Event)} event
      */
     var animationHandlerDelegator = function (event) {
         // TODO пофиксить неподдерживаемый в android < 2.1 режим заполнения (fill-mode)
@@ -143,7 +143,7 @@
         this.name = generateId();
         this.elements = [];
         this.animationRule = addRule("." + this.name);
-        this.keyframesRule = addRule("@" + KEYFRAME_PREFIX + " " + this.name);
+        this.keyframesRule = /** @type {CSSKeyframesRule} */ (addRule("@" + KEYFRAME_PREFIX + " " + this.name));
 
     }
 
@@ -152,7 +152,7 @@
      */
 
     /**
-     * Время отложенного запуска, в миллисекундах
+     * Время отложенного запуска, временная строка CSS.
      * Значение устанавливается методом
      * @see CSSAnimation.delay
      * @type {string}
@@ -173,7 +173,7 @@
      * Значение устанавливается методом.
      * @see CSSAnimation.duration
      * @private
-     * @type {number}
+     * @type {string}
      */
     CSSAnimation.prototype.animationTime = DEFAULT_DURATION;
 
@@ -315,7 +315,7 @@
         }
         // численное значение должно быть небесконечным
         if (isFinite(numeric)) {
-            this.delayTime = delay;
+            this.delayTime = /** @type {string} */ (delay);
         } else if (ENABLE_DEBUG) {
             console.log('delay: passed value "' + delay + '" (numeric : "' + numeric + '") is non-finite');
         }
@@ -350,7 +350,7 @@
 
         // численное значение должно быть небесконечным
         if (isFinite(numeric)) {
-            this.animationTime = duration;
+            this.animationTime = /** @type {string} */ (duration);
         } else if (ENABLE_DEBUG) {
             console.log('duration: non-integer value "' + duration + '" (numeric val: "' + numeric + '")');
         }
@@ -399,8 +399,8 @@
             points = timingFunction;
         } else if (typeOf.string(timingFunction)) {
             // алиас или временная функция CSS
-            trimmed = trim(timingFunction);
-            camelCased = camelCase(timingFunction);
+            trimmed = trim(/** @type {string} */ (timingFunction));
+            camelCased = camelCase(trimmed);
             if (camelCased in cubicBezierAliases) {
                 // алиас
                 points = cubicBezierAliases[camelCased];
@@ -522,7 +522,7 @@
      */
     CSSAnimation.prototype.propAt = function (name, value, position) {
         var keyframe;
-        var key = typeOf.undefined(position) ? keyAliases["to"] : normalizeKey(position);
+        var key = typeOf.undefined(position) ? keyAliases["to"] : normalizeKey(/** @type {(number|string)} */ (position));
         if (typeOf.number(key)) {
             // в долях
             key = key * PERCENT_TO_FRACTION;

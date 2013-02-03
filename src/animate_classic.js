@@ -116,7 +116,7 @@
      * @type {number}
      * @private
      */
-    ClassicAnimation.prototype.integralIterations = floor(DEFAULT_ITERATIONCOUNT);
+    ClassicAnimation.prototype.integralIterations = floor(parseInt(DEFAULT_ITERATIONCOUNT, 10));
 
     /**
      * Направление анимации.
@@ -281,7 +281,7 @@
 
     /**
      * Добавит элемент(-ы) в коллекцию анимируемых.
-     * @param {(HTMLElement|Array.<HTMLElement>)} elem Элемент
+     * @param {HTMLElement} elem Элемент
      */
     ClassicAnimation.prototype.addElement = function (elem) {
         var id, elements;
@@ -294,9 +294,8 @@
             this.startingValues[id] = new Object();
             this.currentValues[id] = new Object();
             this.targets.push(elem);
-        } else {
-            elements = slice(elem);
-            each(elements, this.element, this);
+        } else if (ENABLE_DEBUG) {
+            console.log('addElement: passed variable is non-HTMLElement "' + elem + '"');
         }
     };
 

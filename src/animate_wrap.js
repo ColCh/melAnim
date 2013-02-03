@@ -21,10 +21,10 @@
 
     /**
      * Задежка перед началом после старта в мсек. по умолчанию
-     * @type {number}
+     * @type {string}
      * @const
      */
-    var DEFAULT_DELAY = 0;
+    var DEFAULT_DELAY = "0s";
 
     /**
      * "Направление" анимации по умолчанию
@@ -35,10 +35,10 @@
 
     /**
      * Количество проходов анимации по умолчанию
-     * @type {number}
+     * @type {string}
      * @const
      */
-    var DEFAULT_ITERATIONCOUNT = 1;
+    var DEFAULT_ITERATIONCOUNT = "1";
 
     /**
      * Обработчик событий по умолчанию (пустая функция)
