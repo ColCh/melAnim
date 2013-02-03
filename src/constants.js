@@ -93,6 +93,18 @@
      */
     var CSSANIMATIONS_SUPPORTED = !!getVendorPropName("animation");
 
+    if (ENABLE_DEBUG) {
+        console.log('Detected native CSS3 Animations support.');
+    }
+
+    if (ENABLE_DEBUG) {
+        if (getVendorPropName("animation") === "animation") {
+            console.log('UA supports CSS3 Animations without vendor prefix');
+        } else {
+            console.log('UA supports CSS3 Animations width "' + prefix + '" DOM prefix ("' + lowPrefix + '" CSS prefix)');
+        }
+    }
+
     /**
      * Идеальное количество кадров для анимации на JavaScript.
      * @type {number}
@@ -150,3 +162,55 @@
      * @const
      */
     var FETCH_USE_CACHE = false;
+
+    /**
+     * Использовать ли перехват (true) или всплытие (false) в обработчике событий конца CSS анимаций
+     * @type {boolean}
+     * @const
+     */
+    var ANIMATION_HANDLER_USES_CAPTURE = true;
+
+    /**
+     * Все известные имена событий конца анимаций
+     * @type {Array}
+     * @const
+     */
+    var ANIMATION_END_EVENTNAMES = ["animationend", "webkitAnimationEnd", "OAnimationEnd", "MSAnimationEnd"];
+
+    /**
+     * Специальное значение для идентификации события конца анимации
+     * Используется в обработчике, который ловит все поступающие события анимаций
+     * @type {string}
+     * @const
+     */
+    var ANIMATION_END_EVENTTYPE = "animationend";
+
+    /**
+     * Все известные имена событий конца итераций анимаций
+     * @type {Array}
+     * @const
+     */
+    var ANIMATION_ITERATION_EVENTNAMES = ["animationiteration", "webkitAnimationIteration", "OAnimationIteration", "MSAnimationIteration"];
+
+    /**
+     * Специальное значение для идентификации события конца прохода
+     * Используется в обработчике, который ловит все поступающие события анимаций
+     * @type {string}
+     * @const
+     */
+    var ANIMATION_ITERATION_EVENTTYPE = "animationiteration";
+
+    /**
+     * Все известные имена событий старта  анимаций
+     * @type {Array}
+     * @const
+     */
+    var ANIMATION_START_EVENTNAMES = ["animationiteration", "webkitAnimationStart", "OAnimationStart", "MSAnimationStart"];
+
+    /**
+     * Специальное значение для идентификации события старта анимации
+     * Используется в обработчике, который ловит все поступающие события анимаций
+     * @type {string}
+     * @const
+     */
+    var ANIMATION_START_EVENTTYPE = "animationstart";

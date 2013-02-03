@@ -35,11 +35,19 @@
         console = window.console,
 
         /**
+         * Шорткат для корневого элемента html
+         * для делегирования событий анимации.
+         * @type {HTMLElement}
+         * @const
+         */
+        rootElement = document.documentElement,
+
+        /**
          * Стиль, где можно смотреть CSS-свойства
          * @type {CSSStyleDeclaration}
          * @const
          */
-        dummy = document.documentElement.style,
+        dummy = rootElement.style,
 
         /**
          * Вендорный префикс к текущему браузеру

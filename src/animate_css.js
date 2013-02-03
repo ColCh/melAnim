@@ -11,15 +11,140 @@
         console.log('keyframe prefix is "' + KEYFRAME_PREFIX + '"');
     }
 
+    if (CSSANIMATIONS_SUPPORTED) {
+        // навешиваем обработчики на все имена событий
+        // бывают курьёзы, вроде FireFox - когда свойство "animation" с префиксом ("-moz-animation")
+        // а имя события - без префикса, ещё и в нижнем регистре ("animationend")
+        each(ANIMATION_END_EVENTNAMES.concat(ANIMATION_ITERATION_EVENTNAMES).concat(ANIMATION_START_EVENTNAMES), function (eventName) {
+            // лучше и быстрее всего ловить их не на стадии всплытия
+            // а на стадии погружение. Для большей скорости возьмём корневой элемент
+            rootElement.addEventListener(eventName, exclusiveHandler, ANIMATION_HANDLER_USES_CAPTURE);
+        });
+    }
+
+    /**
+     * Первичная функция-обработчик событий
+     * т.к. обработчики установлены на все события, которые могут никогда и не исполниться
+     * (например, у webkit никогда не будет события с вендорным префиксом "ms")
+     * то лучше убрать остальные мусорные обработчики и оставить один.
+     * @param {AnimationEvent} event
+     */
+    function exclusiveHandler (event) {
+        var eventName = event.type, lowerCased = toLowerCase(eventName);
+        var eventType;
+        var eventNames;
+
+        if (ENABLE_DEBUG) {
+            console.log('exclusiveHandler: eventName is "' + eventName + '"');
+        }
+
+        if (lowerCased.indexOf("start") !== -1) {
+            eventNames = ANIMATION_START_EVENTNAMES;
+            if (ENABLE_DEBUG) {
+                console.log('exclusiveHandler: eventName "' + eventName + '" belongs to animation start events');
+            }
+        } else if (lowerCased.indexOf("iteration") !== -1) {
+            eventNames = ANIMATION_ITERATION_EVENTNAMES;
+            if (ENABLE_DEBUG) {
+                console.log('exclusiveHandler: eventName "' + eventName + '" belongs to animation iteration end events');
+            }
+        } else if (lowerCased.indexOf("end") !== -1) {
+            eventNames = ANIMATION_END_EVENTNAMES;
+            if (ENABLE_DEBUG) {
+                console.log('exclusiveHandler: eventName "' + eventName + '" belongs to animation end events');
+            }
+        } else {
+            // по-идее, никогда не исполнится. unreachable code
+            if (ENABLE_DEBUG) {
+                console.log('exclusiveHandler: unknown animation event type "' + eventName + '"');
+            }
+            return;
+        }
+
+        // снимаем все навешанные обработчики событий
+        each(eventNames, function (eventName) {
+            rootElement.removeEventListener(eventName, exclusiveHandler, ANIMATION_HANDLER_USES_CAPTURE);
+        });
+
+        // вешаем обратно обычный обработчик на точно определённое имя события
+        rootElement.addEventListener(eventName, animationHandlerDelegator, ANIMATION_HANDLER_USES_CAPTURE);
+
+        // вызываем тут же оригинальный обработчик
+        animationHandlerDelegator(event);
+    }
+
+    /**
+     * Объект с функциями-обработчиками всех событий анимаций
+     * Ключ - имя события, значение - объект с именем анимации и функцей-обработчиком
+     * @type {Object.<string, Object.<string, Function>>}
+     */
+    var delegatorCallbacks = {};
+
+    /**
+     * Объект с обработчиками событий окончания анимаций
+     * @type {Object.<string, Function>}
+     */
+    delegatorCallbacks[ ANIMATION_END_EVENTTYPE ] = {};
+
+    /**
+     * Объект с обработчиками событий конца итераций анимаций
+     * @type {Object.<string, Function>}
+     */
+    delegatorCallbacks[ ANIMATION_ITERATION_EVENTTYPE ] = {};
+
+    /**
+     * Объект с обработчиками событий старта анимаций
+     * @type {Object.<string, Function>}
+     */
+    delegatorCallbacks[ ANIMATION_START_EVENTTYPE ] = {};
+
+    /**
+     * Функция будет ловить все поступающих события конца анимации
+     * @param {AnimationEvent} event
+     */
+    var animationHandlerDelegator = function (event) {
+        // TODO пофиксить неподдерживаемый в android < 2.1 режим заполнения (fill-mode)
+        var animationName = event.animationName, callback, eventType, handlersList;
+        var eventName = event.type, lowerCased = toLowerCase(eventName);
+
+        if (lowerCased.indexOf("start") !== -1) {
+            eventType = ANIMATION_START_EVENTTYPE;
+        } else if (lowerCased.indexOf("iteration") !== -1) {
+            eventType = ANIMATION_ITERATION_EVENTTYPE
+        } else if (lowerCased.indexOf("end") !== -1) {
+            eventType = ANIMATION_END_EVENTTYPE;
+        } else {
+            // по-идее, никогда не исполнится. unreachable code
+            if (ENABLE_DEBUG) {
+                console.log('animationHandlerDelegator: unknown animation event type "' + eventName + '"');
+            }
+            return;
+        }
+
+        if (eventType in delegatorCallbacks) {
+            handlersList = delegatorCallbacks[eventType];
+            if (animationName in handlersList) {
+                callback = handlersList[animationName];
+                callback();
+            } else if (ENABLE_DEBUG) {
+                console.log('animationHandlerDelegator: unregistered animation name "' + animationName + '" for event name "' + eventName + '" (event type "' + eventType + '")');
+                // незарегистрированная анимация. ничего не можем сделать.
+                return;
+            }
+        }
+    }
+
     /**
      * Конструктор анимаций с использованием CSS-анимаций
      * @constructor
      */
     function CSSAnimation () {
+
         this.name = generateId();
         this.elements = [];
         this.animationRule = addRule("." + this.name);
         this.keyframesRule = addRule("@" + KEYFRAME_PREFIX + " " + this.name);
+
     }
 
     /*
@@ -372,6 +497,7 @@
      */
     CSSAnimation.prototype.onComplete = function (callback) {
         if (typeOf.func(callback)) {
+            delegatorCallbacks[ ANIMATION_END_EVENTTYPE ] [ this.name ] = bind(callback, this);
             this.oncomplete = callback;
         }
     };
@@ -382,6 +508,7 @@
      */
     CSSAnimation.prototype.onIteration = function (callback) {
         if (typeOf.func(callback)) {
+            delegatorCallbacks[ ANIMATION_ITERATION_EVENTTYPE ] [ this.name ] = bind(callback, this);
             this.oniteration = callback;
         }
     };
