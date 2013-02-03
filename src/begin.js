@@ -22,13 +22,6 @@
         undefined,
 
         /**
-         * Разрешить ли вывод отладочных сообщений
-         * @type {boolean}
-         * @const
-         */
-        ENABLE_DEBUG = true,
-
-        /**
          * Шорткат для объекта отладочного вывода
          * @inheritDoc
          */
