@@ -221,3 +221,19 @@
      * @const
      */
     var ANIMATION_START_EVENTTYPE = "animationstart";
+
+    /**
+     * по чему разделяются стили анимации
+     * (аргумент к String.split)
+     * @type {string}
+     * @const
+     */
+    var ANIMATIONS_SEPARATOR = ", ";
+
+    /**
+     * чем соединяются стили анимации
+     * (аргумент к Array.join)
+     * @type {string}
+     * @const
+     */
+    var ANIMATIONS_JOINER = ", ";

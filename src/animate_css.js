@@ -142,7 +142,6 @@
 
         this.name = generateId();
         this.elements = [];
-        this.animationRule = addRule("." + this.name);
         this.keyframesRule = /** @type {CSSKeyframesRule} */ (addRule("@" + KEYFRAME_PREFIX + " " + this.name));
 
     }
@@ -236,12 +235,6 @@
      */
     CSSAnimation.prototype.keyframesRule = null;
 
-    /**
-     * CSS-правило, где прописаны свойства анимации
-     * @type {CSSRule}
-     */
-    CSSAnimation.prototype.animationRule = null;
-
     /*
      * Приватные методы
      */
@@ -283,6 +276,74 @@
         var percents = position / PERCENT_TO_FRACTION + "%";
         var keyframe = this.keyframesRule.findRule(percents);
         return keyframe;
+    };
+
+    /**
+     * Применит параметры анимации к стилю элемента без
+     * уничтожения текущих анимаций, соблюдая правила добавления.
+     * @param {HTMLElement} element
+     * @private
+     */
+    CSSAnimation.prototype.applyStyle = function (element) {
+
+        // параметры уже применённых анимаций
+        var names = css(element, "animation-name").split(ANIMATIONS_SEPARATOR);
+        var playStates = css(element, "animation-play-state").split(ANIMATIONS_SEPARATOR);
+        var durations = css(element, "animation-duration").split(ANIMATIONS_SEPARATOR);
+        var timingFunctions = css(element, "animation-timing-function").split(ANIMATIONS_SEPARATOR);
+        var delays = css(element, "animation-delay").split(ANIMATIONS_SEPARATOR);
+        var iterations = css(element, "animation-iteration-count").split(ANIMATIONS_SEPARATOR);
+        var directions = css(element, "animation-direction").split(ANIMATIONS_SEPARATOR);
+        var fillModes = css(element, "animation-fill-mode").split(ANIMATIONS_SEPARATOR);
+
+        if (names.length === 0) {
+            // нет применённых анимаций
+            if (ENABLE_DEBUG) {
+                console.log("applyStyle: element doesn't has any animations applied");
+            }
+            names = [ this.name ];
+            playStates = [ DEFAULT_PLAYINGSTATE ];
+            durations = [ this.animationTime ];
+            timingFunctions = [ this.timingFunction ];
+            delays = [ this.delayTime ];
+            iterations = [ this.iterations ];
+            directions = [ this.animationDirection ];
+            fillModes = [ this.fillingMode ];
+        } else {
+            if (ENABLE_DEBUG) {
+                console.log('applyStyle: element has "' + names.length + '" applied animations.');
+            }
+            names.push(this.name);
+            // применяем анимацию приостановленной
+            playStates.push(DEFAULT_PLAYINGSTATE);
+            durations.push(this.animationTime);
+            timingFunctions.push(this.timingFunction);
+            delays.push(this.delayTime);
+            iterations.push(this.iterations);
+            directions.push(this.animationDirection);
+            fillModes.push(this.fillingMode);
+        }
+
+        // применяем обновленные параметры анимаций
+        css(element, "animation-name", names.join(ANIMATIONS_JOINER));
+        css(element, "animation-play-state", playStates.join(ANIMATIONS_JOINER));
+        css(element, "animation-duration", durations.join(ANIMATIONS_JOINER));
+        css(element, "animation-timing-function", timingFunctions.join(ANIMATIONS_JOINER));
+        css(element, "animation-delay", delays.join(ANIMATIONS_JOINER));
+        css(element, "animation-iteration-count", iterations.join(ANIMATIONS_JOINER));
+        css(element, "animation-direction", directions.join(ANIMATIONS_JOINER));
+        css(element, "animation-fill-mode", fillModes.join(ANIMATIONS_JOINER));
+    };
+
+    /**
+     * Уберёт параметры текущей анимации из стиля элемента с
+     * соблюдением правил добавления стилец анимации,
+     * при этом не затрагивая других анимаций.
+     * @param {HTMLElement} element
+     * @private
+     */
+    CSSAnimation.prototype.removeStyle = function (element) {
+
     };
 
     /*
@@ -537,18 +598,16 @@
      * Старт анимации
      */
     CSSAnimation.prototype.start = function () {
-        var animStyle = this.animationRule.style;
-
-        css(animStyle, "animation-play-state", DEFAULT_PLAYINGSTATE);
-        css(animStyle, "animation-name", this.name);
-        css(animStyle, "animation-duration", this.animationTime);
-        css(animStyle, "animation-timing-function", this.timingFunction);
-        css(animStyle, "animation-delay", this.delayTime);
-        css(animStyle, "animation-iteration-count", this.iterations);
-        css(animStyle, "animation-direction", this.animationDirection);
-        css(animStyle, "animation-fill-mode", this.fillingMode);
-
-        css(animStyle, "animation-play-state", PLAYSTATE_RUNNING);
+        // для того, чтобы не перезаписывались уже установленные анимации
+        // применяем анимацию к каждому элементу, соблюдая правила
+        each(this.elements, function (element) {
+            this.applyStyle(element);
+            // безопаснее запускать анимацию только после того, как она применена
+            var playStates = css(element, "animation-play-state").split(ANIMATIONS_SEPARATOR);
+            // текущая анимация должна быть последней
+            playStates[ playStates.length - 1 ] = PLAYSTATE_RUNNING;
+            css(element, "animation-play-state", playStates.join(ANIMATIONS_JOINER));
+        }, this);
 
         if (ENABLE_DEBUG) {
             console.log('start: animation "' + this.name + '" started');
