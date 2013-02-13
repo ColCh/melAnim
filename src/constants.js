@@ -225,7 +225,7 @@
     /**
      * по чему разделяются стили анимации
      * (аргумент к String.split)
-     * @type {string}
+     * @type {RegExp}
      * @const
      */
     var ANIMATIONS_SEPARATOR = /,\s+(?=\w)/;

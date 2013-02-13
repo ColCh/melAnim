@@ -31,7 +31,6 @@
      */
     function exclusiveHandler (event) {
         var eventName = event.type, lowerCased = toLowerCase(eventName);
-        var eventType;
         var eventNames;
 
         if (ENABLE_DEBUG) {
@@ -129,10 +128,9 @@
             } else if (ENABLE_DEBUG) {
                 console.log('animationHandlerDelegator: unregistered animation name "' + animationName + '" for event name "' + eventName + '" (event type "' + eventType + '")');
                 // незарегистрированная анимация. ничего не можем сделать.
-                return;
             }
         }
-    }
+    };
 
     /**
      * Конструктор анимаций с использованием CSS-анимаций
@@ -274,8 +272,7 @@
     CSSAnimation.prototype.lookupKeyframe = function (position) {
         // поиск проходит с указанием процентов
         var percents = position / PERCENT_TO_FRACTION + "%";
-        var keyframe = this.keyframesRule.findRule(percents);
-        return keyframe;
+        return this.keyframesRule.findRule(percents);
     };
 
     /**
@@ -384,7 +381,6 @@
         if (typeOf.element(elem)) {
             // CSS анимация не может анимировать не-элементы
             this.elements.push(elem);
-            addClass(elem, this.name);
         } else if (ENABLE_DEBUG) {
             console.log('addElement: passed variable is non-HTMLElement "' + elem + '"');
         }
@@ -650,6 +646,34 @@
      */
     CSSAnimation.prototype.stop = function () {};
 
+    /**
+     * Разрушение анимации
+     * удаление всех CSS-свойств, снятие применённых анимаций и т.д.
+     */
+    CSSAnimation.prototype.destruct = function () {
+        // удаляем применённые параметры анимации
+        each(this.elements, function (element) {
+            // безопаснее снимать анимацию тогда, когда она приостановлена,
+            // т.к. если снимать сразу, то FF и CH ведут себя по разному
+            var names = css(element, "animation-name").split(ANIMATIONS_SEPARATOR);
+            // индекс этой (this) анимации в списке применённых
+            var index = LinearSearch(names, this.name);
+            // приостанавливаем её
+            var playStates = css(element, "animation-play-state").split(ANIMATIONS_SEPARATOR);
+            playStates[ index ] = PLAYSTATE_PAUSED;
+            css(element, "animation-play-state", playStates.join(ANIMATIONS_JOINER));
+            // аккуратно удаляем примененные параметры анимаций
+            this.removeStyle(element);
+        }, this);
+
+        // удаляем CSS-правило с ключевыми кадрами из таблицы стилей
+        removeRule(this.keyframesRule);
+
+        if (ENABLE_DEBUG) {
+            console.log('destruct: animation "' + this.name + '" totally destructed');
+        }
+    };
+
     /* Экспорты */
     CSSAnimation.prototype["addElement"] = CSSAnimation.prototype.addElement;
     CSSAnimation.prototype["delay"] = CSSAnimation.prototype.delay;
@@ -662,3 +686,4 @@
     CSSAnimation.prototype["propAt"] = CSSAnimation.prototype.propAt;
     CSSAnimation.prototype["start"] = CSSAnimation.prototype.start;
     CSSAnimation.prototype["stop"] = CSSAnimation.prototype.stop;
+    CSSAnimation.prototype["destruct"] = CSSAnimation.prototype.destruct;

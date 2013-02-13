@@ -956,6 +956,21 @@
     }
 
     /**
+     * Удалит правило из таблицы стилей (если оно присутствует в ней)
+     * @param {CSSRule} rule
+     */
+    function removeRule (rule) {
+        var rules = stylesheet.cssRules || stylesheet.rules;
+        var ruleIndex = LinearSearch(rules, rule);
+        if (ENABLE_DEBUG) {
+            console.assert(ruleIndex !== -1, 'removeRule: internal usage but undefined rule;')
+        }
+        // аргументы одинаковые - нет смысла делать ветвление
+        var removeMethod = stylesheet.deleteRule || stylesheet.removeRule;
+        removeMethod.call(stylesheet, ruleIndex);
+    }
+
+    /**
      * Добавит указанный класс элементу
      * @param {HTMLElement} elem
      * @param {string} value
