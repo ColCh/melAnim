@@ -164,6 +164,17 @@
     }
 
     /**
+     * Удалит из массива элементэлемент с указанным индексом
+     * @param {Array} array
+     * @param {number} index
+     */
+    function removeAtIndex (array, index) {
+        if (index in array) {
+            array.splice(index, 1);
+        }
+    }
+
+    /**
      * Классический шаблон итератора
      * @param {Array} collection
      * @constructor

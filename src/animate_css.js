@@ -343,7 +343,38 @@
      * @private
      */
     CSSAnimation.prototype.removeStyle = function (element) {
+        // параметры уже применённых анимаций
+        var names = css(element, "animation-name").split(ANIMATIONS_SEPARATOR);
+        var playStates = css(element, "animation-play-state").split(ANIMATIONS_SEPARATOR);
+        var durations = css(element, "animation-duration").split(ANIMATIONS_SEPARATOR);
+        var timingFunctions = css(element, "animation-timing-function").split(ANIMATIONS_SEPARATOR);
+        var delays = css(element, "animation-delay").split(ANIMATIONS_SEPARATOR);
+        var iterations = css(element, "animation-iteration-count").split(ANIMATIONS_SEPARATOR);
+        var directions = css(element, "animation-direction").split(ANIMATIONS_SEPARATOR);
+        var fillModes = css(element, "animation-fill-mode").split(ANIMATIONS_SEPARATOR);
 
+        // индекс этой (this) анимации в списке применённых к элементу
+        var index = LinearSearch(names, this.name);
+
+        // просто удаляем из списков параметры с индексом имени этой анимации
+        removeAtIndex(names, index);
+        removeAtIndex(playStates, index);
+        removeAtIndex(durations, index);
+        removeAtIndex(timingFunctions, index);
+        removeAtIndex(delays, index);
+        removeAtIndex(iterations, index);
+        removeAtIndex(directions, index);
+        removeAtIndex(fillModes, index);
+
+        // применяем анимации без этой (this)
+        css(element, "animation-name", names.join(ANIMATIONS_JOINER));
+        css(element, "animation-play-state", playStates.join(ANIMATIONS_JOINER));
+        css(element, "animation-duration", durations.join(ANIMATIONS_JOINER));
+        css(element, "animation-timing-function", timingFunctions.join(ANIMATIONS_JOINER));
+        css(element, "animation-delay", delays.join(ANIMATIONS_JOINER));
+        css(element, "animation-iteration-count", iterations.join(ANIMATIONS_JOINER));
+        css(element, "animation-direction", directions.join(ANIMATIONS_JOINER));
+        css(element, "animation-fill-mode", fillModes.join(ANIMATIONS_JOINER));
     };
 
     /*
