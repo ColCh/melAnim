@@ -228,7 +228,7 @@
      * @type {string}
      * @const
      */
-    var ANIMATIONS_SEPARATOR = ", ";
+    var ANIMATIONS_SEPARATOR = /,\s+(?=\w)/;
 
     /**
      * чем соединяются стили анимации
