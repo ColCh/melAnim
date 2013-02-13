@@ -9,11 +9,11 @@ module.exports = function (grunt) {
         concat: {
             options: {
                 separator: '\n\n/*---------------------------------------*/\n\n',
-                banner: '/*! melAnim - v<%= meta.version %> - ' +
+                banner: '\n/*! melAnim - v<%= meta.version %> - ' +
                     '<%= grunt.template.today("yyyy-mm-dd") %>\n' +
                     '* Copyright (c) <%= grunt.template.today("yyyy") %> ' +
                     'ColCh; Licensed MIT ' +
-                    ' @preserve */'
+                    '*/\n'
             },
             dist: {
 
