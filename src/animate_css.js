@@ -481,6 +481,7 @@
     CSSAnimation.prototype.easing = function (timingFunction, position) {
         var points, trimmed, camelCased;
         var stepsAmount, countFromStart;
+        var timingFunction, key, keyframe;
 
         if (typeOf.array(timingFunction)) {
             // переданы аргументы к временным функциям CSS
@@ -506,7 +507,7 @@
             // кубическая кривая Безье
             points = map(points, parseFloat);
             if (inRange(points[0], 0, 1, true) && inRange(points[2], 0, 1, true)) {
-                this.timingFunction = "cubic-bezier" + "(" + points.join(", ") + ")";
+                timingFunction = "cubic-bezier" + "(" + points.join(", ") + ")";
             } else if (ENABLE_DEBUG) {
                 console.log('easing: cubic bezier invalid absciss "' + points[0] + '" or "' + points[2] + '"');
             }
@@ -515,12 +516,23 @@
             stepsAmount = parseInt(points[0], 10);
             countFromStart = points[1] === "start";
             if (typeOf.number(stepsAmount)) {
-                this.timingFunction = "steps" + "(" + stepsAmount.toString() + ", " + (countFromStart ? "start" : "end") + ")";
+                timingFunction = "steps" + "(" + stepsAmount.toString() + ", " + (countFromStart ? "start" : "end") + ")";
             } else if (ENABLE_DEBUG) {
                 console.log('easing: invalid steps amount for staircase timing function "' + stepsAmount + '"')
             }
         }
 
+        if (typeOf.undefined(position)) {
+            this.timingFunction = timingFunction;
+        } else {
+            key = normalizeKey(/** @type {(number|string)} */(position));
+            if (typeOf.number(key)) {
+                // в долях
+                key = key * PERCENT_TO_FRACTION;
+                keyframe = this.lookupKeyframe(key) || this.addKeyframe(key);
+                css(keyframe.style, "animation-timing-function", timingFunction);
+            }
+        }
     };
 
     /**
