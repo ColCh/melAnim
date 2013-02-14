@@ -142,16 +142,6 @@
     }
 
     /**
-     * Аналог Object.keys
-     * @param {Object} obj
-     */
-    function getKeys(obj) {
-        return map(obj, function (value, index) {
-            return index;
-        });
-    }
-
-    /**
      * Аналог Object.create
      * @param {Object} parent
      * @return {Object}
@@ -259,18 +249,19 @@
      * Обычный линейный поиск значения в массиве
      * @param {Array} arr массив
      * @param {(Function|*)} val Значение (или функция сравнения; должна вернуть 0 при равенстве)
+     * @return {number}
      */
     function LinearSearch(arr, val) {
 
         var callable = typeOf.func(val),
             index, i, m, curr,
-            native = Array.prototype.indexOf,
+            indexOf = Array.prototype.indexOf,
             EQUALS = true, NOT_FOUND = -1;
 
         index = NOT_FOUND;
 
-        if (!callable && native) {
-            index = native.call(arr, val);
+        if (!callable && indexOf) {
+            index = indexOf.call(arr, val);
         } else {
             for (i = 0, m = arr.length; i < m && index === NOT_FOUND; i++) {
                 curr = arr[i];
@@ -551,6 +542,7 @@
                         var probeLowPrefix = toLowerCase(probePrefix), STOP = false;
 
                         if (probePrefix + camelCased in target) {
+                            // вендорные префиксы определены в самом начале скрипта
                             prefix = probePrefix;
                             lowPrefix = probeLowPrefix;
                             result = gVPNCache[property] = probePrefix + camelCased;
@@ -724,8 +716,8 @@
          * @const
          */
         var DEFAULT_EPSILON = 1e-6;
-        var i, stopCondition, contraction, cache;
-        var savedX0, savedX1, deriv;
+        var i, stopCondition, cache;
+        var savedX0, savedX1;
 
         epsilon = typeOf.number(epsilon) ? epsilon : DEFAULT_EPSILON;
         stopCondition = function (X0, X1) { return Math.abs(X0 - X1) <= epsilon; };
@@ -826,19 +818,17 @@
 
     /**
      * Вычислит значение ординаты (Y) кубической кривой при известной абсциссе (X)
-     * @param {number} x
+     * @param {number} y
      * @return {number}
      */
-    CubicBezier.prototype.calc = function (x) {
+    CubicBezier.prototype.calc = function (y) {
 
         var B_bindedToX = bind(this.B_absciss, this);
         var derivative_X = bind(this.B_derivative_absciss, this);
 
-        var t = findEquationRoot(B_bindedToX, x, 0, 1, 1e-5, derivative_X);
+        var t = findEquationRoot(B_bindedToX, y, 0, 1, 1e-5, derivative_X);
 
-        var y = this.B_ordinate(t);
-
-        return y;
+        return this.B_ordinate(t);
     };
 
     /**
@@ -887,7 +877,7 @@
      * @return {CSSStyleDeclaration}
      */
     function getComputedStyle(element) {
-        return window.getComputedStyle ? window.getComputedStyle(element, null) : element.currentStyle;
+        return window.getComputedStyle ? window["getComputedStyle"](element, null) : /** @type {CSSStyleDeclaration} */ (element.currentStyle);
     }
 
     /**
@@ -940,7 +930,7 @@
      */
     function addRule(selector, cssText) {
 
-        /** @type {CSSRuleList} */
+        /** @type {Array} */
         var rules = stylesheet.cssRules || stylesheet.rules;
         var index = rules.length;
 
@@ -985,7 +975,7 @@
 
     /**
      * Удалит указанный класс у элемента
-     * @param {Element} elem
+     * @param {HTMLElement} elem
      * @param {string} value
      */
     function removeClass(elem, value) {
@@ -1041,7 +1031,7 @@
         }
 
         return stringValue;
-    };
+    }
 
     /**
      * Хуки для получения\установки значения свойства.
@@ -1116,7 +1106,7 @@
         "widows":true,
         "z-index":true,
         "zoom":true
-    }
+    };
 
     /**
      * Вычисление значения между двумя точками

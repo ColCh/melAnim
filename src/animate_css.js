@@ -481,7 +481,7 @@
     CSSAnimation.prototype.easing = function (timingFunction, position) {
         var points, trimmed, camelCased;
         var stepsAmount, countFromStart;
-        var timingFunction, key, keyframe;
+        var CSSTimingFunction, key, keyframe;
 
         if (typeOf.array(timingFunction)) {
             // переданы аргументы к временным функциям CSS
@@ -507,7 +507,7 @@
             // кубическая кривая Безье
             points = map(points, parseFloat);
             if (inRange(points[0], 0, 1, true) && inRange(points[2], 0, 1, true)) {
-                timingFunction = "cubic-bezier" + "(" + points.join(", ") + ")";
+                CSSTimingFunction = "cubic-bezier" + "(" + points.join(", ") + ")";
             } else if (ENABLE_DEBUG) {
                 console.log('easing: cubic bezier invalid absciss "' + points[0] + '" or "' + points[2] + '"');
             }
@@ -516,21 +516,21 @@
             stepsAmount = parseInt(points[0], 10);
             countFromStart = points[1] === "start";
             if (typeOf.number(stepsAmount)) {
-                timingFunction = "steps" + "(" + stepsAmount.toString() + ", " + (countFromStart ? "start" : "end") + ")";
+                CSSTimingFunction = "steps" + "(" + stepsAmount.toString() + ", " + (countFromStart ? "start" : "end") + ")";
             } else if (ENABLE_DEBUG) {
                 console.log('easing: invalid steps amount for staircase timing function "' + stepsAmount + '"')
             }
         }
 
         if (typeOf.undefined(position)) {
-            this.timingFunction = timingFunction;
+            this.timingFunction = CSSTimingFunction;
         } else {
             key = normalizeKey(/** @type {(number|string)} */(position));
             if (typeOf.number(key)) {
                 // в долях
                 key = key * PERCENT_TO_FRACTION;
                 keyframe = this.lookupKeyframe(key) || this.addKeyframe(key);
-                css(keyframe.style, "animation-timing-function", timingFunction);
+                css(keyframe.style, "animation-timing-function", CSSTimingFunction);
             }
         }
     };
@@ -576,9 +576,7 @@
         var numericIterations;
 
         // исключение составляет специальное значение
-        if (iterationCount === ITERATIONCOUNT_INFINITE) {
-            numericIterations = Number.POSITIVE_INFINITY;
-        } else {
+        if (iterationCount !== ITERATIONCOUNT_INFINITE) {
             numericIterations = parseFloat(iterationCount);
             if (!isFinite(numericIterations) || numericIterations < 0) {
                 if (ENABLE_DEBUG) {
@@ -695,6 +693,7 @@
     CSSAnimation.prototype["fillMode"] = CSSAnimation.prototype.fillMode;
     CSSAnimation.prototype["iterationCount"] = CSSAnimation.prototype.iterationCount;
     CSSAnimation.prototype["onComplete"] = CSSAnimation.prototype.onComplete;
+    CSSAnimation.prototype["onIteration"] = CSSAnimation.prototype.onIteration;
     CSSAnimation.prototype["propAt"] = CSSAnimation.prototype.propAt;
     CSSAnimation.prototype["start"] = CSSAnimation.prototype.start;
     CSSAnimation.prototype["stop"] = CSSAnimation.prototype.stop;

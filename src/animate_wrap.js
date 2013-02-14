@@ -41,13 +41,6 @@
     var DEFAULT_ITERATIONCOUNT = "1";
 
     /**
-     * Обработчик событий по умолчанию (пустая функция)
-     * @type {Function}
-     * @const
-     */
-    var DEFAULT_HANDLER = noop;
-
-    /**
      * Состояние проигрывания анимации при  её создании через конструктор
      * @type {string}
      * @const
@@ -107,13 +100,9 @@
              * Режим заполнения свойств
              * @type {string}
              */
-            fillMode,
+            fillMode;
 
-            /**
-             * Состояние проигрывания анимации
-             * @type {string}
-             */
-            state;
+        var construct;
 
         // если передан объект с расширенными опциями; разворачиваем его.
         if (typeOf.object(duration) && arguments.length === 3) {
@@ -134,12 +123,12 @@
 
         }
 
-        // пока не доделан
-        classicMode = true;//classicMode || !CSSANIMATIONS_SUPPORTED;
+        classicMode = classicMode || !CSSANIMATIONS_SUPPORTED;
 
-        // создание анимации через конструктор предполагает ручной запуск
-        state = DEFAULT_PLAYINGSTATE;
-    };
+        construct = classicMode ? ClassicAnimation : CSSAnimation;
+
+        return new construct();
+    }
 
     /**
      * Функция, позволяющая анимировать без муторного создания объектов в один вызов

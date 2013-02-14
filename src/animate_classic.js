@@ -24,7 +24,7 @@
         if (typeOf.object(properties)) {
             this.properties = /** @type {Object} */ (properties);
         } else {
-            this.properties = new Object();
+            this.properties = {};
         }
         if (typeOf.func(easing)) {
             this.easing = /** @type {Function} */(easing);
@@ -47,23 +47,23 @@
      * Значения свойств для этого ключевого кадра.
      * @type {Object}
      */
-    Keyframe.prototype.properties = new Object();
+    Keyframe.prototype.properties = {};
 
     /**
      * Конструктор анимаций с ключевыми кадрами на JavaScript.
      * @constructor
      */
     function ClassicAnimation() {
-        this.targets = new Array();
-        this.startingValues = new Object();
-        this.currentValues = new Object();
-        this.cache = new Object();
+        this.targets = [];
+        this.startingValues = {};
+        this.currentValues = {};
+        this.cache = {};
         this.animationName = generateId();
-        this.keyframes = new Array();
-        this.specialEasing = new Object();
+        this.keyframes = [];
+        this.specialEasing = {};
         this.iterations = 1;
-        this.rulesList = new Object();
-        this.animatedProperties = new Object();
+        this.rulesList = {};
+        this.animatedProperties = {};
         // начальный и конечный ключевые кадры
         // их свойства наследуют вычисленные
         this.addKeyframe(0.0, createObject(this.animatedProperties));
@@ -284,15 +284,15 @@
      * @param {HTMLElement} elem Элемент
      */
     ClassicAnimation.prototype.addElement = function (elem) {
-        var id, elements;
+        var id;
         if (typeOf.element(elem)) {
             id = generateId();
             this.rulesList[id] = addRule("." + id);
             addClass(/** @type {HTMLElement} */(elem), id);
             elem.setAttribute(DATA_ATTR_NAME, id);
-            this.cache[id] = new Object();
-            this.startingValues[id] = new Object();
-            this.currentValues[id] = new Object();
+            this.cache[id] = {};
+            this.startingValues[id] = {};
+            this.currentValues[id] = {};
             this.targets.push(elem);
         } else if (ENABLE_DEBUG) {
             console.log('addElement: passed variable is non-HTMLElement "' + elem + '"');
@@ -651,12 +651,8 @@
     ClassicAnimation.prototype.propAt = function (name, value, position) {
 
         var keyframe;
-        var keyframes;
         /** @type {(number|string)} */
         var key;
-        var startingKeyframe, endingKeyframe;
-
-        keyframes = this.keyframes;
 
         key = typeOf.undefined(position) ? keyAliases["to"] : position;
         key = normalizeKey(key);
@@ -725,13 +721,11 @@
      */
     ClassicAnimation.prototype.fetch = function (fractionalTime) {
 
-        var keyframes, globalFetch, fetchedProperties, firstKeyframe, secondKeyframe, from, to, propertyName;
-        var element;
+        var keyframes, firstKeyframe, secondKeyframe, from, to;
         var offset, scale;
-        var timingFunction, specialEasing, index, easing, epsilon;
+        var timingFunction, index, easing;
         keyframes = this.keyframes;
 
-        epsilon = Math.pow(10, - this.digits);
         /*
          * Поиск функции смягчения для текущего ключевого кадра
          */
@@ -749,10 +743,9 @@
          *  */
         each(this.targets, function (element) {
 
-            var id, elementData, startingValues, currentValues;
+            var id, startingValues, currentValues;
 
             id = element.getAttribute(DATA_ATTR_NAME);
-            elementData = this.cache[id];
             startingValues = this.startingValues[id];
             currentValues = this.currentValues[id];
 
@@ -771,8 +764,10 @@
                 each(keyframes, function (keyframe) {
                     // специальное значение для прекращения обхода
                     var STOP_ITERATION = false;
+
+                    var key = /** @type {number} */ (keyframe.key);
                     if (propertyName in keyframe.properties) {
-                        if (fractionalTime < keyframe.key || (fractionalTime === 1.0 && keyframe.key === 1.0)) {
+                        if (fractionalTime < key || (fractionalTime === 1.0 && key === 1.0)) {
                             secondKeyframe = keyframe;
                             return STOP_ITERATION;
                         }
@@ -815,8 +810,6 @@
             }, this); // end properties loop
 
         }, this); // end targets loop
-
-        return globalFetch;
     };
 
     /**
@@ -828,14 +821,13 @@
     ClassicAnimation.prototype.render = function (direct) {
         each(this.targets, function (element) {
 
-            var id, elementData, startingValues, currentValues;
+            var id, currentValues;
             var elementStyle;
             var rule, ruleStyle;
             var destinationStyle;
 
             id = element.getAttribute(DATA_ATTR_NAME);
             rule = this.rulesList[id];
-            elementData = this.cache[id];
             currentValues = this.currentValues[id];
 
             elementStyle = element.style;
@@ -924,9 +916,7 @@
      */
     ClassicAnimation.prototype.computeFractionalTime = function (animationProgress, currentIteration) {
 
-        var iterationProgress, iterationCount;
-
-        iterationCount = this.iterations;
+        var iterationProgress;
 
         iterationProgress = animationProgress - currentIteration;
         iterationProgress = min(iterationProgress, MAXIMAL_PROGRESS);
