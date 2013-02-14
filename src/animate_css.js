@@ -126,7 +126,7 @@
                 callback = handlersList[animationName];
                 callback();
             } else if (ENABLE_DEBUG) {
-                console.log('animationHandlerDelegator: unregistered animation name "' + animationName + '" for event name "' + eventName + '" (event type "' + eventType + '")');
+                //console.log('animationHandlerDelegator: unregistered animation name "' + animationName + '" for event name "' + eventName + '" (event type "' + eventType + '")');
                 // незарегистрированная анимация. ничего не можем сделать.
             }
         }
