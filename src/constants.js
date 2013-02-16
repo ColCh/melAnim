@@ -237,3 +237,59 @@
      * @const
      */
     var ANIMATIONS_JOINER = ", ";
+
+    /**
+     * Имя CSS-свойства для назначения \ получения имени анимации.
+     * @type {string}
+     * @const
+     */
+    var ANIMATION_NAME = "animation-name";
+
+    /**
+     * Имя CSS-свойства для назначения \ получения статуса проигрывания анимации.
+     * @type {string}
+     * @const
+     */
+    var ANIMATION_PLAY_STATE = "animation-play-state";
+
+    /**
+     * Имя CSS-свойства для назначения \ получения продолжительности анимации.
+     * @type {string}
+     * @const
+     */
+    var ANIMATION_DURATION = "animation-duration";
+
+    /**
+     * Имя CSS-свойства для назначения \ получения временной функции смягчения анимации \ ключевого кадра.
+     * @type {string}
+     * @const
+     */
+    var ANIMATION_TIMING_FUNCTION = "animation-timing-function";
+
+    /**
+     * Имя CSS-свойства для назначения \ получения задержки старта анимации.
+     * @type {string}
+     * @const
+     */
+    var ANIMATION_DELAY = "animation-delay";
+
+    /**
+     * Имя CSS-свойства для назначения \ получения количества проходов анимации.
+     * @type {string}
+     * @const
+     */
+    var ANIMATION_ITERATION_COUNT = "animation-iteration-count";
+
+    /**
+     * Имя CSS-свойства для назначения \ получения направления прогрессирования анимации.
+     * @type {string}
+     * @const
+     */
+    var ANIMATION_DIRECTION = "animation-direction";
+
+    /**
+     * Имя CSS-свойства для назначения \ получения режима заполнения анимации.
+     * @type {string}
+     * @const
+     */
+    var ANIMATION_FILL_MODE = "animation-fill-mode";

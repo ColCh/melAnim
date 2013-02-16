@@ -284,14 +284,14 @@
     CSSAnimation.prototype.applyStyle = function (element) {
 
         // параметры уже применённых анимаций
-        var names = css(element, "animation-name").split(ANIMATIONS_SEPARATOR);
-        var playStates = css(element, "animation-play-state").split(ANIMATIONS_SEPARATOR);
-        var durations = css(element, "animation-duration").split(ANIMATIONS_SEPARATOR);
-        var timingFunctions = css(element, "animation-timing-function").split(ANIMATIONS_SEPARATOR);
-        var delays = css(element, "animation-delay").split(ANIMATIONS_SEPARATOR);
-        var iterations = css(element, "animation-iteration-count").split(ANIMATIONS_SEPARATOR);
-        var directions = css(element, "animation-direction").split(ANIMATIONS_SEPARATOR);
-        var fillModes = css(element, "animation-fill-mode").split(ANIMATIONS_SEPARATOR);
+        var names = css(element, ANIMATION_NAME).split(ANIMATIONS_SEPARATOR);
+        var playStates = css(element, ANIMATION_PLAY_STATE).split(ANIMATIONS_SEPARATOR);
+        var durations = css(element, ANIMATION_DURATION).split(ANIMATIONS_SEPARATOR);
+        var timingFunctions = css(element, ANIMATION_TIMING_FUNCTION).split(ANIMATIONS_SEPARATOR);
+        var delays = css(element, ANIMATION_DELAY).split(ANIMATIONS_SEPARATOR);
+        var iterations = css(element, ANIMATION_ITERATION_COUNT).split(ANIMATIONS_SEPARATOR);
+        var directions = css(element, ANIMATION_DIRECTION).split(ANIMATIONS_SEPARATOR);
+        var fillModes = css(element, ANIMATION_FILL_MODE).split(ANIMATIONS_SEPARATOR);
 
         if (names.length === 0) {
             // нет применённых анимаций
@@ -322,14 +322,14 @@
         }
 
         // применяем обновленные параметры анимаций
-        css(element, "animation-name", names.join(ANIMATIONS_JOINER));
-        css(element, "animation-play-state", playStates.join(ANIMATIONS_JOINER));
-        css(element, "animation-duration", durations.join(ANIMATIONS_JOINER));
-        css(element, "animation-timing-function", timingFunctions.join(ANIMATIONS_JOINER));
-        css(element, "animation-delay", delays.join(ANIMATIONS_JOINER));
-        css(element, "animation-iteration-count", iterations.join(ANIMATIONS_JOINER));
-        css(element, "animation-direction", directions.join(ANIMATIONS_JOINER));
-        css(element, "animation-fill-mode", fillModes.join(ANIMATIONS_JOINER));
+        css(element, ANIMATION_NAME, names.join(ANIMATIONS_JOINER));
+        css(element, ANIMATION_PLAY_STATE, playStates.join(ANIMATIONS_JOINER));
+        css(element, ANIMATION_DURATION, durations.join(ANIMATIONS_JOINER));
+        css(element, ANIMATION_TIMING_FUNCTION, timingFunctions.join(ANIMATIONS_JOINER));
+        css(element, ANIMATION_DELAY, delays.join(ANIMATIONS_JOINER));
+        css(element, ANIMATION_ITERATION_COUNT, iterations.join(ANIMATIONS_JOINER));
+        css(element, ANIMATION_DIRECTION, directions.join(ANIMATIONS_JOINER));
+        css(element, ANIMATION_FILL_MODE, fillModes.join(ANIMATIONS_JOINER));
     };
 
     /**
