@@ -149,6 +149,15 @@
      */
 
     /**
+     * Статус анимации - по умолчанию "paused", т.е.
+     * анимация прмиеняется к элементу в приостановленном состоянии
+     * запускается методом start.
+     * @type {string}
+     * @private
+     */
+    CSSAnimation.prototype.playState = PLAYSTATE_PAUSED;
+
+    /**
      * Время отложенного запуска, временная строка CSS.
      * Значение устанавливается методом
      * @see CSSAnimation.delay
@@ -372,6 +381,33 @@
         css(element, "animation-iteration-count", iterations.join(ANIMATIONS_JOINER));
         css(element, "animation-direction", directions.join(ANIMATIONS_JOINER));
         css(element, "animation-fill-mode", fillModes.join(ANIMATIONS_JOINER));
+    };
+
+    /**
+     * Установит параметру анимаци указанное значение для элемента.
+     * Такая аккуратность нужна, чтобы не затрагивать уже примененные
+     * к элементу анимации
+     * @param {HTMLElement} element элемент
+     * @param {string} parameterName имя параметра (напр, "animation-duration")
+     * @param {string} parameterValue значение параметра (напр. "5s")
+     * @param {number=} animationIndex индекс анимации в списке примененных (если не указывать, найдет сама для этой (this) анимации)
+     * @private
+     */
+    CSSAnimation.prototype.setProperty = function (element, parameterName, parameterValue, animationIndex) {
+        var paramsList = css(element, parameterName).split(ANIMATIONS_SEPARATOR);
+        var names;
+
+        if (!typeOf.number(animationIndex)) {
+            names = css(element, ANIMATION_NAME).split(ANIMATIONS_SEPARATOR);
+            animationIndex = LinearSearch(names, this.name);
+        }
+
+        if (animationIndex > 0) {
+            paramsList[ animationIndex ] = parameterValue;
+            css(element, parameterName, paramsList.join(ANIMATIONS_JOINER));
+        } else if (ENABLE_DEBUG) {
+            console.log('setProperty: cannot set parameter value; invalid animationIndex "' + animationIndex + '"');
+        }
     };
 
     /*
