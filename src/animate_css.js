@@ -413,6 +413,11 @@
     /*
      * Публичные методы
      */
+
+    /**
+     * Добавит элемент для анимирования
+     * @param {HTMLElement} elem
+     */
     CSSAnimation.prototype.addElement = function (elem) {
         if (typeOf.element(elem)) {
             // CSS анимация не может анимировать не-элементы
