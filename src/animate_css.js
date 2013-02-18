@@ -292,15 +292,28 @@
      */
     CSSAnimation.prototype.applyStyle = function (element) {
 
+        var names, playStates, durations, timingFunctions, delays, iterations, directions, fillModes;
+
+        // для начала проверим, применена ли уже анимация
+        names = css(element, ANIMATION_NAME);
+
+        if (names.indexOf(this.name) !== -1) {
+            // такое имя уже присутствует в списке применных
+            if (ENABLE_DEBUG) {
+                console.log('applyStyle: animation style for "' + this.name + '" already applied : "' + names + '"');
+            }
+            return;
+        }
+
         // параметры уже применённых анимаций
-        var names = css(element, ANIMATION_NAME).split(ANIMATIONS_SEPARATOR);
-        var playStates = css(element, ANIMATION_PLAY_STATE).split(ANIMATIONS_SEPARATOR);
-        var durations = css(element, ANIMATION_DURATION).split(ANIMATIONS_SEPARATOR);
-        var timingFunctions = css(element, ANIMATION_TIMING_FUNCTION).split(ANIMATIONS_SEPARATOR);
-        var delays = css(element, ANIMATION_DELAY).split(ANIMATIONS_SEPARATOR);
-        var iterations = css(element, ANIMATION_ITERATION_COUNT).split(ANIMATIONS_SEPARATOR);
-        var directions = css(element, ANIMATION_DIRECTION).split(ANIMATIONS_SEPARATOR);
-        var fillModes = css(element, ANIMATION_FILL_MODE).split(ANIMATIONS_SEPARATOR);
+        names = names.split(ANIMATIONS_SEPARATOR);
+        playStates = css(element, ANIMATION_PLAY_STATE).split(ANIMATIONS_SEPARATOR);
+        durations = css(element, ANIMATION_DURATION).split(ANIMATIONS_SEPARATOR);
+        timingFunctions = css(element, ANIMATION_TIMING_FUNCTION).split(ANIMATIONS_SEPARATOR);
+        delays = css(element, ANIMATION_DELAY).split(ANIMATIONS_SEPARATOR);
+        iterations = css(element, ANIMATION_ITERATION_COUNT).split(ANIMATIONS_SEPARATOR);
+        directions = css(element, ANIMATION_DIRECTION).split(ANIMATIONS_SEPARATOR);
+        fillModes = css(element, ANIMATION_FILL_MODE).split(ANIMATIONS_SEPARATOR);
 
         if (names.length === 0) {
             // нет применённых анимаций
