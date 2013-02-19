@@ -306,7 +306,7 @@
         directions = css(element, ANIMATION_DIRECTION).split(ANIMATIONS_SEPARATOR);
         fillModes = css(element, ANIMATION_FILL_MODE).split(ANIMATIONS_SEPARATOR);
 
-        if (names.length === 0) {
+        if (names.length === 0 || (names.length === 1 && (names[0] === "" || names[0] === "none"))) {
             // нет применённых анимаций
             if (ENABLE_DEBUG) {
                 console.log("applyStyle: element doesn't has any animations applied");
@@ -406,7 +406,7 @@
             animationIndex = LinearSearch(names, this.name);
         }
 
-        if (animationIndex > 0) {
+        if (animationIndex >= 0) {
             paramsList[ animationIndex ] = parameterValue;
             css(element, parameterName, paramsList.join(ANIMATIONS_JOINER));
         } else if (ENABLE_DEBUG) {
