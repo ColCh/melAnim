@@ -142,6 +142,13 @@
         this.elements = [];
         this.keyframesRule = /** @type {CSSKeyframesRule} */ (addRule("@" + KEYFRAME_PREFIX + " " + this.name));
 
+        if (ENABLE_DEBUG) {
+            if (this.name !== this.keyframesRule.name) {
+                // имена должны совпадать
+                console.log('CSSAnimation constructor: anim name "' + this.name + '" and keyframes name "' + this.keyframesRule.name + '" are different');
+            }
+        }
+
     }
 
     /*
