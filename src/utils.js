@@ -1008,7 +1008,11 @@
             if (getting) {
 
                 if (typeOf.undefined(hookVal)) {
-                    stringValue = getComputedStyle(/** @type {HTMLElement} */(element))[vendorizedPropertyName];
+                    if (typeOf.element(element)) {
+                        stringValue = getComputedStyle(/** @type {HTMLElement} */(element))[vendorizedPropertyName];
+                    } else {
+                        stringValue = /** @type {CSSStyleDeclaration} */ (element)[vendorizedPropertyName];
+                    }
                 } else {
                     stringValue = hookVal;
                 }
