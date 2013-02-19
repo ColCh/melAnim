@@ -711,24 +711,26 @@
 
         // Webkit считает применение анимации началом ее запуска, FireFox - нет
         // переприменяем анимацию
-        // TODO облагородить это временное решение.
+        // TODO облагородить это временное решение или найти более лучшее
         each(this.elements, function (element) {
             var names, animationIndex;
 
             names = css(element, ANIMATION_NAME).split(ANIMATIONS_SEPARATOR);
+            // анимация должна быть уже применена, т.к. это делает метод addElement
             animationIndex = LinearSearch(names, this.name);
 
+            // установка имени этой (this) анимации на пустое
             names[ animationIndex ] = "none";
             css(element, ANIMATION_NAME, names.join(ANIMATIONS_JOINER));
 
+            // начало проигрывания пустой анимации
             this.setParameter(element, ANIMATION_PLAY_STATE, PLAYSTATE_RUNNING, animationIndex);
 
+            // возвращение имени обратно запустит оригинальную анимацию
             names[ animationIndex ] = this.name;
             css(element, ANIMATION_NAME, names.join(ANIMATIONS_JOINER));
         }, this);
 
-        //each(this.elements, this.reApply, this);
-        //this.rewriteParameter(ANIMATION_PLAY_STATE, PLAYSTATE_RUNNING);
         if (ENABLE_DEBUG) {
             console.log('start: animation "' + this.name + '" started');
         }
