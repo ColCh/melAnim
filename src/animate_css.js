@@ -708,7 +708,27 @@
      * Старт анимации
      */
     CSSAnimation.prototype.start = function () {
-        this.rewriteParameter(ANIMATION_PLAY_STATE, PLAYSTATE_RUNNING);
+
+        // Webkit считает применение анимации началом ее запуска, FireFox - нет
+        // переприменяем анимацию
+        // TODO облагородить это временное решение.
+        each(this.elements, function (element) {
+            var names, animationIndex;
+
+            names = css(element, ANIMATION_NAME).split(ANIMATIONS_SEPARATOR);
+            animationIndex = LinearSearch(names, this.name);
+
+            names[ animationIndex ] = "none";
+            css(element, ANIMATION_NAME, names.join(ANIMATIONS_JOINER));
+
+            this.setParameter(element, ANIMATION_PLAY_STATE, PLAYSTATE_RUNNING, animationIndex);
+
+            names[ animationIndex ] = this.name;
+            css(element, ANIMATION_NAME, names.join(ANIMATIONS_JOINER));
+        }, this);
+
+        //each(this.elements, this.reApply, this);
+        //this.rewriteParameter(ANIMATION_PLAY_STATE, PLAYSTATE_RUNNING);
         if (ENABLE_DEBUG) {
             console.log('start: animation "' + this.name + '" started');
         }
