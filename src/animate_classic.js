@@ -151,6 +151,13 @@
      */
     ClassicAnimation.prototype.oniteration = noop;
 
+    /**
+     * Обработчик начала проигрывания анимации
+     * @type {Function}
+     * @private
+     */
+    ClassicAnimation.prototype.onstart = noop;
+
      /**
      * Функция будет выполняться на каждом тике (tick) анимации
      * @private
@@ -339,6 +346,16 @@
             this.oncomplete = callback;
         } else if (ENABLE_DEBUG) {
             console.warn("onComplete: callback is not a function : %o", callback);
+        }
+    };
+
+    /**
+     * Установка функции, которая исполнится, когда анимация начнет проигрываться
+     * @param {Function} callback
+     */
+    ClassicAnimation.prototype.onStart = function (callback) {
+        if (typeOf.func(callback)) {
+            this.onstart = callback;
         }
     };
 
@@ -573,7 +590,10 @@
             if (ENABLE_DEBUG) {
                 console.log('start: ' + this.animationName + ' has positite delay "' + this.delayTime + '" ms');
             }
-            setTimeout(bind(this.timer.start, this.timer), this.delayTime);
+            setTimeout(bind(function () {
+                this.timer.start();
+                this.onstart();
+            }, this.timer), this.delayTime);
         } else {
             if (ENABLE_DEBUG) {
                 console.log('start: ' + this.animationName + ' has non-positite delay "' + this.delayTime + '" so starting right now.');
@@ -985,3 +1005,4 @@
     ClassicAnimation.prototype["start"] = ClassicAnimation.prototype.start;
     ClassicAnimation.prototype["stop"] = ClassicAnimation.prototype.stop;
     ClassicAnimation.prototype["step"] = ClassicAnimation.prototype.step;
+    ClassicAnimation.prototype["onStart"] = ClassicAnimation.prototype.onStart;
