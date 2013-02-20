@@ -49,6 +49,12 @@
 
     /*
      * Конструктор анимаций.
+     * Формат передаци свойств:
+     * keyframes = {
+     *     %KEY% : {
+     *         %PROPERTY_NAME% : %PROPERTY_VALUE%
+     *     }
+     * }
      * @constructor
      *
      * @param {(Element|Array.<Element>)} elements Элемент(ы) для анимирования.
@@ -85,6 +91,12 @@
             oniteration,
 
             /**
+             * Функция, котоаря будет исполняться на каждом шаге анимации
+             * @type {Function}
+             */
+            onstep,
+
+            /**
              * Количество проходов (максимальный прогресс относительно первой итерации)
              * @type {number}
              */
@@ -100,9 +112,19 @@
              * Режим заполнения свойств
              * @type {string}
              */
-            fillMode;
+            fillMode,
 
-        var construct;
+            /**
+             * Ссылка на конструктор классической или CSS анимации, в зависимости от флага classicMode
+             * @type {Function}
+             */
+            construct,
+
+            /**
+             * Созданный экземпляр анимации
+             * @type {(ClassicAnimation|CSSAnimation)}
+             */
+            self;
 
         // если передан объект с расширенными опциями; разворачиваем его.
         if (typeOf.object(duration) && arguments.length === 3) {
@@ -112,6 +134,7 @@
             onstart = duration["onstart"];
             oniteration = duration["oniteration"];
             oncomplete = duration["oncomplete"];
+            onstep = duration["onstep"];
 
             easing = duration["easing"];
 
@@ -127,7 +150,29 @@
 
         construct = classicMode ? ClassicAnimation : CSSAnimation;
 
-        return new construct();
+        self = new construct();
+
+        each(elements, self.addElement, self);
+
+        each(keyframes, function (properties, key) {
+            each(properties, function (propertyName, propertyValue) {
+                self.propAt(propertyName, propertyValue, key);
+            });
+        });
+
+        self.onComplete(oncomplete);
+        self.onIteration(oniteration);
+        self.onStart(onstart);
+        self.onStep(onstep);
+
+        self.delay(delay);
+        self.duration(duration);
+        self.direction(direction);
+        self.easing(easing);
+        self.fillMode(fillMode);
+        self.iterationCount(iterationCount);
+
+        return self;
     }
 
     /**
