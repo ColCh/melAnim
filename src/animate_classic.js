@@ -57,6 +57,7 @@
     //TODO слепки параметров анимации после старта - parametres snapshotting
     //TODO типы свойств для интерполяции (вместо самих свойств)
     //TODO провесить временную функцию на ключевом кадре - кажется, оно багнулось
+    //TODO относительное изменение свойств
     function ClassicAnimation() {
         this.targets = [];
         this.startingValues = {};

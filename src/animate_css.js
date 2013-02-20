@@ -716,6 +716,7 @@
      * @param {string} value значение свойства
      * @param {string=} position строка прогресса в процентах (по умол. 100%)
      */
+     //TODO относительное изменение свойств
     CSSAnimation.prototype.propAt = function (name, value, position) {
         var keyframe;
         var key = typeOf.undefined(position) ? keyAliases["to"] : normalizeKey(/** @type {(number|string)} */ (position));
