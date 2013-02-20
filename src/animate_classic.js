@@ -592,8 +592,9 @@
                 console.log('start: ' + this.animationName + ' has positite delay "' + this.delayTime + '" ms');
             }
             setTimeout(bind(function () {
-                this.timer.start();
-                this.onstart();
+                var self = /** @type {ClassicAnimation} */(this);
+                self.timer.start();
+                self.onstart();
             }, this.timer), this.delayTime);
         } else {
             if (ENABLE_DEBUG) {
