@@ -980,3 +980,4 @@
     ClassicAnimation.prototype["propAt"] = ClassicAnimation.prototype.propAt;
     ClassicAnimation.prototype["start"] = ClassicAnimation.prototype.start;
     ClassicAnimation.prototype["stop"] = ClassicAnimation.prototype.stop;
+    ClassicAnimation.prototype["step"] = ClassicAnimation.prototype.step;
