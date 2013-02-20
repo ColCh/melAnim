@@ -587,6 +587,13 @@
             }
         }
 
+        if (!typeOf.array(points)) {
+            if (ENABLE_DEBUG) {
+                console.log('easing: invalid argument "' + timingFunction + '"');
+            }
+            return;
+        }
+
         if (points.length === 4) {
             // кубическая кривая Безье
             points = map(points, parseFloat);
