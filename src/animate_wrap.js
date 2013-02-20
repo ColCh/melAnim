@@ -60,8 +60,9 @@
      * @param {(Element|Array.<Element>)} elements Элемент(ы) для анимирования.
      * @param {object} keyframes Свойства для анимирования.
      * @param {(string|Object)=} duration Длительность анимации или объект с продвинутыми настройками. По-умолчанию : "400ms".
-     * @param {string=} easing Как будут прогрессировать значения свойств. По-умолчанию : "ease".
+     * @param {(string|Array|Function)=} easing Как будут прогрессировать значения свойств. По-умолчанию : "ease".
      * @param {function=} oncomplete Функция, которая исполнится после завершения анимации. По-умолчанию : "noop", т.е. пустая функция.
+     * @return {(CSSAnimation|ClassicAnimation)}
      */
     function Animation (elements, keyframes, duration, easing, oncomplete) {
 
@@ -146,7 +147,7 @@
 
         }
 
-        classicMode = classicMode || !CSSANIMATIONS_SUPPORTED;
+        classicMode = classicMode || typeOf.func(easing) || !CSSANIMATIONS_SUPPORTED;
 
         construct = classicMode ? ClassicAnimation : CSSAnimation;
 
@@ -177,7 +178,17 @@
 
     /**
      * Функция, позволяющая анимировать без муторного создания объектов в один вызов
+     * Формат записи свойств и вообще аргументов - как в jQuery (для удобства)
+     * Отличается от конструктора тем, что автоматически запускает анимацию после создания экземпляра.
+     * @param {(Array.<HTMLElement>|NodeList|HTMLElement)} elements Элемент(ы) для анимирования
+     * @param {Object} properties Свойства для анимирования. Ключ имя свойства, значение - конечная величина свойства.
+     * @param {(number|string)} duration Продолжительность в МС или в формате CSS Timestring
+     * @param {(string|Function,Array)} easing Смягчение всей анимации (алиас, CSS Timefunction, аргументы к временной функции или сама функция)
+     * @param {Function} complete Обработчик события завершения анимации
+     * @return {(CSSAnimation|ClassicAnimation)}
      */
-    function animate () {
-        // TODO доделать функцию анимации
+    function animate (elements, properties, duration, easing, complete) {
+        var self = new Animation(elements, properties, duration, easing, complete);
+        self.start();
+        return self;
     }
