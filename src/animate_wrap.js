@@ -153,7 +153,7 @@
 
         self = new construct();
 
-        each(elements, self.addElement, self);
+        typeOf.element(elements) ? self.addElement(elements) : each(elements, self.addElement, self);
 
         each(keyframes, function (properties, key) {
             each(properties, function (propertyName, propertyValue) {
