@@ -177,7 +177,7 @@
     }
 
     /**
-     * Функция, позволяющая анимировать без муторного создания объектов в один вызов
+     * "Одноразовая" функция, позволяющая анимировать без муторного создания объектов в один вызов
      * Формат записи свойств и вообще аргументов - как в jQuery (для удобства)
      * Отличается от конструктора тем, что автоматически запускает анимацию после создания экземпляра.
      * @param {(Array.<HTMLElement>|NodeList|HTMLElement)} elements Элемент(ы) для анимирования
@@ -188,7 +188,16 @@
      * @return {(CSSAnimation|ClassicAnimation)}
      */
     function animate (elements, properties, duration, easing, complete) {
-        var self = new Animation(elements, properties, duration, easing, complete);
+        var keyframes = {};
+        keyframes[ keyAliases["to"] ] = {};
+        each(properties, function (propertyName, propertyValue) {
+            keyframes[ keyAliases["to"] ] [ propertyName ] = propertyValue;
+        });
+        var self = new Animation(elements, keyframes, duration, easing, function () {
+            //TODO сделать то же, только без замыкания
+            typeOf.func(complete) && complete();
+            self.destruct();
+        });
         self.start();
-        return self;
+        return /** @type {(CSSAnimation|ClassicAnimation)} */ (self);
     }
