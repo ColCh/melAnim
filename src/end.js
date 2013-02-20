@@ -1,9 +1,8 @@
 
     // Глобальные экспорты
-    animate["CSSAnimation"] = CSSAnimation;
-    animate["ClassicAnimation"] = ClassicAnimation;
-    animate["Animation"] = Animation;
-    window["melAnim"] = animate;
-
+    var melAnim = window["melAnim"] = animate;
+    melAnim["Animation"] = Animation;
+    melAnim["CSSAnimation"] = CSSAnimation;
+    melAnim["ClassicAnimation"] = ClassicAnimation;
 
 })(window);
