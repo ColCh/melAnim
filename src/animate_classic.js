@@ -53,6 +53,10 @@
      * Конструктор анимаций с ключевыми кадрами на JavaScript.
      * @constructor
      */
+    //TODO перезапись анимаций (animation override)
+    //TODO слепки параметров анимации после старта - parametres snapshotting
+    //TODO типы свойств для интерполяции (вместо самих свойств)
+    //TODO провесить временную функцию на ключевом кадре - кажется, оно багнулось
     function ClassicAnimation() {
         this.targets = [];
         this.startingValues = {};
