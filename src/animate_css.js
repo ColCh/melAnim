@@ -799,7 +799,7 @@
      * @param {Function} callback
      */
     //TODO сделать onstep для CSS анимации
-    CSSAnimation.prototype.step = function (callback) {
+    CSSAnimation.prototype.onStep = function (callback) {
         if (typeOf.func(callback)) {
             this.onstep = callback;
         }
@@ -821,3 +821,4 @@
     CSSAnimation.prototype["stop"] = CSSAnimation.prototype.stop;
     CSSAnimation.prototype["destruct"] = CSSAnimation.prototype.destruct;
     CSSAnimation.prototype["onStart"] = CSSAnimation.prototype.onStart;
+    CSSAnimation.prototype["onStep"] = CSSAnimation.prototype.onStep;

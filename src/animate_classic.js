@@ -658,7 +658,7 @@
      * Установка функции, которая будет выполняться на каждом шаге анимации
      * @param {Function} callback
      */
-    ClassicAnimation.prototype.step = function (callback) {
+    ClassicAnimation.prototype.onStep = function (callback) {
        if (typeOf.func(callback)) {
            this.onstep = callback;
        }
@@ -1004,5 +1004,5 @@
     ClassicAnimation.prototype["propAt"] = ClassicAnimation.prototype.propAt;
     ClassicAnimation.prototype["start"] = ClassicAnimation.prototype.start;
     ClassicAnimation.prototype["stop"] = ClassicAnimation.prototype.stop;
-    ClassicAnimation.prototype["step"] = ClassicAnimation.prototype.step;
+    ClassicAnimation.prototype["onStep"] = ClassicAnimation.prototype.onStep;
     ClassicAnimation.prototype["onStart"] = ClassicAnimation.prototype.onStart;
