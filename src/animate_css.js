@@ -218,6 +218,13 @@
      */
     CSSAnimation.prototype.oniteration = noop;
 
+    /**
+     * Обработчик начала проигрывания анимации
+     * @type {Function}
+     * @private
+     */
+    CSSAnimation.prototype.onstart = noop;
+
     /*
      * Индивидуальные свойства
      */
@@ -684,6 +691,17 @@
         }
     };
 
+    /**
+     * Установка функции, которая исполнится, когда анимация начнет проигрываться
+     * @param {Function} callback
+     */
+    CSSAnimation.prototype.onStart = function (callback) {
+        if (typeOf.func(callback)) {
+            delegatorCallbacks[ ANIMATION_START_EVENTTYPE ] [ this.name ] = bind(callback, this);
+            this.onstart = callback;
+        }
+    };
+
      /**
      * Установка значения свойства при указанном прогрессе
      * Для установки смягчения используется метод CSSAnimation.easing
@@ -783,3 +801,4 @@
     CSSAnimation.prototype["start"] = CSSAnimation.prototype.start;
     CSSAnimation.prototype["stop"] = CSSAnimation.prototype.stop;
     CSSAnimation.prototype["destruct"] = CSSAnimation.prototype.destruct;
+    CSSAnimation.prototype["onStart"] = CSSAnimation.prototype.onStart;
