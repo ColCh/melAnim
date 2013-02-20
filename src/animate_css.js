@@ -225,6 +225,13 @@
      */
     CSSAnimation.prototype.onstart = noop;
 
+    /**
+     * Функция, которая будет исполняться на каждом шаге анимации
+     * @type {Function}
+     * @private
+     */
+    CSSAnimation.prototype.onstep = noop;
+
     /*
      * Индивидуальные свойства
      */
@@ -786,6 +793,18 @@
             console.log('destruct: animation "' + this.name + '" totally destructed');
         }
     };
+
+    /**
+     * Установка функции, которая будет выполняться на каждом шаге анимации
+     * @param {Function} callback
+     */
+    //TODO сделать onstep для CSS анимации
+    CSSAnimation.prototype.step = function (callback) {
+        if (typeOf.func(callback)) {
+            this.onstep = callback;
+        }
+    };
+
 
     /* Экспорты */
     CSSAnimation.prototype["addElement"] = CSSAnimation.prototype.addElement;
