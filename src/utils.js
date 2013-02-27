@@ -168,6 +168,7 @@
      * Классический шаблон итератора
      * @param {Array} collection
      * @constructor
+     * @class
      */
     function Iterator(collection) {
         this.collection = collection;
@@ -1179,6 +1180,7 @@
      * @param {Function} callback
      * @param {Object=} context контекст исполнения функции
      * @constructor
+     * @class
      */
     function ReflowLooper(callback, context) {
 

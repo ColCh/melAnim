@@ -13,6 +13,7 @@
     /**
      * Конструктор ключевых кадров.
      * @constructor
+     * @class
      * @param {number} key
      * @param {Object=} properties
      * @param {Function=} easing
@@ -52,6 +53,7 @@
     /**
      * Конструктор анимаций с ключевыми кадрами на JavaScript.
      * @constructor
+     * @class
      */
     //TODO перезапись анимаций (animation override)
     //TODO слепки параметров анимации после старта - parametres snapshotting
@@ -234,6 +236,7 @@
      * Ключ - имя свойства, Значение - функция смягчения
      * Значения устанавливаются методом easing
      * @type {Object.<string, (Function|CubicBezier|Steps)>}
+     * @private
      */
     ClassicAnimation.prototype.specialEasing = null;
 

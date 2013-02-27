@@ -135,6 +135,7 @@
     /**
      * Конструктор анимаций с использованием CSS-анимаций
      * @constructor
+     * @class
      */
     function CSSAnimation () {
 

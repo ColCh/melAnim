@@ -55,7 +55,6 @@
      *         %PROPERTY_NAME% : %PROPERTY_VALUE%
      *     }
      * }
-     * @constructor
      *
      * @param {(Element|Array.<Element>)} elements Элемент(ы) для анимирования.
      * @param {object} keyframes Свойства для анимирования.
