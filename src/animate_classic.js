@@ -665,8 +665,7 @@
         /** @type {(number|string)} */
         var key;
 
-        key = typeOf.undefined(position) ? keyAliases["to"] : position;
-        key = normalizeKey(key);
+        key = typeOf.undefined(position) ? keyAliases["to"] : normalizeKey(position);
         // в долях
         key *= PERCENT_TO_FRACTION;
 
