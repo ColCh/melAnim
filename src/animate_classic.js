@@ -67,7 +67,6 @@
         this.keyframes = [];
         this.specialEasing = {};
         this.iterations = 1;
-        this.rulesList = {};
         this.animatedProperties = {};
         // начальный и конечный ключевые кадры
         // их свойства наследуют вычисленные
@@ -215,13 +214,6 @@
     ClassicAnimation.prototype.targets = null;
 
     /**
-     * Объект с CSS-правилами, в котором будут отрисовываться свойства.
-     * Ключ - ID элемента, значение - CSS правило.
-     * @type {Object.<string, CSSRule>}
-     */
-    ClassicAnimation.prototype.rulesList = null;
-
-    /**
      * Отсортированный по возрастанию свойства "key" массив ключевых кадров.
      * @private
      * @typedef Array.{{key: number, properties: Object.<string, number>, easing: Function}}
@@ -299,8 +291,6 @@
         var id;
         if (typeOf.element(elem)) {
             id = generateId();
-            this.rulesList[id] = addRule("." + id);
-            addClass(/** @type {HTMLElement} */(elem), id);
             elem.setAttribute(DATA_ATTR_NAME, id);
             this.cache[id] = {};
             this.startingValues[id] = {};
@@ -643,13 +633,8 @@
             this.fetch(endFractionalTime);
             this.render(true);
         }
-        // очистка css правил
-        each(this.rulesList, function (rule) {
-            rule.style.cssText = "";
-        });
-        if (ENABLE_DEBUG) {
-            console.log('stop: CSSRules are cleared.');
-        }
+        //TODO fillMode: none
+
         if (ENABLE_DEBUG) {
             console.log('stop: animation "' + this.animationName + '" stopped');
         }
@@ -840,30 +825,22 @@
 
     /**
      * Отрисует высчитанные значения свойств
-     * @param {boolean} direct НЕ (!) использовать ли правило в таблице стилей для отрисовки одинаковых для элементов значений
      * @see ClassicAnimation.fetch
      * @private
      */
-    ClassicAnimation.prototype.render = function (direct) {
+    ClassicAnimation.prototype.render = function () {
         each(this.targets, function (element) {
 
             var id, currentValues;
-            var elementStyle;
-            var rule, ruleStyle;
-            var destinationStyle;
+            var elementStyle = element.style;
 
             id = element.getAttribute(DATA_ATTR_NAME);
-            rule = this.rulesList[id];
             currentValues = this.currentValues[id];
 
-            elementStyle = element.style;
-            ruleStyle = rule.style;
-
-            destinationStyle = direct ? elementStyle : ruleStyle;
-
             each(currentValues, function (propertyValue, propertyName) {
-                css(destinationStyle, propertyName, propertyValue);
+                css(elementStyle, propertyName, propertyValue);
             }, this);
+
         }, this);
     };
 
@@ -902,7 +879,7 @@
         }
 
         this.fetch(this.fractionalTime);
-        this.render(false);
+        this.render();
     };
 
     /***
