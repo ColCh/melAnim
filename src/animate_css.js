@@ -461,7 +461,6 @@
         if (typeOf.element(elem)) {
             // CSS анимация не может анимировать не-элементы
             this.elements.push(elem);
-            this.applyStyle(elem);
         } else if (ENABLE_DEBUG) {
             console.log('addElement: passed variable is non-HTMLElement "' + elem + '"');
         }
@@ -485,7 +484,6 @@
         // численное значение должно быть небесконечным
         if (isFinite(numeric)) {
             this.delayTime = /** @type {string} */ (delay);
-            this.rewriteParameter(ANIMATION_DELAY, this.delayTime);
         } else if (ENABLE_DEBUG) {
             console.log('delay: passed value "' + delay + '" (numeric : "' + numeric + '") is non-finite');
         }
@@ -521,7 +519,6 @@
         // численное значение должно быть небесконечным
         if (isFinite(numeric)) {
             this.animationTime = /** @type {string} */ (duration);
-            this.rewriteParameter(ANIMATION_DURATION, this.animationTime);
         } else if (ENABLE_DEBUG) {
             console.log('duration: non-integer value "' + duration + '" (numeric val: "' + numeric + '")');
         }
@@ -542,7 +539,6 @@
             direction === DIRECTION_ALTERNATE_REVERSE) {
 
             this.animationDirection = direction;
-            this.rewriteParameter(ANIMATION_DIRECTION, this.animationDirection);
 
         } else if (ENABLE_DEBUG) {
             console.log('direction: invalid value "' + direction + '"');
@@ -615,7 +611,6 @@
 
         if (typeOf.undefined(position)) {
             this.timingFunction = CSSTimingFunction;
-            this.rewriteParameter(ANIMATION_TIMING_FUNCTION, CSSTimingFunction);
         } else {
             key = normalizeKey(/** @type {(number|string)} */(position));
             if (typeOf.number(key)) {
@@ -645,7 +640,6 @@
             fillMode === FILLMODE_NONE) {
 
             this.fillingMode = fillMode;
-            this.rewriteParameter(ANIMATION_FILL_MODE, this.fillingMode);
 
         } else if (ENABLE_DEBUG) {
             console.log('fillMode: invalid value "' + fillMode + '"');
@@ -680,7 +674,6 @@
         }
 
         this.iterations = iterationCount;
-        this.rewriteParameter(ANIMATION_ITERATION_COUNT, this.iterations);
     };
 
     /**
@@ -742,7 +735,16 @@
      */
     CSSAnimation.prototype.start = function () {
 
-        this.rewriteParameter(ANIMATION_PLAY_STATE, PLAYSTATE_RUNNING);
+        // для того, чтобы не перезаписывались уже установленные анимации
+        // применяем анимацию к каждому элементу, соблюдая правила
+        each(this.elements, function (element) {
+            this.applyStyle(element);
+            // безопаснее запускать анимацию только после того, как она применена
+            var playStates = css(element, "animation-play-state").split(ANIMATIONS_SEPARATOR);
+            // текущая анимация должна быть последней
+            playStates[ playStates.length - 1 ] = PLAYSTATE_RUNNING;
+            css(element, "animation-play-state", playStates.join(ANIMATIONS_JOINER));
+        }, this);
 
         if (ENABLE_DEBUG) {
             console.log('start: animation "' + this.name + '" started');
