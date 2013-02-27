@@ -631,7 +631,7 @@
                 console.log('stop: animation fills forwards and has direction "' + this.animationDirection + '" and iteration count "' + this.iterations + '" so fetching with keyframe "' + endFractionalTime + '"');
             }
             this.fetch(endFractionalTime);
-            this.render(true);
+            this.render();
         }
         //TODO fillMode: none
 
