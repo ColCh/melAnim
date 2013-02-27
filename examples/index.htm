@@ -4,14 +4,16 @@
     <meta charset="UTF-8"/>
     <title> melAnim.js test </title>
     <style>
+
         @-webkit-keyframes tst {
-
-            30% {
-                -webkit-animation-timing-function: ease-out;
+            50% {
+                height: 100px;
             }
+        }
 
-            100% {
-                width: 550px;
+        @keyframes test {
+            50% {
+                height: 100px;
             }
         }
 
@@ -20,13 +22,20 @@
         }
 
         .css {
-            -webkit-animation-name: tst-;
+
+            -webkit-animation-name: tst_;
             -webkit-animation-duration: 3s;
-            -webkit-animation-iteration-count: 1.5;
-            -webkit-animation-timing-function: ease-in; /*cubic-bezier(1.000, 0.005, 1.000, 0)*/;
+            -webkit-animation-iteration-count: infinite;
+            -webkit-animation-timing-function: ease-in;
             -webkit-animation-delay: 0s;
             -webkit-animation-fill-mode: both;
             -webkit-animation-direction: alternate;
+
+            animation-name: test_;
+            animation-duration: 3s;
+            animation-iteration-count: infinite;
+            animation-timing-function: ease-in;
+            animation-play-state: running;
         }
 
         .anim {
@@ -49,16 +58,16 @@
 
 <div id="fps" style="position: absolute; top: 0; left: 0; font-size: 22px; color: red;">FPS HERE</div>
 
-<div style="top: 10%;" class="anim css">Anim me ONE!</div>
+<div style="top: 10%;" class="anim css" id="css">Anim me ONE!</div>
 <div style="top: 20%;" class="anim js" id="js">Anim me TWO!</div>
 
 <script>
     var PROFILE_ENABLED = 0;
 
     var PROFILE_FPS = 0 && PROFILE_ENABLED;
-    var PROFILE_START = 0 && PROFILE_ENABLED;
-    var PROFILE_CONSTRUCTOR = 0 && PROFILE_ENABLED;
-    var PROFILE_SETUP = 0 && PROFILE_ENABLED;
+    var PROFILE_START = 1 && PROFILE_ENABLED;
+    var PROFILE_CONSTRUCTOR = 1 && PROFILE_ENABLED;
+    var PROFILE_SETUP = 1 && PROFILE_ENABLED;
     var PROFILE_PROCESS = 1 && PROFILE_ENABLED;
 
     if (PROFILE_START) console.profile("startup");
@@ -69,13 +78,14 @@
     if (PROFILE_START) console.profileEnd("startup");
 
     if (PROFILE_CONSTRUCTOR) console.profile("constructor");
-    var anim = new melAnim.CSSAnimation();
+    var anim = new melAnim.ClassicAnimation();
     if (PROFILE_CONSTRUCTOR) console.profileEnd("constructor");
 
     if (PROFILE_SETUP) console.profile("setup");
-    anim.addElement(document.getElementById("js"));
-    anim.propAt("width", "100px", "from");
-    anim.propAt("width", "300px", "to");
+
+    anim.addElement(document.getElementById("css"));
+
+    anim.propAt("width", "300px", "50%");
     //anim.propAt("width", "300px", "90%");
     //anim.propAt("width", "550px", "100%");
 
@@ -85,113 +95,27 @@
     anim.easing("ease");
     //anim.easing("ease-out", "30%");
 
-    anim.direction("alternate");
+    //anim.direction("alternate");
 
     anim.duration("2.5s");
 
-    anim.iterationCount("2");
+    anim.iterationCount("infinite");
 
-    anim.delay("500ms");
+    //anim.delay("500ms");
 
     anim.fillMode("none");
 
     anim.onComplete(function () {
         document.body.style.backgroundColor = 'green';
+        anim.destruct();
         if (PROFILE_PROCESS) console.profileEnd("animation process");
     });
 
     if (PROFILE_SETUP) console.profileEnd("setup");
 
     if (PROFILE_PROCESS) console.profile("animation process");
+
     anim.start();
-    /*
-     var myAnimation = Animation(document.querySelectorAll('.js'), {
-     "from": {
-     "width": "50px"
-     },
-     "to": {
-     "width": "300px"
-     }
-     /*width:{
-     from:"50px",
-     "50%":"200px",
-     to:"300px"
-     }
-     /*
-     "top" : {
-     from: "300px",
-     to: "-10px"
-     },
-     "left": {
-     to: "400px",
-     from: "200px"
-     },
-     "color": {
-     from: "#FF0",
-     to: "#BADA55"
-     },
-     "width": {
-     "50%": "50px",
-     "100%": "200px"
-     },
-     "height": {
-     from: "5px",
-     to: "100px"
-     },
-     "font-size": {
-     from: "10px",
-     to: "40px"
-     },
-     "background-color": {
-     from: "#BADA55",
-     to: "#000"
-     },
-     "transform": {
-     from: "skewX(10deg)",
-     to: "skewX(40deg)"
-     /*skewX: {
-     from: "10deg",
-     to: "20deg"
-     }/*,
-     rotate: {
-     from: "10deg",
-     to: "90deg"
-     },
-     translateX: {
-     from: "-5px",
-     to: "5px"
-     },
-     translateY: {
-     from: "-5px",
-     to: "5px"
-     }
-     },
-     "opacity": {
-     from: "1.0",
-     to: "0.5"
-     }*//*
-     },
-     {
-     duration:"2s",
-
-     easing: function (x) {return x},//"ease-in", //"cubic-bezier(1.000, 0.005, 1.000, 0)",
-
-     complete:function animateComplete() {
-     document.body.style.backgroundColor = "green";
-     },
-
-     fillMode:"both",
-
-     delay:"1s",
-
-     iterationCount:"2",
-
-     direction: "alternate",
-
-     classicMode:true
-     });
-
-     myAnimation.start();*/
 </script>
 </body>
 </html>
