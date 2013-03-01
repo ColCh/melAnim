@@ -51,7 +51,7 @@ module.exports = function (grunt) {
                     'src/end.js'
                 ]
             }
-        }/*,
+        },
 
         closureCompiler: {
             options: {
@@ -73,11 +73,11 @@ module.exports = function (grunt) {
                 src: 'dist/mel-anim.compiled.js',
                 dest: 'dist/mel-anim.adv.js'
             }
-        }*/
+        }
 
     });
 
-    //grunt.loadNpmTasks('grunt-closure-tools');
+    grunt.loadNpmTasks('grunt-closure-tools');
     grunt.loadNpmTasks('grunt-contrib-concat');
 
     //grunt.registerTask('adv-min', ['closureCompiler:advanced']);
