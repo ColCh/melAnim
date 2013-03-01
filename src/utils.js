@@ -30,7 +30,7 @@
      * @return {boolean}
      */
     typeOf.element = function (x) {
-        return toBool("nodeType" in x && x.nodeType === Node.ELEMENT_NODE);
+        return toBool(x && "nodeType" in x && x.nodeType === Node.ELEMENT_NODE);
     };
 
     /**
