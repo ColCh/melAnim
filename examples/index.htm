@@ -72,13 +72,13 @@
 
     if (PROFILE_START) console.profile("startup");
 </script>
-<script type="text/javascript" src="../dist/mel-anim.compiled.js"></script>
+<script type="text/javascript" src="../dist/mel-anim.adv.js"></script>
 <script type="text/javascript">
 
     if (PROFILE_START) console.profileEnd("startup");
 
     if (PROFILE_CONSTRUCTOR) console.profile("constructor");
-    var anim = new melAnim.ClassicAnimation();
+    var anim = new melAnim.Animation();
     if (PROFILE_CONSTRUCTOR) console.profileEnd("constructor");
 
     if (PROFILE_SETUP) console.profile("setup");
@@ -107,7 +107,7 @@
 
     anim.onComplete(function () {
         document.body.style.backgroundColor = 'green';
-        anim.destruct();
+        //anim.destruct();
         if (PROFILE_PROCESS) console.profileEnd("animation process");
     });
 
