@@ -1,7 +1,7 @@
     /**
      * Проверит, является ли объект x экземпляром constructor.
      * @param {*} x
-     * @param {*} constructor
+     * @param {Object} constructor
      * @return {boolean}
      */
     function instanceOf (x, constructor) {
@@ -30,7 +30,7 @@
      * @return {boolean}
      */
     typeOf.element = function (x) {
-        return "nodeType" in x && x.nodeType === Node.ELEMENT_NODE;
+        return toBool("nodeType" in x && x.nodeType === Node.ELEMENT_NODE);
     };
 
     /**
@@ -40,7 +40,7 @@
      * @return {boolean}
      */
     typeOf.func = function (x) {
-        return instanceOf(x, Function) || typeOf(x) === "function";
+        return toBool(instanceOf(x, Function) || typeOf(x) === "function");
     };
 
     /**
@@ -49,7 +49,7 @@
      * @return {boolean}
      */
     typeOf.array = function (x) {
-        return instanceOf(x, Array) || typeOf(x) === "array";
+        return toBool(instanceOf(x, Array) || typeOf(x) === "array");
     };
 
     /**
@@ -58,34 +58,34 @@
      * @return {boolean}
      */
     typeOf.undefined = function (x) {
-        return x === undefined || typeOf(x) === "undefined";
+        return toBool(x === undefined || typeOf(x) === "undefined");
     };
 
     /**
      * Проверит, является ли аргумент числом
      * @param {*} x
-     * @return {Boolean}
+     * @return {boolean}
      */
     typeOf.number = function (x) {
-        return instanceOf(x, Number) || typeOf(x) === "number";
+        return toBool(instanceOf(x, Number) || typeOf(x) === "number");
     };
 
     /**
      * Проверит, является ли аргумент строковым значением
      * @param x
-     * @return {Boolean}
+     * @return {boolean}
      */
     typeOf.string = function (x) {
-        return instanceOf(x, String) || typeOf(x) === "string";
+        return toBool(instanceOf(x, String) || typeOf(x) === "string");
     };
 
     /**
      * Проверит, является ли аргумент объектом
      * @param {*} x
-     * @return {Boolean}
+     * @return {boolean}
      */
     typeOf.object = function (x) {
-        return instanceOf(x, Object) || typeOf(x) === "object";
+        return toBool(instanceOf(x, Object) || typeOf(x) === "object");
     };
 
     /**
@@ -248,7 +248,7 @@
 
     /**
      * Обычный линейный поиск значения в массиве
-     * @param {Array} arr массив
+     * @param {(Array|CSSRuleList)} arr массив
      * @param {(Function|*)} val Значение (или функция сравнения; должна вернуть 0 при равенстве)
      * @return {number}
      */
@@ -441,8 +441,17 @@
      * @return {string}
      * @inheritDoc
      */
-    function toString(x) {
+    function toString (x) {
         return x + "";
+    }
+
+    /**
+     * Преобразует аргумент в булевому типу
+     * @param {*} x
+     * @return {boolean}
+     */
+    function toBool (x) {
+        return !!x;
     }
 
     /**
@@ -931,7 +940,7 @@
      */
     function addRule(selector, cssText) {
 
-        /** @type {Array} */
+        /** @type {CSSRuleList} */
         var rules = stylesheet.cssRules || stylesheet.rules;
         var index = rules.length;
 

@@ -125,10 +125,9 @@
             if (animationName in handlersList) {
                 callback = handlersList[animationName];
                 callback();
-            } else if (ENABLE_DEBUG) {
-                //console.log('animationHandlerDelegator: unregistered animation name "' + animationName + '" for event name "' + eventName + '" (event type "' + eventType + '")');
+            } // else {
                 // незарегистрированная анимация. ничего не можем сделать.
-            }
+            // }
         }
     };
 
@@ -139,14 +138,14 @@
      */
     function CSSAnimation () {
 
-        this.name = generateId();
+        this.animationId = generateId();
         this.elements = [];
-        this.keyframesRule = /** @type {CSSKeyframesRule} */ (addRule("@" + KEYFRAME_PREFIX + " " + this.name));
+        this.keyframesRule = /** @type {CSSKeyframesRule} */ (addRule("@" + KEYFRAME_PREFIX + " " + this.animationId));
 
         if (ENABLE_DEBUG) {
-            if (this.name !== this.keyframesRule.name) {
+            if (this.animationId !== this.keyframesRule.name) {
                 // имена должны совпадать
-                console.log('CSSAnimation constructor: anim name "' + this.name + '" and keyframes name "' + this.keyframesRule.name + '" are different');
+                console.log('CSSAnimation constructor: anim name "' + this.animationId + '" and keyframes name "' + this.keyframesRule.name + '" are different');
             }
         }
 
@@ -241,7 +240,7 @@
      * Имя анимации; никогда не должно быть "none".
      * @type {string}
      */
-    CSSAnimation.prototype.name = "";
+    CSSAnimation.prototype.animationId = "";
 
     /**
      * Коллекция анимируемых элементов
@@ -310,10 +309,10 @@
         // для начала проверим, применена ли уже анимация
         names = css(element, ANIMATION_NAME);
 
-        if (names.indexOf(this.name) !== -1) {
+        if (names.indexOf(this.animationId) !== -1) {
             // такое имя уже присутствует в списке применных
             if (ENABLE_DEBUG) {
-                console.log('applyStyle: animation style for "' + this.name + '" already applied : "' + names + '"');
+                console.log('applyStyle: animation style for "' + this.animationId + '" already applied : "' + names + '"');
             }
             return;
         }
@@ -333,7 +332,7 @@
             if (ENABLE_DEBUG) {
                 console.log("applyStyle: element doesn't has any animations applied");
             }
-            names = [ this.name ];
+            names = [ this.animationId ];
             playStates = [ DEFAULT_PLAYINGSTATE ];
             durations = [ this.animationTime ];
             timingFunctions = [ this.timingFunction ];
@@ -345,7 +344,7 @@
             if (ENABLE_DEBUG) {
                 console.log('applyStyle: element has "' + names.length + '" applied animations.');
             }
-            names.push(this.name);
+            names.push(this.animationId);
             // применяем анимацию приостановленной
             playStates.push(DEFAULT_PLAYINGSTATE);
             durations.push(this.animationTime);
@@ -386,7 +385,7 @@
         var fillModes = css(element, "animation-fill-mode").split(ANIMATIONS_SEPARATOR);
 
         // индекс этой (this) анимации в списке применённых к элементу
-        var index = LinearSearch(names, this.name);
+        var index = LinearSearch(names, this.animationId);
 
         // просто удаляем из списков параметры с индексом имени этой анимации
         removeAtIndex(names, index);
@@ -425,7 +424,7 @@
 
         if (!typeOf.number(animationIndex)) {
             names = css(element, ANIMATION_NAME).split(ANIMATIONS_SEPARATOR);
-            animationIndex = LinearSearch(names, this.name);
+            animationIndex = LinearSearch(names, this.animationId);
         }
 
         if (animationIndex >= 0) {
@@ -554,8 +553,10 @@
      * ТЕКУЩИЙ_КЛЮЧЕВОЙ_КАДР <= ПРОГРЕСС_ПО_ПРОХОДУ < СЛЕДУЮЩИЙ_КЛЮЧЕВОЙ_КАДР
      *
      * (!) Абсциссы первой и второй точек для кубической кривой Безье должны принадлежать промежутку [0, 1].
+     *
      * @param {(Array|string)} timingFunction временная функция CSS, алиас смягчения или массив точек (2 - Steps, 4 - CubicBezier)
      * @param {(number|string)=} position прогресс по проходу в процентах (по умол. не зависит от прогресса)
+     *
      * @see cubicBezierAliases
      * @see cubicBezierApproximations
      */
@@ -563,6 +564,8 @@
         var points, trimmed, camelCased;
         var stepsAmount, countFromStart;
         var CSSTimingFunction, key, keyframe;
+
+        CSSTimingFunction = '';
 
         if (typeOf.array(timingFunction)) {
             // переданы аргументы к временным функциям CSS
@@ -683,7 +686,7 @@
      */
     CSSAnimation.prototype.onComplete = function (callback) {
         if (typeOf.func(callback)) {
-            delegatorCallbacks[ ANIMATION_END_EVENTTYPE ] [ this.name ] = bind(callback, this);
+            delegatorCallbacks[ ANIMATION_END_EVENTTYPE ] [ this.animationId ] = bind(callback, this);
             this.oncomplete = callback;
         }
     };
@@ -694,7 +697,7 @@
      */
     CSSAnimation.prototype.onIteration = function (callback) {
         if (typeOf.func(callback)) {
-            delegatorCallbacks[ ANIMATION_ITERATION_EVENTTYPE ] [ this.name ] = bind(callback, this);
+            delegatorCallbacks[ ANIMATION_ITERATION_EVENTTYPE ] [ this.animationId ] = bind(callback, this);
             this.oniteration = callback;
         }
     };
@@ -705,7 +708,7 @@
      */
     CSSAnimation.prototype.onStart = function (callback) {
         if (typeOf.func(callback)) {
-            delegatorCallbacks[ ANIMATION_START_EVENTTYPE ] [ this.name ] = bind(callback, this);
+            delegatorCallbacks[ ANIMATION_START_EVENTTYPE ] [ this.animationId ] = bind(callback, this);
             this.onstart = callback;
         }
     };
@@ -715,7 +718,7 @@
      * Для установки смягчения используется метод CSSAnimation.easing
      * @param {string} name имя свойства
      * @param {string} value значение свойства
-     * @param {string=} position строка прогресса в процентах (по умол. 100%)
+     * @param {(number|string)=} position строка прогресса в процентах (по умол. 100%)
      */
      //TODO относительное изменение свойств
     CSSAnimation.prototype.propAt = function (name, value, position) {
@@ -748,7 +751,7 @@
         }, this);
 
         if (ENABLE_DEBUG) {
-            console.log('start: animation "' + this.name + '" started');
+            console.log('start: animation "' + this.animationId + '" started');
         }
     };
 
@@ -768,7 +771,7 @@
             // т.к. если снимать сразу, то FF и CH ведут себя по разному
             var names = css(element, "animation-name").split(ANIMATIONS_SEPARATOR);
             // индекс этой (this) анимации в списке применённых
-            var index = LinearSearch(names, this.name);
+            var index = LinearSearch(names, this.animationId);
             // приостанавливаем её
             var playStates = css(element, "animation-play-state").split(ANIMATIONS_SEPARATOR);
             playStates[ index ] = PLAYSTATE_PAUSED;
@@ -781,7 +784,7 @@
         removeRule(this.keyframesRule);
 
         if (ENABLE_DEBUG) {
-            console.log('destruct: animation "' + this.name + '" totally destructed');
+            console.log('destruct: animation "' + this.animationId + '" totally destructed');
         }
     };
 

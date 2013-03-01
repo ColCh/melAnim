@@ -61,7 +61,7 @@
      * @param {(string|Object)=} duration Длительность анимации или объект с продвинутыми настройками. По-умолчанию : "400ms".
      * @param {(string|Array|Function)=} easing Как будут прогрессировать значения свойств. По-умолчанию : "ease".
      * @param {function=} oncomplete Функция, которая исполнится после завершения анимации. По-умолчанию : "noop", т.е. пустая функция.
-     * @return {(CSSAnimation|ClassicAnimation)}
+     * @return {(ClassicAnimation|CSSAnimation  )}
      */
     function Animation (elements, keyframes, duration, easing, oncomplete) {
 
@@ -192,7 +192,7 @@
         each(properties, function (propertyName, propertyValue) {
             keyframes[ keyAliases["to"] ] [ propertyName ] = propertyValue;
         });
-        var self = new Animation(elements, keyframes, duration, easing, function () {
+        var self = Animation(elements, keyframes, duration, easing, function () {
             //TODO сделать то же, только без замыкания
             typeOf.func(complete) && complete();
             self.destruct();

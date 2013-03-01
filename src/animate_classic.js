@@ -65,7 +65,7 @@
         this.startingValues = {};
         this.currentValues = {};
         this.cache = {};
-        this.animationName = generateId();
+        this.animationId = generateId();
         this.keyframes = [];
         this.specialEasing = {};
         this.iterations = 1;
@@ -205,7 +205,7 @@
      * @type {string}
      * @private
      */
-    ClassicAnimation.prototype.animationName = "";
+    ClassicAnimation.prototype.animationId = "";
 
     /**
      * Коллекция элементов, учавствующих в анимации.
@@ -364,9 +364,11 @@
      *
      * При установке смягчения для свойства параметр прогресса игнорируется.
      * (!) Абсциссы первой и второй точек для кубической кривой должны принадлежать промежутку [0, 1].
-     * @param {(Function|string)} timingFunction временная функция CSS, JS функция или алиас смягчения
+     *     *
+     * @param {(Function|Array|string)} timingFunction временная функция CSS, JS функция или алиас смягчения
      * @param {(number|string)=} position прогресс по проходу в процентах (по умол. не зваисит от прогресса)
      * @param {string=} property для какого свойства устанавливается (по умол. для всех)
+     *
      * @see cubicBezierAliases
      * @see cubicBezierApproximations
      */
@@ -582,7 +584,7 @@
 
         if (this.delayTime > 0) {
             if (ENABLE_DEBUG) {
-                console.log('start: ' + this.animationName + ' has positite delay "' + this.delayTime + '" ms');
+                console.log('start: ' + this.animationId + ' has positite delay "' + this.delayTime + '" ms');
             }
             setTimeout(bind(function () {
                 var self = /** @type {ClassicAnimation} */(this);
@@ -591,7 +593,7 @@
             }, this.timer), this.delayTime);
         } else {
             if (ENABLE_DEBUG) {
-                console.log('start: ' + this.animationName + ' has non-positite delay "' + this.delayTime + '" so starting right now.');
+                console.log('start: ' + this.animationId + ' has non-positite delay "' + this.delayTime + '" so starting right now.');
             }
             this.timer.start();
         }
@@ -613,7 +615,7 @@
         this.tick(this.started);
 
         if (ENABLE_DEBUG) {
-            console.log('start: animation "' + this.animationName + '" started');
+            console.log('start: animation "' + this.animationId + '" started');
         }
     };
 
@@ -639,7 +641,7 @@
         //TODO fillMode: none
 
         if (ENABLE_DEBUG) {
-            console.log('stop: animation "' + this.animationName + '" stopped');
+            console.log('stop: animation "' + this.animationId + '" stopped');
         }
 
     };
@@ -668,7 +670,7 @@
         /** @type {(number|string)} */
         var key;
 
-        key = typeOf.undefined(position) ? keyAliases["to"] : normalizeKey(position);
+        key = typeOf.undefined(position) ? keyAliases["to"] : normalizeKey(/** @type {(number|string)} */(position));
         // в долях
         key *= PERCENT_TO_FRACTION;
 
@@ -867,7 +869,7 @@
         if (currentIteration !== previousIteration) {
             // Условие завершения итерации
             if (ENABLE_DEBUG) {
-                console.log('tick: "' + this.animationName + '" - iteration "' + currentIteration + '" of total "' + iterationCount + '"');
+                console.log('tick: "' + this.animationId + '" - iteration "' + currentIteration + '" of total "' + iterationCount + '"');
             }
             this.oniteration();
         } else if (animationProgress >= iterationCount) {
