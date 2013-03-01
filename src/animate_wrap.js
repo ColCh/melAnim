@@ -148,6 +148,10 @@
 
         classicMode = classicMode || typeOf.func(easing) || !CSSANIMATIONS_SUPPORTED;
 
+        if (ENABLE_DEBUG) {
+            console.log('Animation: created instance is "' + (classicMode ? "ClassicAnimation":"CSSAnimation") + '"');
+        }
+
         construct = classicMode ? ClassicAnimation : CSSAnimation;
 
         self = new construct();
