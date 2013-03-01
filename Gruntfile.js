@@ -66,7 +66,7 @@ module.exports = function (grunt) {
                     use_types_for_optimization: null,
                     summary_detail_level: 3,
                     output_wrapper: "'(function(){%output%})();'",
-                    define: ["'ENABLE_DEBUG=false'"]
+                    define: ["'ENABLE_DEBUG=true'"]
                 }
             },
             advanced: {
@@ -80,7 +80,7 @@ module.exports = function (grunt) {
     grunt.loadNpmTasks('grunt-closure-tools');
     grunt.loadNpmTasks('grunt-contrib-concat');
 
-    //grunt.registerTask('adv-min', ['closureCompiler:advanced']);
+    grunt.registerTask('adv-min', ['closureCompiler:advanced']);
     grunt.registerTask('default', ['concat']);
 
 
