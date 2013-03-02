@@ -1,10 +1,15 @@
-@import url(https://fonts.googleapis.com/css?family=Lato:300italic,700italic,300,700);
+@import url(http://fonts.googleapis.com/css?family=Marmelad&subset=latin,cyrillic);
+@import url(http://fonts.googleapis.com/css?family=Scada:400,700&subset=latin,cyrillic);
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Marmelad', "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
 
 body {
   padding:50px;
-  font:14px/1.5 Lato, "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-family: 'Scada', "Helvetica Neue", Helvetica, Arial, sans-serif;
   color:#777;
-  font-weight:300;
+  font-weight: 400;
 }
 
 h1, h2, h3, h4, h5, h6 {
