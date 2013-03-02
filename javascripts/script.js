@@ -17,13 +17,14 @@ jQuery(function () {
     $('body').on("click", ".page-loader", loaderOptions, function (e) {
         var data = e.data;
         var $target = $(e.target);
+        var $listItem = $target.parents("li");
 
         previousItem && $(previousItem).removeClass(activeClass);
 
-        !$target.attr('id') && $target.attr('id', 'loader-' + 1e4 * Math.random() | 0);
-        previousItem = $target.attr('id');
+        !$listItem.attr('id') && $listItem.attr('id', 'loader-' + 1e4 * Math.random() | 0);
+        previousItem = $listItem.attr('id');
 
-        $target.addClass(activeClass);
+        previousItem.addClass(activeClass);
 
         var src = data.path + $target.attr(data.pageAttr) + data.postFix;
         $('body').trigger("requestpageload", [ e.data.container, src ]);
