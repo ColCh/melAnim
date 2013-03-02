@@ -36,7 +36,7 @@ $(function () {
     // обработка поступающих запросов загрузки страницы
     $('body').on("requestpageload", function (e, container, src) {
         $(container).load(src, function () {
-            prettyPrint();
+            window.PR.prettyPrint();
         });
     });
 });
