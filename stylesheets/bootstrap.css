@@ -216,16 +216,16 @@ body {
   font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
   font-size: 14px;
   line-height: 20px;
-  color: #333333;
+  color: #444444;
   background-color: #f7f9fe;
 }
 a {
-  color: #798589;
+  color: #56AAE2;
   text-decoration: none;
 }
 a:hover,
 a:focus {
-  color: #555e61;
+  color: #0F9BDB;
   text-decoration: underline;
 }
 .img-rounded {
@@ -3361,7 +3361,7 @@ input[type="submit"].btn.btn-mini {
 .nav > li > a:hover,
 .nav > li > a:focus {
   text-decoration: none;
-  background-color: #798589;
+  background-color: #eef6f7;
 }
 .nav > li > a > img {
   max-width: none;
@@ -3375,7 +3375,7 @@ input[type="submit"].btn.btn-mini {
   font-size: 11px;
   font-weight: bold;
   line-height: 20px;
-  color: #e6e6e6;
+  color: #3E3F44;
   text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
   text-transform: uppercase;
 }
@@ -3399,9 +3399,9 @@ input[type="submit"].btn.btn-mini {
 .nav-list > .active > a,
 .nav-list > .active > a:hover,
 .nav-list > .active > a:focus {
-  color: #f7f9fe;
-  text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.2);
-  background-color: #798589;
+  color: #2B3034;
+  text-shadow: 0 -1px 0 #ACD3E6;
+  background-color: #d5ddde;
 }
 .nav-list [class^="icon-"],
 .nav-list [class*=" icon-"] {
