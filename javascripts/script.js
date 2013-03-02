@@ -24,7 +24,7 @@ jQuery(function () {
         !$listItem.attr('id') && $listItem.attr('id', 'loader-' + 1e4 * Math.random() | 0);
         previousItem = $listItem.attr('id');
 
-        previousItem.addClass(activeClass);
+        $listItem.addClass(activeClass);
 
         var src = data.path + $target.attr(data.pageAttr) + data.postFix;
         $('body').trigger("requestpageload", [ e.data.container, src ]);
