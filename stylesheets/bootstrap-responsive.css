@@ -790,6 +790,9 @@
   }
 }
 @media (max-width: 767px) {
+  .header {
+      text-align: center;
+  }
   body {
     padding-left: 20px;
     padding-right: 20px;
