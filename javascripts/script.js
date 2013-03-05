@@ -29,8 +29,24 @@ jQuery(function () {
         var src = data.path + $target.attr(data.pageAttr) + data.postFix;
         $('body').trigger("requestpageload", [ e.data.container, src + ' ' + e.data.container ]);
 
+        history.pushState( null, null, this.href );
+
         e.preventDefault();
     });
+
+    $( window ).bind( "popstate", function( e ) {
+        var returnLocation = history.location || document.location;
+
+        var target = $(previousItem);
+
+        var event = jQuery.Event("click", {
+            target: target
+        });
+
+        $('body').triggerHandler("click", event);
+
+    });
+
 });
 
 $(function () {
