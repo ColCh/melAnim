@@ -222,6 +222,7 @@ body {
   font-size: 14px;
   line-height: 20px;
   color: #444444;
+  background-attachment: fixed;
   background-color: #f7f9fe;
   background-image: -webkit-radial-gradient(#f7f9fe, #E7E9EC);
   background-image: -moz-radial-gradient(#f7f9fe, #E7E9EC);
