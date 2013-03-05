@@ -5266,3 +5266,7 @@ a.badge:focus {
 .affix {
   position: fixed;
 }
+.header a {
+    text-decoration: none;
+    color: inherit;
+}
