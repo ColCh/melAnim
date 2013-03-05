@@ -5267,10 +5267,10 @@ a.badge:focus {
   position: fixed;
 }
 .header {
-    -webkit-transform: skewX(1deg) translateX(1px);
-    -moz-transform: skewX(1deg) translateX(1px);
-    -o-transform: skewX(1deg) translateX(1px);
-    transform: skewX(1deg) translateX(1px);
+    -webkit-transform: skewX(-1deg) translateX(1px);
+    -moz-transform: skewX(-1deg) translateX(1px);
+    -o-transform: skewX(-1deg) translateX(1px);
+    transform: skewX(-1deg) translateX(1px);
     text-shadow: 0px 0px 1px #444444;
 }
 .header a {
