@@ -27,7 +27,7 @@ jQuery(function () {
         $listItem.addClass(activeClass);
 
         var src = data.path + $target.attr(data.pageAttr) + data.postFix;
-        $('body').trigger("requestpageload", [ e.data.container, src ]);
+        $('body').trigger("requestpageload", [ e.data.container, src + ' ' + e.data.container ]);
 
         e.preventDefault();
     });
