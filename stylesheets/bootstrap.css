@@ -69,6 +69,7 @@ audio:not([controls]) {
   display: none;
 }
 html {
+  height: 100%;
   font-size: 100%;
   -webkit-text-size-adjust: 100%;
   -ms-text-size-adjust: 100%;
@@ -222,6 +223,10 @@ body {
   line-height: 20px;
   color: #444444;
   background-color: #f7f9fe;
+  background-image: -webkit-radial-gradient(#f7f9fe, #E7E9EC);
+  background-image: -moz-radial-gradient(#f7f9fe, #E7E9EC);
+  background-image: -o-radial-gradient(#f7f9fe, #E7E9EC);
+  background-image: radial-gradient(#f7f9fe, #E7E9EC);
 }
 a {
   color: #038FC3;
