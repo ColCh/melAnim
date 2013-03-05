@@ -1,6 +1,6 @@
 [submodule "javascripts/historyApi"]
 	path = javascripts/historyApi
-	url = git@github.com:devote/HTML5-History-API.git
+	url = git://github.com/devote/HTML5-History-API.git
 [submodule "javascripts/melAnim"]
 	path = javascripts/melAnim
-	url = git@github.com:ColCh/melAnim.git
+	url = git://github.com/ColCh/melAnim.git
