@@ -39,6 +39,7 @@ jQuery(function () {
         e.preventDefault();
     });
 
+    // обработка нажатий на кнопки назад\врепёд.
     $( window ).bind( "popstate", function( e ) {
         var returnLocation = history.location || document.location;
 
@@ -48,7 +49,7 @@ jQuery(function () {
             target: target
         });
 
-        $('body').triggerHandler("click", event);
+        $('body').trigger("click", event);
 
     });
 
