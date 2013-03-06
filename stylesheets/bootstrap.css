@@ -224,10 +224,10 @@ body {
   color: #444444;
   background-attachment: fixed;
   background-color: #f7f9fe;
-  background-image: -webkit-radial-gradient(#f7f9fe, #E7E9EC);
-  background-image: -moz-radial-gradient(#f7f9fe, #E7E9EC);
-  background-image: -o-radial-gradient(#f7f9fe, #E7E9EC);
-  background-image: radial-gradient(#f7f9fe, #E7E9EC);
+  background-image: -webkit-radial-gradient(#f7f9fe 60%, #CED0D2);
+  background-image: -moz-radial-gradient(#f7f9fe 60%, #CED0D2);
+  background-image: -o-radial-gradient(#f7f9fe 60%, #CED0D2);
+  background-image: radial-gradient(#f7f9fe 60%, #CED0D2);
 }
 a {
   color: #038FC3;
