@@ -18,18 +18,23 @@ jQuery(function () {
         var data = e.data;
         var $target = $(e.target);
         var $listItem = $target.parents("li");
+        var currentItem;
 
-        previousItem && $(previousItem).removeClass(activeClass);
+        currentItem = $listItem.attr('id') || $listItem.attr('id', 'loader-' + (1e4 * Math.random() | 0)).attr('id');
 
-        !$listItem.attr('id') && $listItem.attr('id', 'loader-' + 1e4 * Math.random() | 0);
-        previousItem = $listItem.attr('id');
+        if (previousItem !== currentItem) {
 
-        $listItem.addClass(activeClass);
+            previousItem && $(previousItem).removeClass(activeClass);
+            previousItem =currentItem;
 
-        var src = data.path + $target.attr(data.pageAttr) + data.postFix;
-        $('body').trigger("requestpageload", [ e.data.container, src + ' ' + e.data.container ]);
+            $listItem.addClass(activeClass);
 
-        history.pushState( null, null, this.href );
+            var src = data.path + $target.attr(data.pageAttr) + data.postFix;
+            $('body').trigger("requestpageload", [ e.data.container, src + ' ' + e.data.container ]);
+
+            history.pushState( null, null, this.href );
+
+        }
 
         e.preventDefault();
     });
