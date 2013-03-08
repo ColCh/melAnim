@@ -5277,7 +5277,7 @@ a.badge:focus {
     -moz-transform: skewX(-1deg) translateX(1px);
     -o-transform: skewX(-1deg) translateX(1px);
     transform: skewX(-1deg) translateX(1px);
-    text-shadow: 0px 0px 1px #444444;
+    text-shadow: 0px 0px 1px #000000;
 }
 .header a {
     text-decoration: none;
