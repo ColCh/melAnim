@@ -58,8 +58,6 @@ jQuery(function () {
 $(function () {
     // обработка поступающих запросов загрузки страницы
     $('body').on("requestpageload", function (e, container, src) {
-        $(container).load(src, function () {
-            window.PR.prettyPrint();
-        });
+        $(container).load(src);
     });
 });
