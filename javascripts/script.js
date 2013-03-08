@@ -7,6 +7,9 @@ jQuery(function () {
         container: "#content" // селектор, куда сохранится html
     };
 
+    // класс для определения уже подсвеченных блоков
+    var HIGHLIGHTED_CLASS = 'highlighted';
+
     // класс активного элемента меню
     var activeClass = 'active';
 
@@ -53,11 +56,21 @@ jQuery(function () {
 
     });
 
-});
-
-$(function () {
     // обработка поступающих запросов загрузки страницы
     $('body').on("requestpageload", function (e, container, src) {
-        $(container).load(src);
+        $(container).load(src, function () {
+            $('pre:not(.' + HIGHLIGHTED_CLASS + ')').each(function(i, block) {
+                $(block).addClass(HIGHLIGHTED_CLASS);
+                hljs.highlightBlock(block);
+            });
+        });
     });
 });
+
+if (hljs) {
+    hljs.tabReplace = '<span class="code-indent">\t</span>';
+    $('pre:not(.' + HIGHLIGHTED_CLASS + ')').each(function(i, block) {
+        $(block).addClass(HIGHLIGHTED_CLASS);
+        hljs.highlightBlock(block);
+    });
+}
