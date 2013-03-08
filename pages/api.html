@@ -68,7 +68,7 @@
             <p>
                 <code>animate</code> принимает несколько форматов аргументов
 
-                <pre class="prettyprint">
+                <pre class="prettyprint javascript">
                     animate (elements, properties[, duration][, easing][, complete])
                 </pre>
                 Где:
@@ -86,7 +86,7 @@
                 <code>Animate</code> — функция-строитель для двух классов анимаций : JS и CSS. При передачи аргументов выберет нужный режим, основанный на статусе поддержки CSS3 анимаций текущим браузером, или на основе переданных аргументов, и вернёт созданный экземпляр, настроенный по переданным аргументам - настроить объект можно и напрямую. Имеет 2 формата передачи аргументов.
 
                 <strong>Первый</strong> имеет, в целом, такой же формат, что и у <code>animate</code>, за исключением формата передачи свойств.
-                <pre class="prettyprint">
+                <pre class="prettyprint javascript">
                     Animation (elements, keyframes, duration, easing, oncomplete)
                 </pre>
                 Где:
@@ -99,7 +99,7 @@
                 </ul>
 
                 <strong>Второй</strong> вид формата аргументов сжимает их визуальное количество в объект, но при этом можно передать немногим больше аргументов.
-                <pre class="prettyprint">
+                <pre class="prettyprint javascript">
                     Animation (elements, keyframes, options)
                 </pre>
                 Где:
