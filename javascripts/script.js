@@ -33,7 +33,7 @@ jQuery(function () {
             $listItem.addClass(activeClass);
 
             var src = data.path + $target.attr(data.pageAttr) + data.postFix;
-            $('body').trigger("requestpageload", [ e.data.container, src + ' ' + e.data.container ]);
+            $('body').trigger("requestpageload", [ e.data.container, src ]);
 
             history.pushState( null, null, this.href );
 
@@ -58,11 +58,17 @@ jQuery(function () {
 
     // обработка поступающих запросов загрузки страницы
     $('body').on("requestpageload", function (e, container, src) {
-        $(container).load(src, function () {
-            $('pre:not(.' + HIGHLIGHTED_CLASS + ')').each(function(i, block) {
-                $(block).addClass(HIGHLIGHTED_CLASS);
-                hljs.highlightBlock(block);
-            });
+        $(container).get({
+            url: src,
+            success: function (data) {
+                data = $(data);
+                var title = $('title', data).text();
+                document.title = title;
+                $('pre:not(.' + HIGHLIGHTED_CLASS + ')', data).each(function(i, block) {
+                    $(block).addClass(HIGHLIGHTED_CLASS);
+                    hljs.highlightBlock(block);
+                });
+            }
         });
     });
 
