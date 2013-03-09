@@ -62,7 +62,7 @@ jQuery(function () {
             url: src,
             success: function (data) {
                 data = $(data);
-                var title = $('title', data).text();
+                var title = data.filter('title').text();
                 document.title = title;
                 data = $(container, data);
                 $('pre:not(.' + HIGHLIGHTED_CLASS + ')', data).each(function(i, block) {
