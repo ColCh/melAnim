@@ -58,16 +58,18 @@ jQuery(function () {
 
     // обработка поступающих запросов загрузки страницы
     $('body').on("requestpageload", function (e, container, src) {
-        $(container).get({
+        $.ajax({
             url: src,
             success: function (data) {
                 data = $(data);
                 var title = $('title', data).text();
                 document.title = title;
+                data = $(container, data);
                 $('pre:not(.' + HIGHLIGHTED_CLASS + ')', data).each(function(i, block) {
                     $(block).addClass(HIGHLIGHTED_CLASS);
                     hljs.highlightBlock(block);
                 });
+                $(container).html(data.html());
             }
         });
     });
