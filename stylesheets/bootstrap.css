@@ -761,6 +761,7 @@ dd {
   white-space: nowrap;
 }
 .dl-horizontal dd {
+  margin-bottom: 10px;
   margin-left: 180px;
 }
 hr {
