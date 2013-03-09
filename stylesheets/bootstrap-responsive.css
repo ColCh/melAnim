@@ -797,6 +797,10 @@
       display: none;
   }
   body {
+    background-image: -webkit-linear-gradient(#CED0D2 -5%, #f7f9fe 10%, #f7f9fe 90%, #CED0D2 105%);
+    background-image: -moz-linear-gradient(#CED0D2 -5%, #f7f9fe 10%, #f7f9fe 90%, #CED0D2 105%);
+    background-image: -o-linear-gradient(#CED0D2 -5%, #f7f9fe 10%, #f7f9fe 90%, #CED0D2 105%);
+    background-image: linear-gradient(#CED0D2 -5%, #f7f9fe 10%, #f7f9fe 90%, #CED0D2 105%);
     padding-left: 20px;
     padding-right: 20px;
   }
