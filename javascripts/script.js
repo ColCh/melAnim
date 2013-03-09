@@ -7,9 +7,6 @@ jQuery(function () {
         container: "#content" // селектор, куда сохранится html
     };
 
-    // класс для определения уже подсвеченных блоков
-    var HIGHLIGHTED_CLASS = 'highlighted';
-
     // класс активного элемента меню
     var activeClass = 'active';
 
@@ -83,4 +80,3 @@ jQuery(function () {
     }
 
 });
-
