@@ -62,10 +62,8 @@ jQuery(function () {
                 var title = data.filter('title').text();
                 document.title = title;
                 data = $(container, data);
-                $('pre:not(.' + HIGHLIGHTED_CLASS + ')', data).each(function(i, block) {
-                    window.PR.prettyPrint();
-                });
                 $(container).html(data.html());
+                window.PR.prettyPrint();
             }
         });
     });
