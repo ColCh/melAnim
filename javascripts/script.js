@@ -63,20 +63,11 @@ jQuery(function () {
                 document.title = title;
                 data = $(container, data);
                 $('pre:not(.' + HIGHLIGHTED_CLASS + ')', data).each(function(i, block) {
-                    $(block).addClass(HIGHLIGHTED_CLASS);
-                    hljs.highlightBlock(block);
+                    window.PR.prettyPrint();
                 });
                 $(container).html(data.html());
             }
         });
     });
-
-    if (hljs) {
-        hljs.tabReplace = '<span class="code-indent">\t</span>';
-        $('pre:not(.' + HIGHLIGHTED_CLASS + ')').each(function(i, block) {
-            $(block).addClass(HIGHLIGHTED_CLASS);
-            hljs.highlightBlock(block);
-        });
-    }
 
 });
