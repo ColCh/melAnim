@@ -65,10 +65,12 @@
             <p>
             Проект экспортируется в глобальное пространство имён под именем <abbr title="функция со свойствами">вызываемого объекта</abbr> <code>melAnim</code>, что является ссылкой на функцию <code>animate</code>
             Структура вызываемого объекта <code>melAnim</code>:
-            <ul class="unstyled">
-                <li>сама функция - ссылка на animate</li>
-                <li>свойство <code>Animate</code> объект-builder для анимаций на JS и CSS</li>
-            </ul>
+            <dl class="dl-horizontal">
+                <dt><code>animate</code> (сам <code>melAnim</code>)</dt>
+                <dd>сама функция - ссылка на animate</dd>
+                <dt><code>Animate</code></dt>
+                <dd>объект-builder для анимаций на JS и CSS</dd>
+            </dl>
             </p>
             <p>
                 <code>animate</code> принимает несколько форматов аргументов
@@ -76,13 +78,18 @@
                 <pre class="prettyprint javascript">animate (elements, properties[, duration][, easing][, complete])</pre>
 
                 Где:
-                    <ul class="unstyled">
-                        <li><code>elements</code> — Элемент(ы) для анимирования. Элемент, массив элементов, или список элементов (<code>NodeList</code>)</li>
-                        <li><code>properties</code> — Свойства для анимирования в формате <a href="http://api.jquery.com/animate/">jQuery.animate</a> (Ключ - имя свойства, значение - конечная величина свойства).</li>
-                        <li><code>duration</code> — Продолжительность анимаци. Формат: число (миллисекунды) или <code>CSSTimeString</code> (число + размерность - секунды <strong>s</strong> или миллисекунды <strong>ms</strong>)</li>
-                        <li><code>easing</code> — Смягчение <em>всей анимации</em> (алиас, <a href="http://www.w3.org/TR/css3-transitions/#transition-timing-function">CSS Timefunction</a>, <abbr title="2 аргумента - лестничная функция, 4 - кубическая кривая Безье">аргументы к временной функции CSS</abbr> или <abbr title="Только для режима анимаций на JS">сама JS функция</abbr>)</li>
-                        <li><code>complete</code> — Обработчик события завершения анимации. Исполнится, когда анимация проиграется до конца.</li>
-                    </ul>
+                    <dl class="dl-horizontal">
+                        <dt><code>elements</code></dt>
+                        <dd>Элемент(ы) для анимирования. Элемент, массив элементов, или список элементов (<code>NodeList</code>)</dd>
+                        <dt><code>properties</code></dt>
+                        <dd>Свойства для анимирования в формате <a href="http://api.jquery.com/animate/">jQuery.animate</a> (Ключ - имя свойства, значение - конечная величина свойства).</dd>
+                        <dt><code>duration</code></dt>
+                        <dd>Продолжительность анимаци. Формат: число (миллисекунды) или <code>CSSTimeString</code> (число + размерность - секунды <strong>s</strong> или миллисекунды <strong>ms</strong>)</dd>
+                        <dt><code>easing</code></dt>
+                        <dd>Смягчение <em>всей анимации</em> (алиас, <a href="http://www.w3.org/TR/css3-transitions/#transition-timing-function">CSS Timefunction</a>, <abbr title="2 аргумента - лестничная функция, 4 - кубическая кривая Безье">аргументы к временной функции CSS</abbr> или <abbr title="Только для режима анимаций на JS">сама JS функция</abbr>)</dd>
+                        <dt><code>complete</code></dt>
+                        <dd>Обработчик события завершения анимации. Исполнится, когда анимация проиграется до конца.</dd>
+                    </dl>
             </p>
 
             <p>
@@ -92,22 +99,30 @@
                 <strong>Первый</strong> имеет, в целом, такой же формат, что и у <code>animate</code>, за исключением формата передачи свойств.
                 <pre class="prettyprint javascript">Animation (elements, keyframes, duration, easing, oncomplete)</pre>
                 Где:
-                <ul class="unstyled">
-                    <li><code>elements</code> — Элемент(ы) для анимирования. Элемент, массив элементов, или список элементов (<code>NodeList</code>)</li>
-                    <li><code>keyframes</code> — Свойства для анимирования в формате <a href="http://www.w3.org/TR/css3-animations/#keyframes">CSS Keyframes</a> (обратитесь в документацию по CSS3 анимациям).</li>
-                    <li><code>duration</code> — Продолжительность анимаци. Формат: число (миллисекунды) или <code>CSSTimeString</code> (число + размерность - секунды <strong>s</strong> или миллисекунды <strong>ms</strong>)</li>
-                    <li><code>easing</code> — Смягчение <em>всей анимации</em> (алиас, <a href="http://www.w3.org/TR/css3-transitions/#transition-timing-function">CSS Timefunction</a>, <abbr title="2 аргумента - лестничная функция, 4 - кубическая кривая Безье">аргументы к временной функции CSS</abbr> или <abbr title="Только для режима анимаций на JS">сама JS функция</abbr>)</li>
-                    <li><code>complete</code> — Обработчик события завершения анимации. Исполнится, когда анимация проиграется до конца.</li>
-                </ul>
+                <dl class="dl-horizontal">
+                    <dt><code>elements</code></dt>
+                    <dd>Элемент(ы) для анимирования. Элемент, массив элементов, или список элементов (<code>NodeList</code>)</dd>
+                    <dt><code>keyframes</code></dt>
+                    <dd>Свойства для анимирования в формате <a href="http://www.w3.org/TR/css3-animations/#keyframes">CSS Keyframes</a> (обратитесь в документацию по CSS3 анимациям).</dd>
+                    <dt><code>duration</code></dt>
+                    <dd>Продолжительность анимаци. Формат: число (миллисекунды) или <code>CSSTimeString</code> (число + размерность - секунды <strong>s</strong> или миллисекунды <strong>ms</strong>)</dd>
+                    <dt><code>easing</code></dt>
+                    <dd>Смягчение <em>всей анимации</em> (алиас, <a href="http://www.w3.org/TR/css3-transitions/#transition-timing-function">CSS Timefunction</a>, <abbr title="2 аргумента - лестничная функция, 4 - кубическая кривая Безье">аргументы к временной функции CSS</abbr> или <abbr title="Только для режима анимаций на JS">сама JS функция</abbr>)</dd>
+                    <dt><code>complete</code></dt>
+                    <dd>Обработчик события завершения анимации. Исполнится, когда анимация проиграется до конца.</dd>
+                </dl>
 
                 <strong>Второй</strong> вид формата аргументов сжимает их визуальное количество в объект, но при этом можно передать немногим больше аргументов.
                 <pre class="prettyprint javascript">Animation (elements, keyframes, options)</pre>
                 Где:
-                    <ul class="unstyled">
-                        <li><code>elements</code> — Элемент(ы) для анимирования. Элемент, массив элементов, или список элементов (<code>NodeList</code>)</li>
-                        <li><code>properties</code> — Свойства для анимирования в формате <a href="http://api.jquery.com/animate/">jQuery.animate</a> (Ключ - имя свойства, значение - конечная величина свойства).</li>
-                        <li><code>options</code> — Объект с настройками и параметрами.</li>
-                    </ul>
+                    <dl class="dl-horizontal">
+                        <dt><code>elements</code></dt>
+                        <dd>Элемент(ы) для анимирования. Элемент, массив элементов, или список элементов (<code>NodeList</code>)</dd>
+                        <dt><code>properties</code></dt>
+                        <dd>Свойства для анимирования в формате <a href="http://api.jquery.com/animate/">jQuery.animate</a> (Ключ - имя свойства, значение - конечная величина свойства).</dd>
+                        <dt><code>options</code></dt>
+                        <dd>Объект с настройками и параметрами.</dd>
+                    </dl>
                     Структура объекта <code>options</code> — обычный <abbr title="Хеш, словарь - объект с одним уровнем вложенности">plain Object</abbr>:
                     <dl class="dl-horizontal">
                         <dt><code>classicMode</code></dt>
