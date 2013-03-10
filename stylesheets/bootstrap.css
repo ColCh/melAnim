@@ -5290,3 +5290,27 @@ a.badge:focus {
     right: 0;
     border: 0;
 }
+.header .wrap {
+    position: relative;
+    font-size: 40px;
+}
+.header .wrap .text {
+    text-transform: uppercase;
+    position: absolute;
+    top: 0.2em;
+    left: 0.6em;
+    width: 100%;
+    font-family: Impact;
+    letter-spacing: 0.4em;
+    font-size: inherit;
+}
+.header .wrap img {
+    width: 2em;
+}
+.header .wrap:nth-child(2) {
+    top: -0.8em;
+    left: 1.7em;
+}
+.header .wrap:nth-child(2) .text {
+    padding-left: 0.1em;
+}
