@@ -790,12 +790,25 @@
   }
 }
 @media (max-width: 767px) {
+  .logo {
+      font-size: 35px;
+      position: relative;
+      left: -1.3em;
+  }
+  .logo .wrap:nth-child(2) {
+        top: -0.6em;
+        left: 1.3em;
+  }
   .logo .wrap:nth-child(2) .text {
-      padding-left: 0.6em;
+      padding-left: 0.35em;
   }
   .logo .wrap .text {
-      top: 0.25em;
-      left: 0.95em;
+      text-shadow: -1px 1px 0 #E3E3E3, 1px -1px 0 #E3E3E3;
+      color: #555555;
+      letter-spacing: 0.1em;
+      top: 0.20em;
+      left: 0.75em;
+      font-family: Arial;
   }
   .header {
       text-align: center;
