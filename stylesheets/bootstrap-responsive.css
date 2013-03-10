@@ -790,6 +790,13 @@
   }
 }
 @media (max-width: 767px) {
+  .logo .wrap:nth-child(2) .text {
+      padding-left: 0.6em;
+  }
+  .logo .wrap .text {
+      top: 0.25em;
+      left: 0.95em;
+  }
   .header {
       text-align: center;
   }
