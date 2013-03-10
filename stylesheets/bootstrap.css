@@ -15,8 +15,6 @@
  *
  * Designed and built with all the love in the world @twitter by @mdo and @fat.
  */
-
-@import url(http://fonts.googleapis.com/css?family=Marmelad&subset=latin,cyrillic);
 @import url(http://fonts.googleapis.com/css?family=Scada:400,700&subset=latin,cyrillic);
 
 .clearfix {
@@ -640,7 +638,7 @@ h6 {
   line-height: 20px;
   color: inherit;
   text-rendering: optimizelegibility;
-  font-family: 'Marmelad', "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
 h1 small,
 h2 small,
