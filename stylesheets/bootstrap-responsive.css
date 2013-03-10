@@ -813,9 +813,6 @@
   .header {
       text-align: center;
   }
-  .fork-me {
-      display: none;
-  }
   body {
     background-image: none;
     padding-left: 10px;
