@@ -5307,6 +5307,12 @@ a.badge:focus {
     font-family: Impact;
     letter-spacing: 0.4em;
     font-size: inherit;
+    color: #444444;
+    text-shadow: -1px 1px 0 #E3E3E3, -1px -1px 0 #E3E3E3;
+}
+.logo .wrap .text:first-letter {
+    color: black;
+    text-shadow: 0 1px 0 white;
 }
 .logo .wrap img {
     width: 2em;
