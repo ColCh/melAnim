@@ -5290,11 +5290,15 @@ a.badge:focus {
     right: 0;
     border: 0;
 }
-.header .wrap {
-    position: relative;
+.logo {
+    height: 3.5em;
+    overflow: hidden;
     font-size: 40px;
 }
-.header .wrap .text {
+.logo .wrap {
+    position: relative;
+}
+.logo .wrap .text {
     text-transform: uppercase;
     position: absolute;
     top: 0.2em;
@@ -5304,13 +5308,13 @@ a.badge:focus {
     letter-spacing: 0.4em;
     font-size: inherit;
 }
-.header .wrap img {
+.logo .wrap img {
     width: 2em;
 }
-.header .wrap:nth-child(2) {
+.logo .wrap:nth-child(2) {
     top: -0.8em;
     left: 1.7em;
 }
-.header .wrap:nth-child(2) .text {
+.logo .wrap:nth-child(2) .text {
     padding-left: 0.1em;
 }
