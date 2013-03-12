@@ -1,0 +1,17 @@
+title: ColCh
+description: Мой блог на Github
+
+url: http://ColCh.github.com/
+baseurl: /
+
+safe: true
+auto: true
+
+source: .
+destination: ./_site
+
+lsi: false
+pygments: true
+
+exclude:
+  README.md
