@@ -2,7 +2,7 @@ title: ColCh
 description: Мой блог на Github
 
 url: http://ColCh.github.com/
-baseurl: /
+baseurl: /melAnim/
 
 safe: true
 auto: true
