@@ -17,3 +17,11 @@ pygments: true
 
 exclude:
   README.md
+
+post.template: default
+post.extension: markdown
+
+page.template: default
+page.extension: markdown
+
+editor: vim
