@@ -15,19 +15,7 @@
  *
  * Designed and built with all the love in the world @twitter by @mdo and @fat.
  */
-/*@import url(http://fonts.googleapis.com/css?family=Scada:400,700&subset=latin,cyrillic);*/
-@font-face {
-    font-family: 'Scada';
-    font-style: normal;
-    font-weight: 400;
-    src: local('Scada'), local('Scada-Regular'), url(http://themes.googleusercontent.com/static/fonts/scada/v1/F5Y0Urxz0lcNByUbLZLu9g.woff) format('woff');
-}
-@font-face {
-    font-family: 'Scada';
-    font-style: normal;
-    font-weight: 700;
-    src: local('Scada Bold'), local('Scada-Bold'), url(http://themes.googleusercontent.com/static/fonts/scada/v1/xbAq6vOsHBrm_q_F1QIYY_esZW2xOQ-xsNqO47m55DA.woff) format('woff');
-}
+@import url(http://fonts.googleapis.com/css?family=Scada:400,700&subset=latin,cyrillic);
 
 .clearfix {
   *zoom: 1;
