@@ -3,4 +3,4 @@ layout: default
 title: Главная
 ---
 {% capture index_content %}{% include index.md %}{% endcapture %}
-{{ index_content | unindent | markdownify }}
+{{ index_content | markdownify }}
