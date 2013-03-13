@@ -7,6 +7,8 @@ baseurl: /melAnim/
 safe: true
 auto: true
 
+permalink: none
+
 source: .
 destination: ./_site
 
