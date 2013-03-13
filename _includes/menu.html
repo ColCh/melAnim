@@ -1,25 +1,27 @@
 <div class="well well-small">
     <ul class="nav nav-list nav-stacked">
     
-        <li class="nav-header">справка по библиотеке</li>
+        {% for category in site.categories %}
+
+            <li class="nav-header">{{ category[0] }}</li>
+
+            {% for posts in category offset:1 %}
+                {% for node in posts %}
+
+                    {% if page.url == node.url %}
+                        <li class="active"><a href="{{ site.baseurl }}{{node.url}}" class="active">{{node.title}}</a></li>
+                    {% else %}
+                        <li><a href="{{ site.baseurl }}{{node.url}}">{{node.title}}</a></li>
+                    {% endif %}
+
+                {% endfor %}
+            {% endfor %}
+
+            {% unless forloop.last %}
+                <li class="divider"></li>
+            {% endunless %}
+            
+        {% endfor %}
         
-        <li><a href="#">Сравнение с другими библиотеками</a> </li>
-        <li><a href="#">Возможности melAnim</a> </li>
-        <li><a href="{{ site.baseurl }}pages/api.html" class="page-loader">Описание API</a></li>
-        
-        <li class="divider"></li>
-        
-        <li class="nav-header">Демки</li>
-        
-        <li><a href="#">Примеры использования</a></li>
-        <li><a href="#">Визуальный конструктор</a> </li>
-        <li><a href="#">Конструктор смягчений</a> </li>
-        
-        <li class="divider"></li>
-        
-        <li class="nav-header">Тесты</li>
-        
-        <li><a href="#">&lt;в разработке&gt;</a> </li>
-        
-</ul>
+    </ul>
 </div>
