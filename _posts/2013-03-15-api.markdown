@@ -81,8 +81,72 @@ Use numbered headers: true
     
 {:js}
 
+## Пример хука ##
+
+    // установка величины прокрутки с помощью css
+    melAnim.hooks [ "scrollTop" ] [ "set" ] = function (element, propertyName, propertyValue) {
+        element.scrollTop = propertyValue;
+    };
+    
+    // получение значения кастомного свойства "myProp"
+    melAnim.hooks [ "myProp" ] [ "get" ] = function (element, propertyName, propertyValue) {
+        // что здесь будет находиться, определит ваша фантазия :)
+        element.style.borderWidth = propertyValue;
+    };
+    
+{:js}
+
 # normalize #
 
 Преобразует строкое представление значения в машино-читабельное или наоборот.
+Передача элемента необходима для трансляции в другой тип значения - к примеру, из процентов и пиксели.
+
+    function normalize(element, propertyName, propertyValue, toString)
+
+{:js}
+
+Где: 
+
+`element`
+:объект, с которым функция будет работать. Тип : `HTMLElement` или `CSSStyleDeclaration`
+
+`propertyName`
+:имя свойства, с которым функция будет работать. Тип - `String` (строка).
+
+`propertyValue`
+:значение свойства. Тип - `Number`, или `String`, или `Array`.
+
+`toString`
+:определяет поведение. Если передано значение `true`, то функция приведёт числовое значение в строковое, и если `false` - то в числовое. Тип - `Boolean`.
+
+## Пример использования ##
+
+    // формат по-умолчанию установлен "PX"
+
+    // переведёт проценты в числовое значение
+    normalize(document.body, "width", "50%", false); // 960
+    
+    // и приведёт числовое значение в строку
+    normalize(document.body, "width", 960, true); // "960px"
+    
+{:js}
+
+## Пример хука ##
+
+    // хук для значения прокрутки
+    melAnim.hooks[ "scrollTop" ] ['normalize'] = function (element, propertyName, propertyValue, toString) {
+        return element.scrollTop;
+    };
+    
+    // хук для перевода значения матрицы 2D трансформации
+    melAnim.hooks[ "transform" ] ['normalize'] = function (element, propertyName, propertyValue, toString) {
+        if (toString) {
+            return "matrix(" + propertyValue.join(", ") + ")";
+        } else {
+            return propertyValue.match(/matrix\(([^\)]+)\)/).split(",").map(function (x) { return parseInt(x, 10); });
+        }
+    };
+    
+{:js}
 
 *[машино-читабельное]: Численное значение, с которым можно оперировать
