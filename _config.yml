@@ -15,5 +15,7 @@ destination: ./_site
 lsi: false
 pygments: true
 
+markdown: maruku
+
 exclude:
   README.md
