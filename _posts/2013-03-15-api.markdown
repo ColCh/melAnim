@@ -5,8 +5,6 @@ category: Описание библиотеки
 ---
 Use numbered headers: true
 
-{:js: lang=javascript class=prettyprint}
-
 Все методы и свойства описаны в коде с помощью *JSDOC*.
 На этой странице будут описаны только основные экспортируемые классы и функции, их методы и аргументы.
 {: .lead}
@@ -45,9 +43,9 @@ Use numbered headers: true
 
 ## Формат аргументов ##
 
+{% highlight javascript %}
     function vendorize(propertyName, target);
-
-{:js}
+{% endhighlight %}
 
 Где: 
 
@@ -59,6 +57,7 @@ Use numbered headers: true
 
 ## Примеры использования ##
 
+{% highlight javascript %}
     // вернёт performance в Chrome
     melAnim.vendorize("performance", true);
 
@@ -67,8 +66,7 @@ Use numbered headers: true
     
     // вернёт text-shadow в Chrome
     melAnim.vendorize("text-shadow", false);
-
-{:js}
+{% endhighlight %}
 
 # beforeReflow #
 
