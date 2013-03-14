@@ -60,13 +60,13 @@ Use numbered headers: true
 ## Примеры использования ##
 
     // вернёт performance в Chrome
-    getVendorPropName("performance", true);
+    melAnim.vendorize("performance", true);
 
     // вернёт webkitNow в Chrome
-    getVendorPropName("now", window.performance);
+    melAnim.vendorize("now", window.performance);
     
     // вернёт text-shadow в Chrome
-    getVendorPropName("text-shadow", false);
+    melAnim.vendorize("text-shadow", false);
 
 {:js}
 
