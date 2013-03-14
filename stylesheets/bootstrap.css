@@ -5320,3 +5320,18 @@ a.badge:focus {
 .logo .wrap:nth-child(2) .text {
     padding-left: 0.1em;
 }
+.to-top {
+    top: 0;
+    left: 0;
+    opacity: 0.3;
+    padding-top: 10px;
+    width: 50px;
+    height: 100%;
+}
+.to-top > a {
+    height: 100%;
+}
+.to-top:hover {
+    opacity: 1;
+    background-color: rgba(247, 249, 254, 0.5);
+}
