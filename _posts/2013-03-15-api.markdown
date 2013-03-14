@@ -38,14 +38,62 @@ Use numbered headers: true
 
 Функция попытается подобрать вендорный префикс к свойству, применяя при этом преобразование имени свойства из CSS-формата в DOM-формат.
 
+Возвращаемое значение - верное имя свойства, или `null`, если подобрать не удалось.
+
 *[CSS-формата]: Слова в свойстве разделени дефисом. Пр. : "z-index"
 *[DOM-формат]: Слова в свойстве пишутся с большой буквы без разделителей. Пр. : "zIndex"
+
+## Формат аргументов ##
+
+    function vendorize(propertyName, target);
+
+{:js}
+
+Где: 
+
+`propertyName`
+:имя свойства
+
+`target`
+:Где смотреть наличие свойств - в *CSS* при `false`, в *window* при `true`, или в переданном объекте Тип - `Boolean` или `Object`.
+
+## Примеры использования ##
+
+    // вернёт performance в Chrome
+    getVendorPropName("performance", true);
+
+    // вернёт webkitNow в Chrome
+    getVendorPropName("now", window.performance);
+    
+    // вернёт text-shadow в Chrome
+    getVendorPropName("text-shadow", false);
+
+{:js}
 
 # beforeReflow #
 
 Исполнит функцию перед следующей отрисовкой. Если браузер не имеет встроенной реализации `requestAnimationFrame`, то будет использован 
 таймер отрисовки на `window.setTimeout` - один для всех обработчиков.
 Экспортируется для совместного использования таймера отрисовки как `melAnim`, так и любого другого кода.
+
+## Формат аргументов ##
+
+    function beforeReflow(callback);
+
+{:js}
+
+Где: 
+
+`callback`
+:функция, которая исполнится перед отрисовкой. Ей будет передано первым аргументом текущее время в формате *timestamp*.
+
+## Примеры использования ##
+
+    melAnim.beforeReflow(function (timestamp) {
+        alert( timestamp ); // выведет текущее время
+    });
+
+{:js}
 
 # css #
 
