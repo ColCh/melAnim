@@ -81,20 +81,20 @@ Use numbered headers: true
 : перевод значения свойства из строкового в машино-читабельный - пригодный для действия `blend`. Формат аргументов такой же, что и у `normalize`.
 
 #### Пример ####
-    
+
+{% highlight javascript %}
     /*
-     *HOOKS [ PROPERTY_NAME ] = {
-     *    ACTION: HANDLER
-     *}
-     */
+    *HOOKS [ PROPERTY_NAME ] = {
+    *    ACTION: HANDLER
+    *}
+    */
     melAnim.hooks[ "double-width" ] = {
         'get': function (/* args */) { /* hook body */ },
         'set': function (/* args */) { /* hook body */ },
         'blend': function (/* args */) { /* hook body */ }
         // ну и так далее
     };
-    
-{:js}
+{% endhighlight %}
 
 ## melAnim.aliases ##
 
@@ -118,23 +118,24 @@ Use numbered headers: true
 
 Определение алиаса времени ключевого кадра 
 
+{% highlight javascript %}
     melAnim.aliases.keys[ "half" ] = 50;
     // теперь можно указывать "half" вместо "50"
-{:js}
+{% endhighlight %}
 
 Определение алиаса к точкам кубической кривой Безье
 
+{% highlight javascript %}
     melAnim.aliases.bezierPoints[ "my-linear" ] = [ 0.0, 0.0, 1.0, 1.0 ];
     // теперь можно указывать "my-linear" как функцию смягчения
-    
-{:js}
+{% endhighlight %}
 
 Определение алиаса к приближению кубической кривой. *Формат аргументов пока не определён*{: class=text-error}.
 
+{% highlight javascript %}
     melAnim.aliases.bezierApprox[ "my-linear" ] = function (/* easing args */) { /* easing body */ };
     // теперь можно указывать "my-linear" как функцию смягчения, но только для JS-анимации
-
-{:js}
+{% endhighlight %}
 
 ## melAnim.normalizeUnits ##
 
@@ -148,13 +149,13 @@ Use numbered headers: true
 
 ### Структура melAnim.normalizeUnits ###
 
+{% highlight javascript %}
     /*
-     *normalizeUnits [ UNIT ] = HOOK;
-     */
+    *normalizeUnits [ UNIT ] = HOOK;
+    */
     melAnim.normalizeUnits[ "double-px" ] = function (element, property, value) {
         return melAnim.normalizeUnits[ "px" ] * 2;
     };
-    
+
     // теперь можно указывать единицы измерения double-px, напр. "5double-px", что будет в итоге "10px"
-    
-{:js}
+{% endhighlight %}

@@ -78,9 +78,9 @@ Use numbered headers: true
 
 ## Формат аргументов ##
 
+{% highlight javascript %}
     function beforeReflow(callback);
-
-{:js}
+{% endhighlight %}
 
 Где: 
 
@@ -89,11 +89,11 @@ Use numbered headers: true
 
 ## Примеры использования ##
 
+{% highlight javascript %}
     melAnim.beforeReflow(function (timestamp) {
         alert( timestamp ); // выведет текущее время
     });
-
-{:js}
+{% endhighlight %}
 
 # css #
 
@@ -102,9 +102,9 @@ Use numbered headers: true
 
 ## Формат аргументов : ##
 
+{% highlight javascript %}
     function css(element, propertyName [, propertyValue])
-
-{:js}
+{% endhighlight %}
 
 Где: 
 
@@ -119,6 +119,7 @@ Use numbered headers: true
 
 ## Примеры использования ##
 
+{% highlight javascript %}
     // установит <body> красный цвет текста
     css(document.body, "color", "red");
 
@@ -126,11 +127,11 @@ Use numbered headers: true
     css(document.body.style, "font-size", "20px");
     
     // и так далее, по аналогии
-    
-{:js}
+{% endhighlight %}
 
 ## Пример хука ##
 
+{% highlight javascript %}
     // установка величины прокрутки с помощью css
     melAnim.hooks [ "scrollTop" ] [ "set" ] = function (element, propertyName, propertyValue) {
         element.scrollTop = propertyValue;
@@ -141,17 +142,16 @@ Use numbered headers: true
         // что здесь будет находиться, определит ваша фантазия :)
         element.style.borderWidth = propertyValue;
     };
-    
-{:js}
+{% endhighlight %}
 
 # normalize #
 
 Преобразует строкое представление значения в машино-читабельное или наоборот.
 Передача элемента необходима для трансляции в другой тип значения - к примеру, из процентов и пиксели.
 
+{% highlight javascript %}
     function normalize(element, propertyName, propertyValue, toString)
-
-{:js}
+{% endhighlight %}
 
 Где: 
 
@@ -169,6 +169,7 @@ Use numbered headers: true
 
 ## Пример использования ##
 
+{% highlight javascript %}
     // формат по-умолчанию установлен "PX"
 
     // переведёт проценты в числовое значение
@@ -176,11 +177,11 @@ Use numbered headers: true
     
     // и приведёт числовое значение в строку
     normalize(document.body, "width", 960, true); // "960px"
-    
-{:js}
+{% endhighlight %}
 
 ## Пример хука ##
 
+{% highlight javascript %}
     // хук для значения прокрутки
     melAnim.hooks[ "scrollTop" ] ['normalize'] = function (element, propertyName, propertyValue, toString) {
         return element.scrollTop;
@@ -194,7 +195,6 @@ Use numbered headers: true
             return propertyValue.match(/matrix\(([^\)]+)\)/).split(",").map(function (x) { return parseInt(x, 10); });
         }
     };
-    
-{:js}
+{% endhighlight %}
 
 *[машино-читабельное]: Численное значение, с которым можно оперировать
