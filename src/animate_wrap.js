@@ -193,7 +193,7 @@
     function animate (elements, properties, duration, easing, complete) {
         var keyframes = {};
         keyframes[ keyAliases["to"] ] = {};
-        each(properties, function (propertyName, propertyValue) {
+        each(properties, function (propertyValue, propertyName) {
             keyframes[ keyAliases["to"] ] [ propertyName ] = propertyValue;
         });
         var self = Animation(elements, keyframes, duration, easing, function () {
