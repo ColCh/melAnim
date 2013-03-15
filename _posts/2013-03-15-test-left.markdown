@@ -1,0 +1,32 @@
+---
+layout: default
+title: Простая анимация
+category: Демки
+---
+# Простая анимация #
+
+На этой странице будет показан пример простейшей анимации с
+с использованием функции `melAnim`, без создания объектов
+
+<div class="testcase-wrap">
+{% include Tests/animate-left/index.html %}
+</div>
+
+# Исходный код для этого примера #
+
+## HMTL ##
+
+{% highlight html linenos %}{% include Tests/animate-left/index.html %}{% endhighlight %}
+
+## JavaScript ##
+
+{% highlight javascript linenos %}
+    {% include Tests/animate-left/script.js %}
+{% endhighlight %}
+
+<!-- скрипт, начинающий тест -->
+<script>
+$("body").on("teststart", function (e, myElement) {
+    {% include Tests/animate-left/script.js %}
+});
+</script>
