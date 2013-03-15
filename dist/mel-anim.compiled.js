@@ -2932,6 +2932,36 @@
             var playStates = css(element, "animation-play-state").split(ANIMATIONS_SEPARATOR);
             playStates[ index ] = PLAYSTATE_PAUSED;
             css(element, "animation-play-state", playStates.join(ANIMATIONS_JOINER));
+
+            // обрабатываем режим заполнения
+            //TODO дополнительная обработка текущей итерации в зависимости от параметра направления
+            var endingKey, endingKeyframe, endingStyle;
+            if (this.fillingMode !== FILLMODE_NONE) {
+                if (this.fillingMode === FILLMODE_FORWARDS || this.fillingMode === FILLMODE_BOTH) {
+                    // заполняется конечный ключевой кадр
+                    endingKey = 1.0;
+                } else if (this.fillingMode === FILLMODE_BACKWARDS || this.fillingMode === FILLMODE_BOTH) {
+                    // заполняется начальный ключевой кадр
+                    endingKey = 0.0;
+                }
+
+                endingKeyframe = this.lookupKeyframe(endingKey);
+
+                if (endingKeyframe) {
+                    var propertyName, propertyValue;
+                    endingStyle = endingKeyframe.style;
+                    for (var i = 0, m = endingStyle.length; i < m; i++) {
+                        propertyName = endingStyle[i];
+                        propertyValue = endingStyle[propertyName];
+                        if (propertyName !== ANIMATION_TIMING_FUNCTION) {
+                            css(element, propertyName, propertyValue);
+                        }
+                    }
+                } else if (ENABLE_DEBUG) {
+                    console.log("destruct: WTF?! beginning or ending keyframe does not exist");
+                }
+            }
+
             // аккуратно удаляем примененные параметры анимаций
             this.removeStyle(element);
         }, this);
