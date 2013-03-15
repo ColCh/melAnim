@@ -191,15 +191,13 @@
      * @return {(CSSAnimation|ClassicAnimation)}
      */
     function animate (elements, properties, duration, easing, complete) {
-        var keyframes = {};
-        keyframes[ keyAliases["to"] ] = {};
-        each(properties, function (propertyValue, propertyName) {
-            keyframes[ keyAliases["to"] ] [ propertyName ] = propertyValue;
-        });
-        var self = Animation(elements, keyframes, duration, easing, function () {
+        var self = Animation(elements, {}, duration, easing, function () {
             //TODO сделать то же, только без замыкания
             typeOf.func(complete) && complete();
             self.destruct();
+        });
+        each(properties, function (propertyValue, propertyName) {
+            self.propAt(propertyName, propertyValue);
         });
         self.fillMode(FILLMODE_FORWARDS);
         self.start();
