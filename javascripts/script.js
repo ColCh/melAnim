@@ -67,5 +67,10 @@ jQuery(function () {
             }
         });
     });
+    
+    
+    $( 'body' ).on("click", ".testcase", function (e) {
+        $( 'body' ).trigger( 'teststart', e.target );
+    });
 
 });

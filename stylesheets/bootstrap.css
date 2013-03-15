@@ -5332,3 +5332,18 @@ a.badge:focus {
     opacity: 1;
     background-color: rgba(247, 249, 254, 0.5);
 }
+.testcase-wrap {
+    margin: 10px 0;
+    padding: 5px;
+    border: 1px solid #eee;
+}
+.testcase-wrap .testcase {
+    position: relative;
+    margin: 5px;
+    border: 1px solid #888;
+    font-size: 11px;
+    text-align: center;
+    line-height: 50px;
+    width: 50px;
+    height: 50px;
+}
