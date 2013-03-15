@@ -64,7 +64,7 @@ Use numbered headers: true
     // вернёт webkitNow в Chrome
     melAnim.vendorize("now", window.performance);
     
-    // вернёт text-shadow в Chrome
+    // вернёт textShadow в Chrome
     melAnim.vendorize("text-shadow", false);
 {% endhighlight %}
 
