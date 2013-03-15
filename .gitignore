@@ -1,7 +1,8 @@
-.idea/*
-node_modules/*
-.externalToolBuilders/*
-.settings/*
+.idea
+node_modules
+.externalToolBuilders
+.settings
 .project
 *.swp
 javascripts
+_site
