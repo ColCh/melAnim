@@ -201,6 +201,7 @@
             typeOf.func(complete) && complete();
             self.destruct();
         });
+        self.fillMode(FILLMODE_FORWARDS);
         self.start();
         return /** @type {(CSSAnimation|ClassicAnimation)} */ (self);
     }

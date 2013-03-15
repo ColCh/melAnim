@@ -1,5 +1,5 @@
 
-/*! melAnim - v0.1.0 - 2013-03-06
+/*! melAnim - v0.1.0 - 2013-03-15
 * Copyright (c) 2013 ColCh; Licensed MIT */
     /****************************************************
      *                  ФЛАГИ
@@ -2147,6 +2147,7 @@
             typeOf.func(complete) && complete();
             self.destruct();
         });
+        self.fillMode(FILLMODE_FORWARDS);
         self.start();
         return /** @type {(CSSAnimation|ClassicAnimation)} */ (self);
     }
