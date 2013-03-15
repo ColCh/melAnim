@@ -4,3 +4,5 @@ node_modules
 .project
 .settings
 _site/
+_includes/Variables/melAnim-path.txt
+javascripts/mel-anim.compiled.js
