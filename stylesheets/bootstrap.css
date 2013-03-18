@@ -5335,9 +5335,10 @@ a.badge:focus {
 .testcase-wrap {
     margin: 10px 0;
     padding: 5px;
-    border: 1px solid #eee;
+    border: 1px solid #DDD;
 }
 .testcase-wrap .testcase {
+    background-color: #EEE;
     position: relative;
     margin: 5px;
     border: 1px solid #888;
