@@ -1,1 +1,1 @@
-window.melAnim(myElement, { left: "100px" });
+melAnim(myElement, { left: "50%" });
