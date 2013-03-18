@@ -9,7 +9,7 @@ category: Демки
 с использованием функции `melAnim`, без создания объектов; с длительностью, и другими настройками, по умолчанию.
 
 <div class="testcase-wrap">
-{% include Tests/animate-left/index.html %}
+    {% include Tests/animate-left/index.html %}
 </div>
 
 # Исходный код для этого примера #
@@ -20,9 +20,7 @@ category: Демки
 
 ## JavaScript ##
 
-{% highlight javascript linenos %}
-    {% include Tests/animate-left/script.js %}
-{% endhighlight %}
+{% highlight javascript linenos %}{% include Tests/animate-left/script.js %}{% endhighlight %}
 
 <!-- скрипт, начинающий тест -->
 <script>
