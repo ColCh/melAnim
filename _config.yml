@@ -2,7 +2,7 @@ title: melAnim
 description: Keyframe based animation framework
 
 url: http://ColCh.github.com/
-baseurl: /melAnim/
+baseurl: /melAnim
 
 safe: true
 auto: true
