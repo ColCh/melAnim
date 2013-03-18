@@ -8,23 +8,26 @@ category: Демки
 На этой странице будет показан пример простейшей анимации с
 с использованием функции `melAnim`, без создания объектов; с длительностью, и другими настройками, по умолчанию.
 
+{% capture test_html %}{% include Tests/animate-left/index.html %}{% endcapture %}
+{% capture test_js %}{% include Tests/animate-left/script.js %}{% endcapture %}
+
 <div class="testcase-wrap">
-    {% include Tests/animate-left/index.html %}
+    {{ test_html }}
 </div>
 
 # Исходный код для этого примера #
 
 ## HMTL ##
 
-{% highlight html linenos %}{% include Tests/animate-left/index.html %}{% endhighlight %}
+{% highlight html linenos %}{{ test_html }}{% endhighlight %}
 
 ## JavaScript ##
 
-{% highlight javascript linenos %}{% include Tests/animate-left/script.js %}{% endhighlight %}
+{% highlight javascript linenos %}{{ test_js }}{% endhighlight %}
 
 <!-- скрипт, начинающий тест -->
 <script>
 $("body").on("teststart", function (e, myElement) {
-    {% include Tests/animate-left/script.js %}
+    {{ test_js }}
 });
 </script>
