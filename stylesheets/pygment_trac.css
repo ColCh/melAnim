@@ -8,9 +8,9 @@
 
 .highlight .l { color: #cd5c5c} /* Literal */
 .highlight .n { color: #ffffff} /* Name */
-.highlight .o { color: #ffffff} /* Operator */
+.highlight .o { color: #FFFDD0} /* Operator */
 .highlight .x { color: #ffffff} /* Other */
-.highlight .p { color: #fff} /* Punctuation */
+.highlight .p { color: #FFFDD0} /* Punctuation */
 
 .highlight .c,  /* Comment */
 .highlight .cm, /* Comment.Multiline */
@@ -40,9 +40,9 @@
 
 .highlight .na { color: #bdb76b; font-weight: bold } /* Name.Attribute */
 .highlight .nb { color: #ffffff} /* Name.Builtin */
-.highlight .nc { color: #ffffff} /* Name.Class */
+.highlight .nc { color: #CAE682} /* Name.Class */
 .highlight .no { color: #ffa0a0} /* Name.Constant */
-.highlight .nd { color: #ffffff} /* Name.Decorator */
+.highlight .nd { color: #FFDAAB} /* Name.Decorator */
 .highlight .ni { color: #ffdead} /* Name.Entity */
 .highlight .ne { color: #ffffff} /* Name.Exception */
 .highlight .nf { color: #ffffff} /* Name.Function */
