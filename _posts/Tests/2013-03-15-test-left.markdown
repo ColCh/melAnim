@@ -10,24 +10,38 @@ category: Демки
 
 {% capture test_html %}{% include Tests/animate-left/index.html %}{% endcapture %}
 {% capture test_js %}{% include Tests/animate-left/script.js %}{% endcapture %}
+{% capture test_css %}{% include Tests/animate-left/style.css %}{% endcapture %}
+
+<!-- CSS теста -->
+<style>{{ test_css }}</style>
 
 <div class="testcase-wrap">
     {{ test_html }}
 </div>
 
+<!-- скрипт, начинающий тест -->
+<script>
+    $("body").on("teststart", function (e, myElement) {
+        {{ test_js }}
+    });
+</script>
+
 # Исходный код для этого примера #
 
 ## HMTL ##
 
-{% highlight html linenos %}{{ test_html }}{% endhighlight %}
+<div class="code html">
+    {% highlight html linenos %}{{ test_html }}{% endhighlight %}
+</div>
 
 ## JavaScript ##
 
-{% highlight javascript linenos %}{{ test_js }}{% endhighlight %}
+<div class="code js">
+    {% highlight javascript linenos %}{{ test_js }}{% endhighlight %}
+</div>
 
-<!-- скрипт, начинающий тест -->
-<script>
-$("body").on("teststart", function (e, myElement) {
-    {{ test_js }}
-});
-</script>
+## CSS ##
+
+<div class="code css">
+    {% highlight css %}{{ test_css }}{% endhighlight %}
+</div>
