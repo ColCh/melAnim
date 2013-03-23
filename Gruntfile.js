@@ -12,7 +12,7 @@ module.exports = function (grunt) {
                 banner: '\n/*! melAnim - v<%= meta.version %> - ' +
                     '<%= grunt.template.today("yyyy-mm-dd") %>\n' +
                     '* Copyright (c) <%= grunt.template.today("yyyy") %> ' +
-                    'ColCh; Licensed MIT ' +
+                    'ColCh; Licensed GPLv3 ' +
                     '*/\n'
             },
             dist: {
