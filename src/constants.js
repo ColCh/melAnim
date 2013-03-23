@@ -223,12 +223,27 @@
     var ANIMATION_START_EVENTTYPE = "animationstart";
 
     /**
+     * Служебное имя для CSS анимации
+     * @const
+     * @type {string}
+     */
+    var ANIMATION_NAME_NONE = "none";
+
+    /**
+     * чем соединяется стиль одной анимации
+     * (аргумент к Array.join)
+     * @type {string}
+     * @const
+     */
+    var ANIMATION_SINGLE_JOINER = " ";
+
+    /**
      * по чему разделяются стили анимации
      * (аргумент к String.split)
      * @type {RegExp}
      * @const
      */
-    var ANIMATIONS_SEPARATOR = /,\s+(?=\w)/;
+    var ANIMATIONS_SEPARATOR = /,\s+(?=[a-z])/i;
 
     /**
      * чем соединяются стили анимации
@@ -237,6 +252,13 @@
      * @const
      */
     var ANIMATIONS_JOINER = ", ";
+
+    /**
+     * Имя CSS-свойства для CSS3 анимации.
+     * @type {string}
+     * @const
+     */
+    var ANIMATION = "animation";
 
     /**
      * Имя CSS-свойства для назначения \ получения имени анимации.

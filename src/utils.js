@@ -1,3 +1,4 @@
+
     /**
      * Проверит, является ли объект x экземпляром constructor.
      * @param {*} x
@@ -1247,4 +1248,152 @@
     ReflowLooper.prototype.looper = function (timeStamp) {
         this.timeoutID = requestAnimationFrame(this.looper);
         this.callback.call(this.context, timeStamp);
+    };
+
+    /**
+     * Регистр анимаций для обеспечивания перезаписи свойств
+     * понятие "перезапись анинимаций" взято из спецификации по CSS3 анимациям
+     * @type {{data: Array, search: Function, add: Function, remove: Function}}
+     */
+    var overrideRegistry = {
+
+        /**
+         * Регистр для реализации перезаписи анимаций
+         * Структура :
+         *      [
+         *          [ Animation1, Animation2 ]
+         *          ...
+         *      ]
+         * Где у Animation1 и Animation2 одинаковые элементы для анимирования
+         * @type {Array.<Array.<(CSSAnimation|ClassicAnimation)>>}
+         * @private
+         */
+        data : [],
+
+        /**
+         * Поиск индекса группы анимаций
+         * @param {(CSSAnimation|ClassicAnimation)} animation
+         * @private
+         * @return {number} индекс группы в overrideRegistry.data, или -1, если не найдена или регистр пуст
+         */
+        search: function (animation) {
+            var element = animation.getElement();
+            var groupIndex;
+
+            groupIndex = -1;
+
+            if (this.data.length) {
+                groupIndex = LinearSearch(this.data, function (animationsGroup) {
+                    // т.к. анимации сгруппированы по анимируемым элементам, то
+                    // для поиска группы достаточно сравнить с первой попавшейся
+                    return animationsGroup[0].getElement() === element;
+                });
+                if (ENABLE_DEBUG && groupIndex === -1) {
+                    console.log('overrideRegistry.search: animation "' + animation.toString() + '" is not found in the override registry!');
+                }
+            } else if (ENABLE_DEBUG) {
+                console.log('overrideRegistry.search:  override registry is empty');
+            }
+
+            return groupIndex;
+        },
+
+        /**
+         * Добавление анимации в регистр
+         * @param {(CSSAnimation|ClassicAnimation)} animation
+         */
+        add: function (animation) {
+            var groupIndex, group;
+
+            groupIndex = this.search(animation);
+
+            if (groupIndex === -1) {
+                group = [];
+                this.data.push(group);
+                if (ENABLE_DEBUG) {
+                    console.log('overrideRegistry.add: created new animation group. groups length is "' + this.data.length + '"');
+                }
+            } else {
+                group = this.data[groupIndex];
+            }
+
+            group.push(animation);
+
+            if (ENABLE_DEBUG) {
+                console.log('overrideRegistry.add: animation "' + animation.toString() + '" added to override registry');
+            }
+        },
+
+        /**
+         * Удаление анимации из регистра
+         * @param {(CSSAnimation|ClassicAnimation)} animation
+         */
+        remove: function (animation) {
+            var groupIndex, group, animationIndex;
+
+            groupIndex = this.search(animation);
+
+            if (groupIndex !== -1) {
+
+                group = this.data[groupIndex];
+
+                animationIndex = LinearSearch(group, function (anim) {
+                    return anim === animation;
+                });
+
+                if (animationIndex !== -1) {
+
+                    // просто удаляем её из списка перезаписей
+                    group.splice(animationIndex, 1);
+
+                    if (ENABLE_DEBUG) {
+                        console.log('overrideRegistry.remove: animation "' + animation.toString() + '" is removed from override registry successfully.');
+                    }
+
+                } else if (ENABLE_DEBUG) {
+                    // по идее, никогда не исполнился. но на всякий пожарный...
+                    console.log('overrideRegistry.remove: animation "' + animation.toString() + '" is not found in the group!');
+                }
+
+            } else if (ENABLE_DEBUG) {
+                // по идее, никогда не исполнился. но на всякий пожарный...
+                console.log('overrideRegistry.remove:  animation is not found in the registry or registry is empty; nothing to remove');
+            }
+
+        },
+
+        /**
+         * Пересоздаст запись анимации в регистр
+         * @param {(CSSAnimation|ClassicAnimation)} animation
+         */
+        update: function (animation) {
+            this.remove(animation);
+            this.add(animation);
+        },
+
+        /**
+         * Проверит, перезаписано ли свойство для анимации
+         * @param {(CSSAnimation|ClassicAnimation)} animation
+         * @param {string} propertyName
+         * @return {boolean}
+         */
+        isOverridden: function (animation, propertyName) {
+            var groupIndex, group, isOverridden;
+            var i;
+
+            groupIndex = this.search(animation);
+            isOverridden = false;
+
+            if (groupIndex !== -1) {
+                group = this.data[groupIndex];
+                for (i = group.length - 1; i && !isOverridden; i -= 1) {
+                    isOverridden = group[i].isPropSetted(propertyName) && group[i].toString() !== animation.toString();
+                }
+            } else if (ENABLE_DEBUG) {
+                console.log('overrideRegistry.isOverridden: cannot check property override');
+            }
+
+            return isOverridden;
+        }
+
     };

@@ -1,4 +1,4 @@
 
-/**@license melAnim.js by melky (coloured_chalk@mail.ru). Dual licensed under the MIT and GPL licenses. */
+/**@license melAnim.js by melky (coloured_chalk@mail.ru). Licensed under the GPLv3 license. */
 (function (window) {
 	"use strict";

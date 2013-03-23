@@ -61,7 +61,6 @@
     //TODO провесить временную функцию на ключевом кадре - кажется, оно багнулось
     //TODO относительное изменение свойств
     function ClassicAnimation() {
-        this.targets = [];
         this.startingValues = {};
         this.currentValues = {};
         this.cache = {};
@@ -70,12 +69,19 @@
         this.specialEasing = {};
         this.iterations = 1;
         this.animatedProperties = {};
+
+        // специальная обработка смягчения по умолчанию
+        this.easing(DEFAULT_EASING);
+
         // начальный и конечный ключевые кадры
         // их свойства наследуют вычисленные
         this.addKeyframe(0.0, createObject(this.animatedProperties));
         this.addKeyframe(1.0, createObject(this.animatedProperties));
         this.timer = new ReflowLooper(this.tick, this);
-        return this;
+
+        if (ENABLE_DEBUG) {
+            console.log('CREATED NEW <JAVASCRIPT> ANIMATION INSTANCE');
+        }
     }
 
     /*
@@ -208,12 +214,12 @@
     ClassicAnimation.prototype.animationId = "";
 
     /**
-     * Коллекция элементов, учавствующих в анимации.
+     * Анимируемый элемент
      * Заполняется сеттером "element"
      * @private
-     * @type {Array.<Element>}
+     * @type {Element}
      */
-    ClassicAnimation.prototype.targets = null;
+    ClassicAnimation.prototype.element = null;
 
     /**
      * Отсортированный по возрастанию свойства "key" массив ключевых кадров.
@@ -290,18 +296,28 @@
      * Добавит элемент(-ы) в коллекцию анимируемых.
      * @param {HTMLElement} elem Элемент
      */
-    ClassicAnimation.prototype.addElement = function (elem) {
+    ClassicAnimation.prototype.setElement = function (elem) {
         var id;
         if (typeOf.element(elem)) {
             id = generateId();
-            elem.setAttribute(DATA_ATTR_NAME, id);
-            this.cache[id] = {};
-            this.startingValues[id] = {};
-            this.currentValues[id] = {};
-            this.targets.push(elem);
+            this.cache = {};
+            this.startingValues = {};
+            this.currentValues = {};
+            if (elem !== this.element) {
+                this.element = elem;
+            }
         } else if (ENABLE_DEBUG) {
             console.log('addElement: passed variable is non-HTMLElement "' + elem + '"');
         }
+    };
+
+    /**
+     * Геттер для элемента анимации
+     * Не приватный, но его имя срезается GCC
+     * @return {Element}
+     */
+    ClassicAnimation.prototype.getElement = function () {
+        return this.element;
     };
 
     /**
@@ -327,7 +343,7 @@
                 console.log('duration: computed epsilon is "' + this.digits + '" digits');
             }
         } else if (ENABLE_DEBUG) {
-            console.warn('duration: bad value "'+ duration +'"');
+            console.log('duration: bad value "'+ duration +'"');
         }
     };
 
@@ -350,6 +366,16 @@
     ClassicAnimation.prototype.onStart = function (callback) {
         if (typeOf.func(callback)) {
             this.onstart = callback;
+        }
+    };
+
+    /**
+     * Установка функции, которая завершится при окончании прохода
+     * @param {Function} callback
+     */
+    ClassicAnimation.prototype.onIteration = function (callback) {
+        if (typeOf.func(callback)) {
+            this.oniteration = callback;
         }
     };
 
@@ -477,7 +503,7 @@
                 }
             }
         } else if (ENABLE_DEBUG) {
-            console.warn('easing: cannot form a function from arguments %o', timingFunction);
+            console.log('easing: cannot form a function from arguments "' + timingFunction + '"');
         }
     };
 
@@ -515,7 +541,7 @@
         if (typeOf.number(numericDelay)) {
             this.delayTime =/** @type {number} */ (numericDelay);
         } else if (ENABLE_DEBUG) {
-            console.warn('delay: cannot parse value "%s"', delay);
+            console.log('delay: cannot parse value "' + delay + '"');
         }
     };
 
@@ -599,16 +625,14 @@
         }
 
         // запоминаем текущие значения анимируемых свойств для каждого элемента
-        each(this.targets, function (element) {
+        var element = this.element;
+        var startingValues = this.startingValues;
 
-            var id = element.getAttribute(DATA_ATTR_NAME);
-            var startingValues = this.startingValues[id];
+        overrideRegistry.add(this);
 
-            each(this.animatedProperties, function (special_value, propertyName) {
-                var currentPropertyValue = css(element, propertyName);
-                startingValues[propertyName] = normalize(element, propertyName, currentPropertyValue, false);
-            }, this);
-
+        each(this.animatedProperties, function (special_value, propertyName) {
+            var currentPropertyValue = css(element, propertyName);
+            startingValues[propertyName] = normalize(element, propertyName, currentPropertyValue, false);
         }, this);
 
         this.started = now();
@@ -627,11 +651,12 @@
         var fillsForwards, endFractionalTime;
 
         this.timer.stop();
+        overrideRegistry.remove(this);
 
         fillsForwards = this.fillingMode === FILLMODE_FORWARDS ||this.fillingMode === FILLMODE_BOTH;
 
         if (fillsForwards) {
-            endFractionalTime = this.needsReverse(this.iterations) ? 1.0 : 0.0;
+            endFractionalTime = this.needsReverse(this.iterations) ? 0.0 : 1.0;
             if (ENABLE_DEBUG) {
                 console.log('stop: animation fills forwards and has direction "' + this.animationDirection + '" and iteration count "' + this.iterations + '" so fetching with keyframe "' + endFractionalTime + '"');
             }
@@ -676,7 +701,7 @@
 
         if (!typeOf.number(key)) {
             if (ENABLE_DEBUG) {
-                console.warn('propAt: passed keyframe key is invalid "%s"', position);
+                console.log('propAt: passed keyframe key is invalid "' + position + '"');
             }
             return;
         }
@@ -684,6 +709,27 @@
         keyframe = this.lookupKeyframe(key) || this.addKeyframe(key);
         this.animatedProperties[name] = SPECIAL_VALUE;
         keyframe.properties[name] = value;
+    };
+
+    /**
+     * Проверка установки значнеия свойства
+     * Сделано для перезаписи анимаций.
+     * @param {string} name имя свойства
+     * @return {boolean} значение свойства
+     */
+    ClassicAnimation.prototype.isPropSetted = function (name) {
+        return name in this.animatedProperties;
+    };
+
+    /**
+     * Перегрузка toString
+     * возвратит имя анимации
+     * @return {string}
+     * @override
+     * @inheritDoc
+     */
+    ClassicAnimation.prototype.toString = function () {
+        return this.animationId;
     };
 
     /*
@@ -756,75 +802,83 @@
          *  информация о вычисленных значениях
          *  для каждого элемента
          *  */
-        each(this.targets, function (element) {
+        var element = this.element;
 
-            var id, startingValues, currentValues;
+        var startingValues, currentValues;
 
-            id = element.getAttribute(DATA_ATTR_NAME);
-            startingValues = this.startingValues[id];
-            currentValues = this.currentValues[id];
+        startingValues = this.startingValues;
+        currentValues = this.currentValues;
 
-            each(this.animatedProperties, function (_, propertyName) {
+        each(this.animatedProperties, function (_, propertyName) {
 
-                var value, individualFractionalTime;
+            var value, individualFractionalTime;
 
-                /*
-                 * Поиск двух ближайших ключевых кадров
-                 * для которых задано значение свойства
-                 */
-                firstKeyframe = keyframes[0];
-                secondKeyframe = keyframes[keyframes.length - 1];
+            if (overrideRegistry.isOverridden(this, propertyName)) {
+                // пропустить перезаписанное свойство
+                // и удалить из списка вычисленных
+                if (ENABLE_DEBUG && propertyName in currentValues) {
+                    console.log('ClassicAnimation.fetch at "' + this.animationId + '": property "' + propertyName + '" is overridden. Skipping and removing it.');
+                }
+                delete currentValues[propertyName];
+                return true;
+            }
 
-                //TODO было бы неплохо заменить линейный поиск на бинарный
-                each(keyframes, function (keyframe) {
-                    // специальное значение для прекращения обхода
-                    var STOP_ITERATION = false;
+            /*
+             * Поиск двух ближайших ключевых кадров
+             * для которых задано значение свойства
+             */
+            firstKeyframe = keyframes[0];
+            secondKeyframe = keyframes[keyframes.length - 1];
 
-                    var key = /** @type {number} */ (keyframe.key);
-                    if (propertyName in keyframe.properties) {
-                        if (fractionalTime < key || (fractionalTime === 1.0 && key === 1.0)) {
-                            secondKeyframe = keyframe;
-                            return STOP_ITERATION;
-                        }
-                        firstKeyframe = keyframe;
+            //TODO было бы неплохо заменить линейный поиск на бинарный
+            each(keyframes, function (keyframe) {
+                // специальное значение для прекращения обхода
+                var STOP_ITERATION = false;
+
+                var key = /** @type {number} */ (keyframe.key);
+                if (propertyName in keyframe.properties) {
+                    if (fractionalTime < key || (fractionalTime === 1.0 && key === 1.0)) {
+                        secondKeyframe = keyframe;
+                        return STOP_ITERATION;
                     }
-                    return !STOP_ITERATION;
-                });
-
-                offset = firstKeyframe.key;
-                scale = 1.0 / (secondKeyframe.key - firstKeyframe.key);
-                individualFractionalTime = (fractionalTime - offset) * scale;
-
-                if (instanceOf(timingFunction, CubicBezier)) {
-                    easing = /** @type {CubicBezier} */(timingFunction).calc(individualFractionalTime);
-                } else if (instanceOf(timingFunction, Steps)) {
-                    easing = /** @type {Steps} */(timingFunction).calc(individualFractionalTime);
-                } else {
-                    easing = timingFunction(individualFractionalTime);
+                    firstKeyframe = keyframe;
                 }
-                easing = round(easing, this.digits);
+                return !STOP_ITERATION;
+            });
 
-                if (firstKeyframe.properties[propertyName] === SPECIAL_VALUE) {
-                    from = startingValues[propertyName];
-                } else {
-                    from = firstKeyframe.properties[propertyName];
-                    from = normalize(element, propertyName, from, false);
-                }
+            offset = firstKeyframe.key;
+            scale = 1.0 / (secondKeyframe.key - firstKeyframe.key);
+            individualFractionalTime = (fractionalTime - offset) * scale;
 
-                if (secondKeyframe.properties[propertyName] === SPECIAL_VALUE) {
-                    to = startingValues[propertyName];
-                } else {
-                    to = secondKeyframe.properties[propertyName];
-                    to = normalize(element, propertyName, to, false);
-                }
+            if (instanceOf(timingFunction, CubicBezier)) {
+                easing = /** @type {CubicBezier} */(timingFunction).calc(individualFractionalTime);
+            } else if (instanceOf(timingFunction, Steps)) {
+                easing = /** @type {Steps} */(timingFunction).calc(individualFractionalTime);
+            } else {
+                easing = timingFunction(individualFractionalTime);
+            }
+            easing = round(easing, this.digits);
 
-                value = blend(propertyName, /** @type {(Array|number)} */ (from), /** @type {(Array|number)} */(to), easing, this.digits);
+            if (firstKeyframe.properties[propertyName] === SPECIAL_VALUE) {
+                from = startingValues[propertyName];
+            } else {
+                from = firstKeyframe.properties[propertyName];
+                from = normalize(element, propertyName, from, false);
+            }
 
-                currentValues[propertyName] = value;
+            if (secondKeyframe.properties[propertyName] === SPECIAL_VALUE) {
+                to = startingValues[propertyName];
+            } else {
+                to = secondKeyframe.properties[propertyName];
+                to = normalize(element, propertyName, to, false);
+            }
 
-            }, this); // end properties loop
+            value = blend(propertyName, /** @type {(Array|number)} */ (from), /** @type {(Array|number)} */(to), easing, this.digits);
 
-        }, this); // end targets loop
+            currentValues[propertyName] = value;
+
+        }, this); // end properties loop
+
     };
 
     /**
@@ -833,19 +887,20 @@
      * @private
      */
     ClassicAnimation.prototype.render = function () {
-        each(this.targets, function (element) {
+        var element = this.element;
 
-            var id, currentValues;
-            var elementStyle = element.style;
+        var currentValues;
+        var elementStyle = element.style;
 
-            id = element.getAttribute(DATA_ATTR_NAME);
-            currentValues = this.currentValues[id];
+        currentValues = this.currentValues;
 
-            each(currentValues, function (propertyValue, propertyName) {
+        each(currentValues, function (propertyValue, propertyName) {
+            if (!overrideRegistry.isOverridden(this, propertyName)) {
+                // пропустить перезаписанные свойства
                 css(elementStyle, propertyName, propertyValue);
-            }, this);
-
+            }
         }, this);
+
     };
 
     /**
@@ -976,7 +1031,7 @@
     };
 
     /* Экспорты */
-    ClassicAnimation.prototype["addElement"] = ClassicAnimation.prototype.addElement;
+    ClassicAnimation.prototype["setElement"] = ClassicAnimation.prototype.setElement;
     ClassicAnimation.prototype["delay"] = ClassicAnimation.prototype.delay;
     ClassicAnimation.prototype["duration"] = ClassicAnimation.prototype.duration;
     ClassicAnimation.prototype["direction"] = ClassicAnimation.prototype.direction;
@@ -989,3 +1044,4 @@
     ClassicAnimation.prototype["stop"] = ClassicAnimation.prototype.stop;
     ClassicAnimation.prototype["onStep"] = ClassicAnimation.prototype.onStep;
     ClassicAnimation.prototype["onStart"] = ClassicAnimation.prototype.onStart;
+    ClassicAnimation.prototype["destruct"] = noop;

@@ -56,7 +56,7 @@
      *     }
      * }
      *
-     * @param {(Element|Array.<Element>)} elements Элемент(ы) для анимирования.
+     * @param {(Element|Array.<Element>)} element Элемент(ы) для анимирования.
      * @param {object} keyframes Свойства для анимирования.
      * @param {(string|Object)=} duration Длительность анимации или объект с продвинутыми настройками. По-умолчанию : "400ms".
      * @param {(string|Array|Function)=} easing Как будут прогрессировать значения свойств. По-умолчанию : "ease".
@@ -126,23 +126,27 @@
              */
             self;
 
+        var options;
+
         // если передан объект с расширенными опциями; разворачиваем его.
         if (typeOf.object(duration) && arguments.length === 3) {
 
-            classicMode = duration["classicMode"];
+            options = duration;
 
-            onstart = duration["onstart"];
-            oniteration = duration["oniteration"];
-            oncomplete = duration["oncomplete"];
-            onstep = duration["onstep"];
+            classicMode = options["classicMode"];
 
-            easing = duration["easing"];
+            onstart = options["onstart"];
+            oniteration = options["oniteration"];
+            oncomplete = options["oncomplete"];
+            onstep = options["onstep"];
 
-            duration = duration["duration"];
-            direction = duration["direction"];
-            iterationCount = duration["iterationCount"];
-            delay = duration["delay"];
-            fillMode = duration["fillMode"];
+            easing = options["easing"];
+
+            duration = options["duration"];
+            direction = options["direction"];
+            iterationCount = options["iterationCount"];
+            delay = options["delay"];
+            fillMode = options["fillMode"];
 
         }
 
@@ -156,7 +160,7 @@
 
         self = new construct();
 
-        typeOf.element(elements) ? self.addElement(elements) : each(elements, self.addElement, self);
+        typeOf.element(elements) ? self.setElement(elements) : each(elements, self.setElement, self);
 
         each(keyframes, function (properties, key) {
             each(properties, function (propertyName, propertyValue) {
@@ -191,15 +195,33 @@
      * @return {(CSSAnimation|ClassicAnimation)}
      */
     function animate (elements, properties, duration, easing, complete) {
-        var self = Animation(elements, {}, duration, easing, function () {
+
+        var completeWrapper = function () {
             //TODO сделать то же, только без замыкания
-            typeOf.func(complete) && complete();
+            typeOf.func(complete) && complete.apply(null, arguments);
             self.destruct();
-        });
+        };
+
+        var options;
+
+        if (typeOf.object(duration)) {
+            options = createObject(/** @type {Object} */(duration));
+        } else {
+            options = {};
+            options["duration"] = duration;
+            options["easing"] = easing;
+        }
+
+        options["oncomplete"] = completeWrapper;
+
+        var self = Animation(elements, undefined, options);
+
         each(properties, function (propertyValue, propertyName) {
             self.propAt(propertyName, propertyValue);
         });
+
         self.fillMode(FILLMODE_FORWARDS);
         self.start();
+
         return /** @type {(CSSAnimation|ClassicAnimation)} */ (self);
     }
