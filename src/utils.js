@@ -1535,7 +1535,6 @@
     /**
      * Имя свойства для смягчения
      * @type {string}
-     * @private
      */
     Keyframes.prototype.easingProperty = "timing-function";
 
@@ -1598,9 +1597,29 @@
     /**
      * Проверка на то, установлено ли значение свойства при указанном прогрессе
      * @param {string} propertyName
-     * @param {number} position прогресс в процентах
+     * @param {number=} position прогресс в процентах
      * @returns {boolean}
      */
     Keyframes.prototype.isSetted = function (propertyName, position) {
-        return propertyName in this.keyframes && !typeOf.undefined(this.lookupKeyframe(propertyName, position));
+        var registered = propertyName in this.keyframes;
+
+        if (typeOf.number(position) && registered) {
+            return toBool(this.lookupKeyframe(propertyName, position));
+        }
+
+        return registered;
+    };
+
+    /**
+     * Пройдётся по всем свойствам и ключевым кадрам
+     * @param {function(string, *, number)} callback функция обратного вызова
+     * @param {Object} context контекст исполнения
+     */
+    Keyframes.prototype.forEach = function (callback, context) {
+        context = typeOf.object(context) ? context : this;
+        each(this.keyframes, function (keyframes, propertyName) {
+            each(keyframes, function (keyframe) {
+                return callback.call(context, propertyName, keyframe.value, keyframe.key);
+            }, this);
+        }, this);
     };

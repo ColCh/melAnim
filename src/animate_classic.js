@@ -11,7 +11,6 @@
     function ClassicAnimation() {
         this.startingValues = {};
         this.currentValues = {};
-        this.cache = {};
         this.animationId = generateId();
         this.keyframes = new Keyframes();
         this.specialEasing = {};
@@ -128,11 +127,11 @@
     * */
 
     /**
-     * Объект с временными данными.
-     * @type {Object}
+     * Снимок ключевых кадров
+     * @type {Keyframes}
      * @private
      */
-    ClassicAnimation.prototype.cache = null;
+    ClassicAnimation.prototype.shapshot = null;
 
     /**
      * Объект с текущими значениями свойств
@@ -243,7 +242,6 @@
         var id;
         if (typeOf.element(elem)) {
             id = generateId();
-            this.cache = {};
             this.startingValues = {};
             this.currentValues = {};
             if (elem !== this.element) {
@@ -343,10 +341,6 @@
      */
     ClassicAnimation.prototype.easing = function (timingFunction, position, property) {
 
-        /**
-         * Временной кадр, если указываем смягчение для него
-         * @type {{key: number, properties: Object, easing: Function}}
-         * */
         var keyframe;
         /**
          * Функция смягчения
@@ -520,10 +514,7 @@
      */
     ClassicAnimation.prototype.iterationCount = function (iterations) {
 
-        /**
-         * Числовое представление
-         * @type {number}
-         */
+        /** @type {number} */
         var numericIterations;
 
         // исключение составляет специальное значение
@@ -574,6 +565,25 @@
             var currentPropertyValue = css(element, propertyName);
             startingValues[propertyName] = normalize(element, propertyName, currentPropertyValue, false);
         }, this);
+
+        this.snapshot = new Keyframes();
+
+        this.keyframes.forEach(function (propertyName, propertyValue, position) {
+            var normalizedValue;
+            if (propertyName === this.keyframes.easingProperty) {
+                this.snapshot.easing(propertyValue, position);
+            } else {
+                if (propertyValue === SPECIAL_VALUE) {
+                    propertyValue = css(this.element, propertyName);
+                }
+                normalizedValue = normalize(this.element, propertyName, propertyValue, false);
+                this.snapshot.propAt(propertyName, normalizedValue, position);
+            }
+        }, this);
+
+        if (ENABLE_DEBUG) {
+            console.log('ClassicAnimation.start: keyframes are snapshotted');
+        }
 
         this.started = now();
         this.tick(this.started);
@@ -655,7 +665,7 @@
      * @return {boolean} значение свойства
      */
     ClassicAnimation.prototype.isPropSetted = function (name) {
-        return name in this.animatedProperties;
+        return this.keyframes.isSetted(name);
     };
 
     /**
@@ -724,7 +734,7 @@
         position = fractionalTime / PERCENT_TO_FRACTION;
 
          // смягчение для текущего ключевого кадра
-        timingFunction = this.keyframes.retrieveEasing(position) || this.smoothing;
+        timingFunction = this.snapshot.retrieveEasing(position) || this.smoothing;
 
         each(this.animatedProperties, function (_, propertyName) {
 
@@ -745,7 +755,7 @@
              * Поиск двух ближайших ключевых кадров
              * для которых задано значение свойства
              */
-            keyframes = this.keyframes.retrieveValue(propertyName, position);
+            keyframes = this.snapshot.retrieveValue(propertyName, position);
             firstKeyframe = keyframes[0];
             secondKeyframe = keyframes[1];
 
@@ -762,19 +772,8 @@
             }
             easing = round(easing, this.digits);
 
-            if (firstKeyframe.value === SPECIAL_VALUE) {
-                from = this.startingValues[propertyName];
-            } else {
-                from = firstKeyframe.value;
-                from = normalize(this.element, propertyName, from, false);
-            }
-
-            if (secondKeyframe.value === SPECIAL_VALUE) {
-                to = this.value;
-            } else {
-                to = secondKeyframe.value;
-                to = normalize(this.element, propertyName, to, false);
-            }
+            from = firstKeyframe.value;
+            to = secondKeyframe.value;
 
             value = blend(propertyName, /** @type {(Array|number)} */ (from), /** @type {(Array|number)} */(to), easing, this.digits);
 
