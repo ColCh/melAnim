@@ -1,55 +1,3 @@
-    function easingSearchCallback (fractionalTime, firstKeyframe, index, keyframes) {
-        var secondKeyframe = keyframes[ index + 1];
-        // для навигации в бинарном поиске
-        var MOVE_RIGHT = 1, MOVE_LEFT = -1, STOP = 0;
-
-        if (!secondKeyframe) return MOVE_LEFT;
-        if (firstKeyframe.key > fractionalTime) return MOVE_LEFT;
-        if (secondKeyframe.key <= fractionalTime) return MOVE_RIGHT;
-
-        return STOP;
-    }
-
-    /**
-     * Конструктор ключевых кадров.
-     * @constructor
-     * @class
-     * @param {number} key
-     * @param {Object=} properties
-     * @param {Function=} easing
-     */
-    function Keyframe (key, properties, easing) {
-        if (typeOf.number(key)) {
-            this.key = /** @type {number} */ (key);
-        }
-        if (typeOf.object(properties)) {
-            this.properties = /** @type {Object} */ (properties);
-        } else {
-            this.properties = {};
-        }
-        if (typeOf.func(easing)) {
-            this.easing = /** @type {Function} */(easing);
-        }
-    }
-
-    /**
-     * Прогресс, к которому относится ключевой кадр (в долях)
-     * @type {number}
-     */
-    Keyframe.prototype.key = 0.00;
-
-    /**
-     * Смягчение ключевого кадра
-     * @type {(Function|CubicBezier|Steps)}
-     */
-    Keyframe.prototype.easing = noop;
-
-    /**
-     * Значения свойств для этого ключевого кадра.
-     * @type {Object}
-     */
-    Keyframe.prototype.properties = {};
-
     /**
      * Конструктор анимаций с ключевыми кадрами на JavaScript.
      * @constructor
@@ -65,18 +13,13 @@
         this.currentValues = {};
         this.cache = {};
         this.animationId = generateId();
-        this.keyframes = [];
+        this.keyframes = new Keyframes();
         this.specialEasing = {};
         this.iterations = 1;
         this.animatedProperties = {};
 
         // специальная обработка смягчения по умолчанию
         this.easing(DEFAULT_EASING);
-
-        // начальный и конечный ключевые кадры
-        // их свойства наследуют вычисленные
-        this.addKeyframe(0.0, createObject(this.animatedProperties));
-        this.addKeyframe(1.0, createObject(this.animatedProperties));
         this.timer = new ReflowLooper(this.tick, this);
 
         if (ENABLE_DEBUG) {
@@ -222,9 +165,9 @@
     ClassicAnimation.prototype.element = null;
 
     /**
-     * Отсортированный по возрастанию свойства "key" массив ключевых кадров.
+     * Коллекция ключевых кадров
      * @private
-     * @typedef Array.{{key: number, properties: Object.<string, number>, easing: Function}}
+     * @type {Keyframes}
      */
     ClassicAnimation.prototype.keyframes = null;
 
@@ -495,10 +438,7 @@
                 } else {
                     key = normalizeKey(/** @type {(number|string)} */(position));
                     if (typeOf.number(key)) {
-                        // указываем в процентах, используем в долях.
-                        key *= PERCENT_TO_FRACTION;
-                        keyframe = this.lookupKeyframe(key) || this.addKeyframe(key);
-                        keyframe.easing = easing;
+                        this.keyframes.easing(easing, key);
                     }
                 }
             }
@@ -696,8 +636,6 @@
         var key;
 
         key = typeOf.undefined(position) ? keyAliases["to"] : normalizeKey(/** @type {(number|string)} */(position));
-        // в долях
-        key *= PERCENT_TO_FRACTION;
 
         if (!typeOf.number(key)) {
             if (ENABLE_DEBUG) {
@@ -706,9 +644,8 @@
             return;
         }
 
-        keyframe = this.lookupKeyframe(key) || this.addKeyframe(key);
         this.animatedProperties[name] = SPECIAL_VALUE;
-        keyframe.properties[name] = value;
+        this.keyframes.propAt(name, value, key);
     };
 
     /**
@@ -781,45 +718,26 @@
      * @private
      */
     ClassicAnimation.prototype.fetch = function (fractionalTime) {
+        var firstKeyframe, secondKeyframe, from, to, position;
+        var timingFunction;
 
-        var keyframes, firstKeyframe, secondKeyframe, from, to;
-        var offset, scale;
-        var timingFunction, index, easing;
-        keyframes = this.keyframes;
+        position = fractionalTime / PERCENT_TO_FRACTION;
 
-        /*
-         * Поиск функции смягчения для текущего ключевого кадра
-         */
-        timingFunction = this.smoothing;
-
-        index = binarySearch(/**@type {Array}*/(keyframes), fractionalTime, easingSearchCallback);
-
-        if (index !== -1 && keyframes[index].easing !== noop) {
-            timingFunction = keyframes[index].easing;
-        }
-
-        /**
-         *  информация о вычисленных значениях
-         *  для каждого элемента
-         *  */
-        var element = this.element;
-
-        var startingValues, currentValues;
-
-        startingValues = this.startingValues;
-        currentValues = this.currentValues;
+         // смягчение для текущего ключевого кадра
+        timingFunction = this.keyframes.retrieveEasing(position) || this.smoothing;
 
         each(this.animatedProperties, function (_, propertyName) {
 
-            var value, individualFractionalTime;
+            var value, individualFractionalTime, keyframes;
+            var offset, scale, easing;
 
             if (overrideRegistry.isOverridden(this, propertyName)) {
                 // пропустить перезаписанное свойство
                 // и удалить из списка вычисленных
-                if (ENABLE_DEBUG && propertyName in currentValues) {
+                if (ENABLE_DEBUG && propertyName in this.currentValues) {
                     console.log('ClassicAnimation.fetch at "' + this.animationId + '": property "' + propertyName + '" is overridden. Skipping and removing it.');
                 }
-                delete currentValues[propertyName];
+                delete this.currentValues[propertyName];
                 return true;
             }
 
@@ -827,28 +745,13 @@
              * Поиск двух ближайших ключевых кадров
              * для которых задано значение свойства
              */
+            keyframes = this.keyframes.retrieveValue(propertyName, position);
             firstKeyframe = keyframes[0];
-            secondKeyframe = keyframes[keyframes.length - 1];
-
-            //TODO было бы неплохо заменить линейный поиск на бинарный
-            each(keyframes, function (keyframe) {
-                // специальное значение для прекращения обхода
-                var STOP_ITERATION = false;
-
-                var key = /** @type {number} */ (keyframe.key);
-                if (propertyName in keyframe.properties) {
-                    if (fractionalTime < key || (fractionalTime === 1.0 && key === 1.0)) {
-                        secondKeyframe = keyframe;
-                        return STOP_ITERATION;
-                    }
-                    firstKeyframe = keyframe;
-                }
-                return !STOP_ITERATION;
-            });
+            secondKeyframe = keyframes[1];
 
             offset = firstKeyframe.key;
             scale = 1.0 / (secondKeyframe.key - firstKeyframe.key);
-            individualFractionalTime = (fractionalTime - offset) * scale;
+            individualFractionalTime = (fractionalTime - offset) * scale / PERCENT_TO_FRACTION;
 
             if (instanceOf(timingFunction, CubicBezier)) {
                 easing = /** @type {CubicBezier} */(timingFunction).calc(individualFractionalTime);
@@ -859,23 +762,23 @@
             }
             easing = round(easing, this.digits);
 
-            if (firstKeyframe.properties[propertyName] === SPECIAL_VALUE) {
-                from = startingValues[propertyName];
+            if (firstKeyframe.value === SPECIAL_VALUE) {
+                from = this.startingValues[propertyName];
             } else {
-                from = firstKeyframe.properties[propertyName];
-                from = normalize(element, propertyName, from, false);
+                from = firstKeyframe.value;
+                from = normalize(this.element, propertyName, from, false);
             }
 
-            if (secondKeyframe.properties[propertyName] === SPECIAL_VALUE) {
-                to = startingValues[propertyName];
+            if (secondKeyframe.value === SPECIAL_VALUE) {
+                to = this.value;
             } else {
-                to = secondKeyframe.properties[propertyName];
-                to = normalize(element, propertyName, to, false);
+                to = secondKeyframe.value;
+                to = normalize(this.element, propertyName, to, false);
             }
 
             value = blend(propertyName, /** @type {(Array|number)} */ (from), /** @type {(Array|number)} */(to), easing, this.digits);
 
-            currentValues[propertyName] = value;
+            this.currentValues[propertyName] = value;
 
         }, this); // end properties loop
 
@@ -895,10 +798,7 @@
         currentValues = this.currentValues;
 
         each(currentValues, function (propertyValue, propertyName) {
-            if (!overrideRegistry.isOverridden(this, propertyName)) {
-                // пропустить перезаписанные свойства
-                css(elementStyle, propertyName, propertyValue);
-            }
+            css(elementStyle, propertyName, propertyValue);
         }, this);
 
     };

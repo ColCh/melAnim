@@ -1395,5 +1395,212 @@
 
             return isOverridden;
         }
+    };
 
+    /**
+     * Конструктор ключевых кадров.
+     * @constructor
+     */
+    function Keyframe () {
+
+    }
+
+    /**
+     * Прогресс, к которому относится ключевой кадр (в процентах; целочисленное)
+     * @type {number}
+     */
+    Keyframe.prototype.key = 0;
+
+    /**
+     * Значение свойства для этого ключевого кадра.
+     * @type {*}
+     */
+    Keyframe.prototype.value = null;
+
+    /**
+     * Конструктор коллекции ключевых кадров
+     * @constructor
+     */
+    function Keyframes () {
+        this.keyframes = {};
+    }
+
+    /**
+     * Массив ключевых кадров
+     * @type {Object}
+     * @private
+     */
+    Keyframes.prototype.keyframes = null;
+
+    /**
+     * Попытается найти в коллеции ключевых кадров для свойства нужный с указанной позицией
+     * @param {string} propertyName
+     * @param {number} position
+     * @return {Keyframe?}
+     */
+    Keyframes.prototype.lookupKeyframe = function (propertyName, position) {
+        var keyframes, keyframeIndex;
+
+        if (propertyName in this.keyframes) {
+            keyframes = this.keyframes[ propertyName ];
+            keyframeIndex = binarySearch(keyframes, position, function (desiredKey, currentKeyframe) {
+                return compareNumbers(desiredKey, currentKeyframe.key);
+            });
+            if (keyframeIndex !== -1) {
+                return keyframes[keyframeIndex];
+            }
+        }
+
+        return undefined;
+    };
+
+    /**
+     * Добавит ключевой кадр для свойства на указанной позиции и вернёт его
+     * @param {string} propertyName
+     * @param {number} position
+     * @return {Keyframe}
+     */
+    Keyframes.prototype.addKeyframe = function (propertyName, position) {
+        var propertyKeyframes, keyframe;
+        var startingKeyframe, endingKeyframe;
+
+        if (!(propertyName in this.keyframes)) {
+            this.keyframes[propertyName] = [  ];
+            if (position !== keyAliases["from"]) {
+                startingKeyframe = new Keyframe();
+                startingKeyframe.key = keyAliases["from"];
+                startingKeyframe.value = SPECIAL_VALUE;
+                this.keyframes[propertyName].push(startingKeyframe);
+            }
+            if (position !== keyAliases["to"]) {
+                endingKeyframe = new Keyframe();
+                endingKeyframe.key = keyAliases["to"];
+                endingKeyframe.value = SPECIAL_VALUE;
+                this.keyframes[propertyName].push(endingKeyframe);
+            }
+        }
+
+        propertyKeyframes = this.keyframes[propertyName];
+        keyframe = new Keyframe();
+        keyframe.key = position;
+        propertyKeyframes.push(keyframe);
+        bubbleSort(propertyKeyframes, function (current, next) {
+            return current.key - next.key;
+        });
+
+        return keyframe;
+    };
+
+    /**
+     * Найдёт ключевой кадр для свойства на указанной позиции,
+     * или создаст его, если он не существует.
+     * @param {string} propertyName
+     * @param {number} position
+     * @return {Keyframe}
+     */
+    Keyframes.prototype.findKeyframe = function (propertyName, position) {
+        var keyframe = this.lookupKeyframe(propertyName, position);
+
+        if (!keyframe) {
+            keyframe = this.addKeyframe(propertyName, position);
+        }
+
+        return /** @type {Keyframe} */(keyframe);
+    };
+
+    /**
+     * Установка значения свойства при указанном прогрессе
+     * Для установки смягчения при прогрессе используется метод easing
+     * @param {string} propertyName имя свойства
+     * @param {string} propertyValue значение свойства
+     * @param {(number|string)=} position численное представление позиции; в процентах.
+     */
+    Keyframes.prototype.propAt = function (propertyName, propertyValue, position) {
+        var keyframe, key;
+
+        if (typeOf.string(propertyName)) {
+            if (typeOf.number(position)) {
+
+                keyframe = this.findKeyframe(propertyName, position);
+                keyframe.value = propertyValue;
+
+            } else if (ENABLE_DEBUG) {
+                console.log('Keyframes.propAt: passed keyframe key "' + position + '" is invalid');
+            }
+        } else if (ENABLE_DEBUG) {
+            console.log('Keyframes.propAt: INVALID passed property name "' + propertyName + '"');
+        }
+    };
+
+    /**
+     * Имя свойства для смягчения
+     * @type {string}
+     * @private
+     */
+    Keyframes.prototype.easingProperty = "timing-function";
+
+    /**
+     * Установка смягчения при прогрессе
+     * @param timingFunction
+     * @param position
+     * @returns {*}
+     */
+    Keyframes.prototype.easing = function (timingFunction, position) {
+        return this.propAt(this.easingProperty, timingFunction, position);
+    };
+
+    /**
+     * Получение значения свойства при указанном прогрессе
+     * @param {string} propertyName
+     * @param {number} position прогресс в процентах
+     */
+    Keyframes.prototype.retrieveValue = function (propertyName, position) {
+        var keyframes, keyframeIndex;
+        var firstKeyframe, secondKeyframe;
+        if (propertyName in this.keyframes) {
+            keyframes = this.keyframes[propertyName];
+            keyframeIndex = binarySearch(keyframes, position, function (desiredKey, currentKeyframe, index, keyframes) {
+                var secondKeyframe = keyframes[ index + 1];
+                // для навигации в бинарном поиске
+                var MOVE_RIGHT = 1, MOVE_LEFT = -1, STOP = 0;
+
+                if (!secondKeyframe) return MOVE_LEFT;
+                if (currentKeyframe.key > desiredKey) return MOVE_LEFT;
+                if (secondKeyframe.key < desiredKey) return MOVE_RIGHT;
+
+                return STOP;
+            });
+            if (keyframeIndex !== -1) {
+                firstKeyframe = keyframes[ keyframeIndex ];
+                secondKeyframe = keyframes[ keyframeIndex + 1 ];
+                return [ firstKeyframe, secondKeyframe ];
+            }
+        }
+        return undefined;
+    };
+
+    /**
+     * Получение смягчения при прогрессе
+     * @param {number} position прогресс в процентах
+     */
+    Keyframes.prototype.retrieveEasing = function (position) {
+        var keyframes = this.retrieveValue(this.easingProperty, position);
+        var firstKeyframe;
+        if (keyframes) {
+            firstKeyframe = keyframes[0];
+            if (firstKeyframe) {
+                return firstKeyframe.value;
+            }
+        }
+        return undefined;
+    };
+
+    /**
+     * Проверка на то, установлено ли значение свойства при указанном прогрессе
+     * @param {string} propertyName
+     * @param {number} position прогресс в процентах
+     * @returns {boolean}
+     */
+    Keyframes.prototype.isSetted = function (propertyName, position) {
+        return propertyName in this.keyframes && !typeOf.undefined(this.lookupKeyframe(propertyName, position));
     };
