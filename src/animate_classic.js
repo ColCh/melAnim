@@ -684,44 +684,6 @@
     * */
 
     /**
-     * Добавит ключевой кадр на указанном прогрессе по проходу в долях и вернёт его
-     * @param {number} position
-     * @param {Object=} properties
-     * @param {Function=} easing
-     * @private
-     */
-    ClassicAnimation.prototype.addKeyframe = function (position, properties, easing) {
-
-        var keyframe;
-        var keyframes;
-
-        if (typeOf.number(position)) {
-            keyframe = new Keyframe(position, properties, easing);
-            keyframes = this.keyframes;
-            keyframes.push(keyframe);
-            bubbleSort(/** @type {Array} */(keyframes), compareKeyframes);
-        }
-
-        return keyframe;
-    };
-
-    /**
-     * Попытается найти в коллекции ключевой кадр
-     * с указанным прогрессом по проходу (в долях)
-     * @param {number} position
-     * @return {Object}
-     * @private
-     */
-    ClassicAnimation.prototype.lookupKeyframe = function (position) {
-        var keyframe, index;
-        index = binarySearch(/** @type {Array} */(this.keyframes), position, function (key, keyframe) {
-            return key - keyframe.key;
-        });
-        keyframe = this.keyframes[index];
-        return keyframe;
-    };
-
-    /**
      * Высчитает значения свойств при указанном прогрессе про проходу
      * @param {number} fractionalTime прогресс по проходу ( [0, 1] )
      * @return {undefined}
