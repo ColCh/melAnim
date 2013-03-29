@@ -10,12 +10,12 @@
     //TODO относительное изменение свойств
     function ClassicAnimation() {
         this.startingValues = {};
-        this.currentValues = {};
         this.animationId = generateId();
         this.keyframes = new Keyframes();
         this.specialEasing = {};
         this.iterations = 1;
         this.animatedProperties = {};
+        this.rule = addRule("." + this.animationId);
 
         // специальная обработка смягчения по умолчанию
         this.easing(DEFAULT_EASING);
@@ -82,7 +82,7 @@
 
     /**
      * Смягчение всей анимации
-     * @type {(Function|CubicBezier|Steps)}
+     * @type {Easing}
      * @private
      */
     ClassicAnimation.prototype.smoothing = cubicBezierApproximations[ DEFAULT_EASING ];
@@ -115,13 +115,6 @@
      */
     ClassicAnimation.prototype.onstep = noop;
 
-    /**
-     * Количество знаков после запятой для прогресса и свойств.
-     * @type {number}
-     * @private
-     */
-    ClassicAnimation.prototype.digits = DEFAULT_DIGITS_ROUND;
-
     /*
     *   Индивидуальные свойства
     * */
@@ -132,13 +125,6 @@
      * @private
      */
     ClassicAnimation.prototype.shapshot = null;
-
-    /**
-     * Объект с текущими значениями свойств
-     * @type {Object.<string, Object.<string, (number|Array)>>}
-     * @private
-     */
-    ClassicAnimation.prototype.currentValues = null;
 
     /**
      * Объект со стартовыми значениями свойств
@@ -243,10 +229,11 @@
         if (typeOf.element(elem)) {
             id = generateId();
             this.startingValues = {};
-            this.currentValues = {};
-            if (elem !== this.element) {
-                this.element = elem;
+            if (this.element) {
+                removeClass(this.element, this.animationId);
             }
+            addClass(elem, this.animationId);
+            this.element = elem;
         } else if (ENABLE_DEBUG) {
             console.log('addElement: passed variable is non-HTMLElement "' + elem + '"');
         }
@@ -279,10 +266,6 @@
                 numericDuration = 0;
             }
             this.animationTime = /** @type {number} */ (numericDuration);
-            this.digits = floor(lg(this.animationTime * FRAMES_PER_SECOND)) - 2.0;
-            if (ENABLE_DEBUG) {
-                console.log('duration: computed epsilon is "' + this.digits + '" digits');
-            }
         } else if (ENABLE_DEBUG) {
             console.log('duration: bad value "'+ duration +'"');
         }
@@ -333,106 +316,29 @@
      * (!) Абсциссы первой и второй точек для кубической кривой должны принадлежать промежутку [0, 1].
      *     *
      * @param {(Function|Array|string)} timingFunction временная функция CSS, JS функция или алиас смягчения
-     * @param {(number|string)=} position прогресс по проходу в процентах (по умол. не зваисит от прогресса)
+     * @param {(number|string)=} key прогресс по проходу в процентах (по умол. не зваисит от прогресса)
      * @param {string=} property для какого свойства устанавливается (по умол. для всех)
      *
      * @see cubicBezierAliases
      * @see cubicBezierApproximations
      */
-    ClassicAnimation.prototype.easing = function (timingFunction, position, property) {
+    ClassicAnimation.prototype.easing = function (timingFunction, key, property) {
+        var easing, position;
 
-        var keyframe;
-        /**
-         * Функция смягчения
-         * @type {(Function|CubicBezier|Steps)}
-         */
-        var easing;
-        /**
-         * Аргументы к временной функции
-         * @type {Array}
-         */
-        var points;
-        /**
-         * для выделения алиасов
-         * ease-in -> easeIn
-         * @type {string}
-         */
-        var camelCased;
-        /**
-         * строка временной функции css без пробелов
-         * @type {string}
-         */
-        var trimmed;
-        /**
-         * Количество ступеней лестничной функции
-         * @type {number}
-         */
-        var stepsAmount;
-        /**
-         * Отсчитывать ли ступени лестничной функции от старта (или с конца)
-         * @type {boolean}
-         */
-        var countFromStart;
-        /**
-         * Числовое представление прогресса
-         * @type {number}
-         */
-        var key;
+        easing = EasingRegistry.request(timingFunction);
 
-        if (typeOf.func(timingFunction)) {
-            easing = /** @type {Function} */ (timingFunction);
-        } else if (typeOf.string(timingFunction)) {
-            // alias или CSS timing-function
-
-            trimmed = trim(/** @type {string} */ (timingFunction) );
-            camelCased = camelCase(trimmed);
-
-            if (camelCased in cubicBezierApproximations) {
-                // алиас функции приближения
-                easing = cubicBezierApproximations[camelCased];
-            } else if (camelCased in cubicBezierAliases) {
-                // алиас к точкам
-                points = cubicBezierAliases[camelCased];
-            } else {
-                // строка временной функции css
-                if (cubicBezierReg.test(trimmed)) {
-                    points = trimmed.match(cubicBezierReg)[1].split(",");
-                } else if (stepsReg.test(trimmed)) {
-                    points = trimmed.match(stepsReg)[1].split(",");
-                }
-            }
-
-            if (points) {
-                // переданы аргументы к временным функциям.
-                if (points.length === 4) {
-                    // 4 аргумента - это кубическая кривая Безье
-                    points = map(points, parseFloat);
-                    // абсциссы точек должны лежать в [0, 1]
-                    if (inRange(points[0], 0, 1, true) && inRange(points[2], 0, 1, true)) {
-                        easing = new CubicBezier(points[0], points[1], points[2], points[3]);
-                    }
-                } else if (points.length === 2) {
-                    // 2 аргумента - лестничная функция
-                    stepsAmount = parseInt(points[0], 10);
-                    countFromStart = points[1] === "start";
-                    if (typeOf.number(stepsAmount)) {
-                        easing = new Steps(stepsAmount, countFromStart);
-                    }
-                }
-            }
-
-        }
-
-        if (typeOf.func(easing) || instanceOf(easing, CubicBezier) || instanceOf(easing, Steps)) {
+        if (easing) {
             if (typeOf.string(property)) {
                 this.specialEasing[/** @type {string} */(property)] = easing;
             } else {
-                if (typeOf.undefined(position)) {
+                if (typeOf.undefined(key)) {
                     this.smoothing = easing;
                 } else {
-                    key = normalizeKey(/** @type {(number|string)} */(position));
-                    if (typeOf.number(key)) {
-                        this.keyframes.easing(easing, key);
+                    position = normalizeKey(/** @type {(number|string)} */(key));
+                    if (typeOf.number(position)) {
+                        this.keyframes.easing(easing, position);
+                    } else if (ENABLE_DEBUG) {
+                        console.log('ClassicAnimation.easing: cannot parse passed key "' + key + '"');
                     }
                 }
             }
@@ -539,6 +445,8 @@
      */
     ClassicAnimation.prototype.start = function () {
 
+        var fillsBackwards;
+
         if (this.delayTime > 0) {
             if (ENABLE_DEBUG) {
                 console.log('start: ' + this.animationId + ' has positite delay "' + this.delayTime + '" ms');
@@ -547,7 +455,7 @@
                 var self = /** @type {ClassicAnimation} */(this);
                 self.timer.start();
                 self.onstart();
-            }, this.timer), this.delayTime);
+            }, this), this.delayTime);
         } else {
             if (ENABLE_DEBUG) {
                 console.log('start: ' + this.animationId + ' has non-positite delay "' + this.delayTime + '" so starting right now.');
@@ -564,6 +472,7 @@
         each(this.animatedProperties, function (special_value, propertyName) {
             var currentPropertyValue = css(element, propertyName);
             startingValues[propertyName] = normalize(element, propertyName, currentPropertyValue, false);
+            css(element, propertyName, '');
         }, this);
 
         this.snapshot = new Keyframes();
@@ -585,8 +494,13 @@
             console.log('ClassicAnimation.start: keyframes are snapshotted');
         }
 
+        fillsBackwards = this.fillingMode === FILLMODE_BOTH || this.fillingMode === FILLMODE_BACKWARDS;
+
         this.started = now();
-        this.tick(this.started);
+
+        if (this.delayTime <= 0 || fillsBackwards) {
+            this.tick(this.started);
+        }
 
         if (ENABLE_DEBUG) {
             console.log('start: animation "' + this.animationId + '" started');
@@ -603,15 +517,14 @@
         this.timer.stop();
         overrideRegistry.remove(this);
 
-        fillsForwards = this.fillingMode === FILLMODE_FORWARDS ||this.fillingMode === FILLMODE_BOTH;
+        fillsForwards = this.fillingMode === FILLMODE_FORWARDS || this.fillingMode === FILLMODE_BOTH;
 
         if (fillsForwards) {
             endFractionalTime = this.needsReverse(this.iterations) ? 0.0 : 1.0;
             if (ENABLE_DEBUG) {
                 console.log('stop: animation fills forwards and has direction "' + this.animationDirection + '" and iteration count "' + this.iterations + '" so fetching with keyframe "' + endFractionalTime + '"');
             }
-            this.fetch(endFractionalTime);
-            this.render();
+            this.fetch(endFractionalTime, true);
         }
         //TODO fillMode: none
 
@@ -686,17 +599,17 @@
     /**
      * Высчитает значения свойств при указанном прогрессе про проходу
      * @param {number} fractionalTime прогресс по проходу ( [0, 1] )
-     * @return {undefined}
+     * @param {boolean} direct отрисовка напрямую - передаётся методу render
      * @private
      */
-    ClassicAnimation.prototype.fetch = function (fractionalTime) {
-        var firstKeyframe, secondKeyframe, from, to, position;
+    ClassicAnimation.prototype.fetch = function (fractionalTime, direct) {
+        var firstKeyframe, secondKeyframe, position;
         var timingFunction;
 
-        position = fractionalTime / PERCENT_TO_FRACTION;
+        position = fractionalTime * FRACTION_TO_PERCENT;
 
          // смягчение для текущего ключевого кадра
-        timingFunction = this.snapshot.retrieveEasing(position) || this.smoothing;
+        timingFunction = /** @type {Easing} */(this.snapshot.retrieveEasing(position) || this.smoothing);
 
         each(this.animatedProperties, function (_, propertyName) {
 
@@ -705,12 +618,7 @@
 
             if (overrideRegistry.isOverridden(this, propertyName)) {
                 // пропустить перезаписанное свойство
-                // и удалить из списка вычисленных
-                if (ENABLE_DEBUG && propertyName in this.currentValues) {
-                    console.log('ClassicAnimation.fetch at "' + this.animationId + '": property "' + propertyName + '" is overridden. Skipping and removing it.');
-                }
-                delete this.currentValues[propertyName];
-                return true;
+                return;
             }
 
             /*
@@ -723,23 +631,13 @@
 
             offset = firstKeyframe.key;
             scale = 1.0 / (secondKeyframe.key - firstKeyframe.key);
-            individualFractionalTime = (fractionalTime - offset) * scale / PERCENT_TO_FRACTION;
+            individualFractionalTime = (position - offset) * scale;
 
-            if (instanceOf(timingFunction, CubicBezier)) {
-                easing = /** @type {CubicBezier} */(timingFunction).calc(individualFractionalTime);
-            } else if (instanceOf(timingFunction, Steps)) {
-                easing = /** @type {Steps} */(timingFunction).calc(individualFractionalTime);
-            } else {
-                easing = timingFunction(individualFractionalTime);
-            }
-            easing = round(easing, this.digits);
+            easing = timingFunction.compute(individualFractionalTime);
 
-            from = firstKeyframe.value;
-            to = secondKeyframe.value;
+            value = blend(propertyName, /** @type {(Array|number)} */ (firstKeyframe.value), /** @type {(Array|number)} */(secondKeyframe.value), easing);
 
-            value = blend(propertyName, /** @type {(Array|number)} */ (from), /** @type {(Array|number)} */(to), easing, this.digits);
-
-            this.currentValues[propertyName] = value;
+            this.render(propertyName, value, direct);
 
         }, this); // end properties loop
 
@@ -748,20 +646,13 @@
     /**
      * Отрисует высчитанные значения свойств
      * @see ClassicAnimation.fetch
+     * @param {string} propertyName имя свойства
+     * @param {(number|Array)} propertyValue значение свойства
+     * @param {boolean} direct отрисовка напрямую в стиль элемента
      * @private
      */
-    ClassicAnimation.prototype.render = function () {
-        var element = this.element;
-
-        var currentValues;
-        var elementStyle = element.style;
-
-        currentValues = this.currentValues;
-
-        each(currentValues, function (propertyValue, propertyName) {
-            css(elementStyle, propertyName, propertyValue);
-        }, this);
-
+    ClassicAnimation.prototype.render = function (propertyName, propertyValue, direct) {
+        css((direct ? this.element:this.rule).style, propertyName, propertyValue);
     };
 
     /**
@@ -782,24 +673,23 @@
         currentIteration = this.currentIteration = this.computeIteration(this.animationProgress);
         this.fractionalTime = this.computeFractionalTime(this.animationProgress, this.currentIteration);
 
-        if (currentIteration !== previousIteration) {
-            // Условие завершения итерации
-            if (ENABLE_DEBUG) {
-                console.log('tick: "' + this.animationId + '" - iteration "' + currentIteration + '" of total "' + iterationCount + '"');
-            }
-            this.oniteration();
-        } else if (animationProgress >= iterationCount) {
+        if (animationProgress >= iterationCount) {
             // Условие завершения анимации
             this.stop();
             this.oncomplete();
             // метод stop сам отрисует конечный кадр, т.к. он зависит от параметра fill-mode
             return;
+        } else if (currentIteration !== previousIteration) {
+            // Условие завершения итерации
+            if (ENABLE_DEBUG && iterationCount !== Number.POSITIVE_INFINITY) {
+                console.log('tick: "' + this.animationId + '" - iteration "' + currentIteration + '" of total "' + iterationCount + '"');
+            }
+            this.oniteration();
         } else {
             this.onstep();
         }
 
-        this.fetch(this.fractionalTime);
-        this.render();
+        this.fetch(this.fractionalTime, false);
     };
 
     /***
@@ -809,13 +699,7 @@
      * @private
      */
     ClassicAnimation.prototype.computeProgress = function (timeStamp) {
-
-        var animationProgress;
-
-        animationProgress = this.computeElapsedTime(timeStamp) / this.animationTime;
-        animationProgress = round(animationProgress, this.digits);
-
-        return animationProgress;
+        return this.computeElapsedTime(timeStamp) / this.animationTime;
     };
 
     /**

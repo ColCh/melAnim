@@ -100,25 +100,6 @@
     var ITERATIONCOUNT_INFINITE = "infinite";
 
     /**
-     * Поддерживаются ли CSS3 анимации текущим браузером.
-     * @type {boolean}
-     * @const
-     */
-    var CSSANIMATIONS_SUPPORTED = !!getVendorPropName("animation");
-
-    if (ENABLE_DEBUG) {
-        console.log('Detected native CSS3 Animations support.');
-    }
-
-    if (ENABLE_DEBUG) {
-        if (getVendorPropName("animation") === "animation") {
-            console.log('UA supports CSS3 Animations without vendor prefix');
-        } else {
-            console.log('UA supports CSS3 Animations width "' + prefix + '" DOM prefix ("' + lowPrefix + '" CSS prefix)');
-        }
-    }
-
-    /**
      * Идеальное количество кадров для анимации на JavaScript.
      * Пол умолчанию 60, т.к. к этому стремится requestAnimationFrame.
      * @type {number}
@@ -134,11 +115,18 @@
     var HIGHRESOLUTION_TIMER_BOUND = 1e12;
 
     /**
-     * Количество знаков после запятой для значений
+     * Количество знаков после запятой для значений временных функций
      * @type {number}
      * @const
      */
-    var DEFAULT_DIGITS_ROUND = 5;
+    var ROUND_DIGITS_EASING = 3;
+
+    /**
+     * Количество знаков после запятой для значений CSS свойств
+     * @type {number}
+     * @const
+     */
+    var ROUND_DIGITS_CSS = 1;
 
     /**
      * Имя атрибута для связывания элемента и
@@ -162,13 +150,21 @@
      * @type {number}
      * @const
      */
-    var PERCENT_TO_FRACTION = 1 / 100;
+    var FRACTION_TO_PERCENT = 100;
 
     /**
      * Максимальный прогресс по проходу, в долях
+     * @type {number}
      * @const
      * */
     var MAXIMAL_PROGRESS = 1.0;
+
+    /**
+     * Минимальный прогресс по проходу, в долях
+     * @type {number}
+     * @const
+     * */
+    var MINIMAL_PROGRESS = 0;
 
     /**
      * Использовать ли перехват (true) или всплытие (false) в обработчике событий конца CSS анимаций
@@ -230,6 +226,30 @@
     var ANIMATION_NAME_NONE = "none";
 
     /**
+     * чем разделяются аргументы у временных функций CSS.
+     * (аргумент к String.split)
+     * @type {string}
+     * @const
+     */
+    var TIMINGFUNCTION_SEPARATOR = ",";
+
+    /**
+     * чем соединяются аргументы у временных функций CSS.
+     * (аргумент к Array.join)
+     * @type {string}
+     * @const
+     */
+    var TIMINGFUNCTION_SEPARATOR = ",";
+
+    /**
+     * Второй аргумент к лестничной временной функции,
+     * указывающий на то, что отсчитывать ступени нужно с начала
+     * @type {string}
+     * @const
+     */
+    var STEPS_START = "start";
+
+    /**
      * чем соединяется стиль одной анимации
      * (аргумент к Array.join)
      * @type {string}
@@ -251,7 +271,7 @@
      * @type {string}
      * @const
      */
-    var ANIMATIONS_JOINER = ", ";
+    var ANIMATIONS_JOINER = ",";
 
     /**
      * Имя CSS-свойства для CSS3 анимации.

@@ -29,13 +29,14 @@ module.exports = function (grunt) {
                     // Main useful variables & shortcuts
                     'src/begin.js',
 
+                    // Constants are using funcs from utils. File with main definitions
+                    'src/constants.js',
+
                     // Mini-framework with funcs like addClass et cetera
                     'src/utils.js',
                     // Useful hooks for making support a wide range of props
                     'src/hooks.js',
 
-                    // Constants are using funcs from utils. File with main definitions
-                    'src/constants.js',
                     // Aliases for times, timing functions and so on
                     'src/aliases.js',
 

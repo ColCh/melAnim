@@ -114,6 +114,12 @@
     var max = Math.max;
 
     /**
+     * Шорткат для Math.pow
+     * @inheritDoc
+     */
+    var pow = Math.pow;
+
+    /**
      * Вернёт true, если число нечётное; и false, если чётное.
      * @param number
      * @return {boolean}
@@ -708,181 +714,6 @@
     }
 
     /**
-     * Найдёт корень уравнения вида f(x)=val с указанной точностью итерационным способом
-     * Если не указать сжимающее отображение, то будет использован метод хорд
-     * @param {Function} F уравнение
-     * @param {number} Y значение уравнения в искомой точке
-     * @param {number} X0 начальное приближение (или значение уравнения)
-     * @param {number} X1 след. приближение
-     * @param {number} epsilon минимальная разница между двумя приближениями (или 10^-6)
-     * @param {Function} derivative производная функции F (для метода касательных)
-     * @return {number} приближённое значение корня уравнения
-     */
-    function findEquationRoot(F, Y, X0, X1, epsilon, derivative) {
-
-        var F1, F0, DELTA_X, DELTA_F, X0d;
-        /**
-         * Значение погрешности по умолчанию
-         * @type {number}
-         * @const
-         */
-        var DEFAULT_EPSILON = 1e-6;
-        var i, stopCondition, cache;
-        var savedX0, savedX1;
-
-        epsilon = typeOf.number(epsilon) ? epsilon : DEFAULT_EPSILON;
-        stopCondition = function (X0, X1) { return Math.abs(X0 - X1) <= epsilon; };
-
-        // сохраним для метода хорд
-        savedX0 = X0;
-        savedX1 = X1;
-
-        // для начала пробуем метод касательных (метод Ньютона), у которого
-        // больше скорость сходимости, чем у метода хорд
-        X0 = Y;
-        // используем метод одной касательной
-        X0d = derivative(X0);
-
-        // ограничим количество итераций метода касательных
-        i = 8;
-
-        while (i-->0) {
-
-            X1 = X0 - ( (F(X0) - Y ) / X0d );
-
-            if (stopCondition(F(X1), Y)) {
-                return X1;
-            }
-
-            X0 = X1;
-        }
-
-        // теперь пробуем метод хорд
-        // без ограничений по количеству итераций
-        X0 = savedX0;
-        X1 = savedX1;
-
-        while (!stopCondition(X0, X1)) {
-            F1 = F(X1) - Y;
-            F0 = F(X0) - Y;
-
-            DELTA_X = X1 - X0;
-            DELTA_F = F1 - F0;
-
-            cache = X1;
-            X1 = X1 - F1 * DELTA_X / DELTA_F;
-            X0 = cache;
-        }
-
-        return X1;
-    }
-
-    /**
-     * Представление кубической кривой Безье для смягчения анимации
-     * Считается, что P0 = (0;0) и P3 = (1;1)
-     * @param {number} p1x
-     * @param {number} p1y
-     * @param {number} p2x
-     * @param {number} p2y
-     * @constructor
-     */
-    function CubicBezier (p1x, p1y, p2x, p2y) {
-        // Кривая записана в полиноминальной форме
-        this.cx = 3.0 * p1x;
-        this.bx = 3.0 * (p2x - p1x) - this.cx;
-        this.ax = 1.0 - this.cx - this.bx;
-
-        this.cy = 3.0 * p1y;
-        this.by = 3.0 * (p2y - p1y) - this.cy;
-        this.ay = 1.0 - this.cy - this.by;
-    }
-
-    /**
-     * Вернёт значение кривой в координатах x,t при переданном t.
-     * @param {number} t
-     * @return {number}
-     * @private
-     */
-    CubicBezier.prototype.B_absciss = function (t) {
-        return ((this.ax * t + this.bx) * t + this.cx) * t;
-    };
-
-    /**
-     * Вернёт значение производной в координатах x,t при переданном времени t.
-     * @param {number} t
-     * @return {number}
-     * @private
-     */
-    CubicBezier.prototype.B_derivative_absciss = function (t) {
-        return (3.0 * this.ax * t + 2.0 * this.bx) * t + this.cx;
-    };
-
-    /**
-     * Вернёт значение кривой в координатах y,t при переданном времени t.
-     * @param {number} t
-     * @return {number}
-     * @private
-     */
-    CubicBezier.prototype.B_ordinate = function (t) {
-        return ((this.ay * t + this.by) * t + this.cy) * t;
-    };
-
-    /**
-     * Вычислит значение ординаты (Y) кубической кривой при известной абсциссе (X)
-     * @param {number} y
-     * @return {number}
-     */
-    CubicBezier.prototype.calc = function (y) {
-
-        var B_bindedToX = bind(this.B_absciss, this);
-        var derivative_X = bind(this.B_derivative_absciss, this);
-
-        var t = findEquationRoot(B_bindedToX, y, 0, 1, 1e-5, derivative_X);
-
-        return this.B_ordinate(t);
-    };
-
-    /**
-     * Ступенчатая функция, ограничивающая область выходных значений до определенного числа.
-     * Ступени отсчитываются с конца, или с начала.
-     * @param {number} stepsAmount Количество ступеней
-     * @param {boolean} countFromStart Отсчитывать с начала (true) или с конца (false).
-     * @constructor
-     */
-    function Steps(stepsAmount, countFromStart) {
-        // количество ступеней - строго целочисленное
-        this.stepsAmount = stepsAmount | 0;
-        this.countFromStart = countFromStart;
-    }
-
-    /**
-     * Количество ступеней
-     * @type {number}
-     * @private
-     */
-    Steps.prototype.stepsAmount = 0;
-
-    /**
-     * Отсчитывать ли ступени с конца (false) или с начала (true)
-     * @type {boolean}
-     * @private
-     */
-    Steps.prototype.countFromStart = true;
-
-    /**
-     * Вернёт значение ординаты ступенчатой функции при известной абсциссе x.
-     * @param {number} x
-     * @return {number}
-     */
-    Steps.prototype.calc = function (x) {
-        if (this.countFromStart) {
-            return min(1.0, ceil(this.stepsAmount * x) / this.stepsAmount);
-        } else {
-            return floor(this.stepsAmount * x) / this.stepsAmount;
-        }
-    };
-
-    /**
      * Вернёт вычисленный стиль элемента
      * @param {Element} element
      * @return {CSSStyleDeclaration}
@@ -1020,7 +851,7 @@
 
                 if (typeOf.undefined(hookVal)) {
                     if (typeOf.element(element)) {
-                        stringValue = getComputedStyle(/** @type {HTMLElement} */(element))[vendorizedPropertyName];
+                        stringValue = /** @type {HTMLElement} */(element).style[vendorizedPropertyName] || getComputedStyle(/** @type {HTMLElement} */(element))[vendorizedPropertyName];
                     } else {
                         stringValue = /** @type {CSSStyleDeclaration} */ (element)[vendorizedPropertyName];
                     }
@@ -1129,20 +960,19 @@
      * @param {string} propertyName Имя свойства
      * @param {(Array|number)} from Значение меньшей точки
      * @param {(Array|number)} to Значение большей точки
-     * @param {number} digits точность значения в количестве знакв после запятой
      * @param {number} timingFunctionValue Значение прогресса между ними
      * @return {number|Array} Вычисленное значение
      */
-    function blend(propertyName, from, to, timingFunctionValue, digits) {
+    function blend(propertyName, from, to, timingFunctionValue) {
 
         /** @type {(Array|number)} */
         var value;
 
         if (propertyName in blend.hooks) {
-            value = blend.hooks[propertyName](from, to, timingFunctionValue, digits);
+            value = blend.hooks[propertyName](from, to, timingFunctionValue, ROUND_DIGITS_CSS);
         } else {
             value = /** @type {number} */ ((to - from) * timingFunctionValue + from);
-            value = round(value, digits);
+            value = round(value, ROUND_DIGITS_CSS);
         }
 
         return value;
@@ -1345,6 +1175,11 @@
 
                     // просто удаляем её из списка перезаписей
                     group.splice(animationIndex, 1);
+
+                    // пустая и ненужная группа
+                    if (group.length === 0) {
+                        this.data.splice(groupIndex, 1);
+                    }
 
                     if (ENABLE_DEBUG) {
                         console.log('overrideRegistry.remove: animation "' + animation.toString() + '" is removed from override registry successfully.');
@@ -1622,4 +1457,441 @@
                 return callback.call(context, propertyName, keyframe.value, keyframe.key);
             }, this);
         }, this);
+    };
+
+    /**
+     * Конструктор массива кеша для смягчения
+     * @type {Function}
+     * @constructor
+     */
+    var EasingCache = typeOf.undefined(window.Float64Array) ? Array:Float64Array;
+
+    /**
+     * Конструктор смягчений
+     * Родительский класс для всех смягчений
+     * @constructor
+     */
+    function Easing () {
+        this.cache = new EasingCache(pow(10, ROUND_DIGITS_EASING) + 1);
+        this.id = generateId();
+    }
+
+    /**
+     * Кэш для вычисленных значений
+     * @type {Array}
+     * @private
+     */
+    Easing.prototype.cache = null;
+
+    /**
+     * Вычисление значения временной функции в момент времени t
+     * Проксирует метод solve.
+     * Все вычисления кешируются.
+     */
+    Easing.prototype.compute = function (fractionalTime) {
+        var fraction;
+        fractionalTime = round(fractionalTime, ROUND_DIGITS_EASING);
+        fraction = floor(fractionalTime * pow(10, ROUND_DIGITS_EASING));
+        if (fraction in this.cache && this.cache[ fraction ] !== 0) {
+            return this.cache[ fraction ];
+        } else {
+            this.cache[ fraction ] = round(this.solve(fractionalTime), ROUND_DIGITS_EASING);
+            return this.cache[ fraction ];
+        }
+    };
+
+    /**
+     * Сама функция вычисления значения временной функции.
+     * @param t
+     */
+    Easing.prototype.solve = noop;
+
+    /**
+     * Идентификатор смягчения
+     * Для кеширования
+     * @type {string}
+     */
+    Easing.prototype.id = "";
+
+    /**
+     * Проверка временных функций на сходство
+     * @param {Easing} easing
+     * @return {boolean}
+     */
+    Easing.prototype.equals = function (easing) {
+        return this.solve === easing.solve;
+    };
+
+    var EasingRegistry = {
+
+        /**
+         * Обработать временную функцию с содержанием : строка временной функции CSS или алиас.
+         * @param {string} timingFunction
+         * @return {Array} аргументы к временной функции
+         */
+        parse: function (timingFunction) {
+            var trimmed, camelCased, reg, matched, args;
+            var easing;
+
+            args = [];
+
+            if (ENABLE_DEBUG && !typeOf.string(timingFunction)) {
+                console.log('easingRegistry.parse: passed timingFunction has different from "string" type "' + typeOf(timingFunction) + '"');
+            }
+
+            timingFunction = typeOf.string(timingFunction) ? timingFunction : toString(timingFunction);
+
+            trimmed = trim(timingFunction);
+            camelCased = camelCase(trimmed);
+
+            if (camelCased in cubicBezierAliases) {
+                args = cubicBezierAliases[ camelCased ];
+            } else {
+                // строка временной функции css
+                if (cubicBezierReg.test(trimmed)) {
+                    reg = cubicBezierReg;
+                } else if (stepsReg.test(trimmed)) {
+                    reg = stepsReg;
+                }
+
+                if (reg) {
+                    // строка аргументов к временной функции. разделены запятой
+                    matched = trimmed.match(reg)[1];
+                    args = matched.split(TIMINGFUNCTION_SEPARATOR);
+                } else if (ENABLE_DEBUG) {
+                    console.log('easingRegistry.parse: can\'t parse passed timing function string "' + timingFunction + '"');
+                }
+            }
+
+            return args;
+        },
+
+        /**
+         * Создаст функцию смягчения с указанными аргументами
+         * 4 аргумента - кубическая кривая Безье
+         * 1 или 2 аргумента - лестничная функция
+         * @param {Array} args
+         */
+        build: function (args) {
+            var numericArgs, timingFunction;
+            var stepsAmount, countFromStart;
+
+            timingFunction = noop;
+
+            switch (args.length) {
+                case 4:
+                    // CUBIC BEZIER
+                    numericArgs = map(args, parseFloat);
+                    // абсциссы точек должны лежать в [0, 1], ординаты не ограничены.
+                    if (inRange(numericArgs[0], 0, 1, true) && inRange(numericArgs[2], 0, 1, true)) {
+                        timingFunction = new CubicBezier(args[0], args[1], args[2], args[3]);
+                    }
+                    break;
+                case 1:
+                case 2:
+                    // STEPS
+                    // 2 аргумента - лестничная функция
+                    // 1 аргумент - лестничная функция с пропущенным указателем на старт\конец
+                    stepsAmount = parseInt(args[0], 10);
+                    countFromStart = args[1] === STEPS_START;
+                    if (typeOf.number(stepsAmount)) {
+                        timingFunction = new Steps(stepsAmount, countFromStart);
+                    }
+                    break;
+                default:
+                    if (ENABLE_DEBUG) {
+                        console.log('EasingRegistry.build: unknown arguments length "'+ args.length +'"');
+                    }
+            }
+
+            return timingFunction;
+        },
+
+        /**
+         * Запросить у регистра временную функцию
+         * Аргумент - алиас/временная функция CSS/аргументы к временной функции CSS/JS функция
+         * @type {(string|Array|Function)}
+         * @return {Easing}
+         */
+        request: function (contain) {
+            var args, timingFunction;
+
+            if (instanceOf(contain, Easing)) {
+                timingFunction = contain;
+            } else if (typeOf.func(contain)) {
+                timingFunction = new Easing();
+                timingFunction.solve = timingFunction;
+            } else {
+                if (typeOf.string(contain)) {
+                    args = this.parse(contain);
+                }
+                if (typeOf.array(args)) {
+                    timingFunction = this.build(args);
+                }
+            }
+
+            if (!this.contains(timingFunction)) {
+                this.add(timingFunction);
+            }
+
+            return timingFunction;
+        },
+
+        /**
+         * Сам регистр временных функций
+         * @type {Object.<string, Easing>}
+         * @private
+         */
+        data: {},
+
+        /**
+         * Добавление временной функции в регистр
+         * @param {Easing} easing
+         */
+        add: function (easing) {
+            if (!this.contains(easing)) {
+                this.data[ easing.id ] = easing;
+            }
+            if (ENABLE_DEBUG) {
+                console.log('EasingRegistry.add: adding new easing with id "' + easing.id + '" in the registry');
+            }
+        },
+
+        /**
+         * Удаление временной функции из регистра
+         * @param {Easing} easing
+         */
+        remove: function (easing) {
+            if (this.contains(easing)) {
+                delete this.data[ easing.id ];
+            }
+            if (ENABLE_DEBUG) {
+                console.log('EasingRegistry.remove: removing easing with id "' + easing.id + '" from the registry');
+            }
+        },
+
+        /**
+         * Проверка на существование записи о временной функции в регистре
+         * @param {Easing} easing
+         * @return {boolean}
+         */
+        contains: function (easing) {
+            var contains;
+
+            // смягчение было зарегистрировано в регистре
+            contains = easing.id in this.data;
+
+            if (!contains) {
+                // проверяем по содержанию
+                each(this.data, function (timingFunction) {
+                    contains = easing.equals(timingFunction);
+                    return !contains;
+                });
+            }
+
+            return contains;
+        }
+    };
+
+    /**
+     * Представление кубической кривой Безье для смягчения анимации
+     * Считается, что P0 = (0;0) и P3 = (1;1)
+     * @param {number} p1x
+     * @param {number} p1y
+     * @param {number} p2x
+     * @param {number} p2y
+     * @constructor
+     * @extends Easing
+     */
+    function CubicBezier (p1x, p1y, p2x, p2y) {
+
+        // родительский конструктор
+        Easing.call(this);
+
+        this.p1x = p1x;
+        this.p1y = p1y;
+        this.p2x = p2x;
+        this.p2y = p2y;
+    }
+
+    CubicBezier.prototype = new Easing();
+
+    /**
+     * Вернёт значение кривой при переданном t и точках p1, p2.
+     * @param {number} t
+     * @param {number} p1
+     * @param {number} p2
+     * @return {number}
+     * @private
+     */
+    CubicBezier.prototype.B = function (p1, p2, t) {
+        // (3*t * (1 - t)^2) * P1  + (3*t^2 *  (1 - t) )* P2 + (t^3);
+
+        var B1 = 3 * t * (1 - t) * (1 - t);
+        var B2 = 3 * t * t * (1 - t);
+        var B3 = t * t * t;
+
+        return B1 * p1 + B2 * p2 + B3;
+    };
+
+    /**
+     * Вернёт значение кривой в координатах x,t при переданном t.
+     * @param {number} t
+     * @return {number}
+     * @private
+     */
+    CubicBezier.prototype.B_absciss = function (t) {
+        return this.B(this.p1x, this.p2x, t);
+    };
+
+    /**
+     * Вернёт значение производной первого порядка в координатах x,t при переданном времени t.
+     * @param {number} t
+     * @return {number}
+     * @private
+     */
+    CubicBezier.prototype.B_derivative_I_absciss = function (t) {
+        var B1d = 9 * t * t - 12 * t + 3;
+        var B2d = 6 * t - 9 * t * t;
+        var B3d = 3 * t * t;
+
+        return B1d * this.p1x + B2d * this.p2x + B3d;
+    };
+
+    /**
+     * Вернёт значение кривой в координатах y,t при переданном времени t.
+     * @param {number} t
+     * @return {number}
+     * @private
+     */
+    CubicBezier.prototype.B_ordinate = function (t) {
+        return this.B(this.p1y, this.p2y, t);
+    };
+
+    /**
+     * Вычислит значение ординаты (Y) кубической кривой при известной абсциссе (X)
+     * @override
+     * @param {number} y
+     * @return {number}
+     */
+    CubicBezier.prototype.solve = function (y) {
+
+        // небольшой трюк - нет смысла считать значение в опорных точках.
+        if (y === 0) {
+            return 0;
+        } else if (y === this.p1x) {
+            return this.p1y;
+        } else if (y === this.p2x) {
+            return this.p2x;
+        } else if (y === 1.0) {
+            return 1.0;
+        }
+
+        var self = this;
+
+        var t;
+
+        var X0 = y, X1;
+        var epsilon = pow(10, - ROUND_DIGITS_EASING);
+        var i = 16; // вообще и пяти достаточно
+        var F;
+
+        // усовершенствованный метод Ньютона
+        // обычно проходит в 1-2 итерации при точности 0.001
+        while (i--) {
+            F = this.B_absciss(X0) - y;
+            X1 = X0 -  F / this.B_derivative_I_absciss( X0 - F / ( 2 * this.B_derivative_I_absciss(X0)) );
+            if (Math.abs(this.B_absciss(X1) - y) <= epsilon) {
+                break;
+            }
+            X0 = X1;
+        }
+
+        t = X1;
+
+        return this.B_ordinate(t);
+    };
+
+    /**
+     * Проверка двух кубических кривых на сходство
+     * @param {CubicBezier} easing
+     * @return {boolean}
+     * @override
+     */
+    CubicBezier.prototype.equals = function (easing) {
+
+        if (!instanceOf(easing, CubicBezier)) {
+            return false;
+        }
+
+        var isFirstAbscissEquals = this.p1x === easing.p1x;
+        var isFirstOrdinateEquals = this.p1y === easing.p1y;
+        var isSecondAbscissEquals = this.p2x === easing.p2x;
+        var isSecondOrdinateEquals = this.p2y === easing.p2y;
+
+        return isFirstAbscissEquals && isFirstOrdinateEquals && isSecondAbscissEquals && isSecondOrdinateEquals;
+    };
+
+    /**
+     * Ступенчатая функция, ограничивающая область выходных значений до определенного числа.
+     * Ступени отсчитываются с конца, или с начала.
+     * @param {number} stepsAmount Количество ступеней
+     * @param {boolean} countFromStart Отсчитывать с начала (true) или с конца (false).
+     * @constructor
+     * @extends Easing
+     */
+    function Steps(stepsAmount, countFromStart) {
+
+        Easing.call(this);
+
+        // количество ступеней - строго целочисленное
+        this.stepsAmount = stepsAmount | 0;
+        this.countFromStart = countFromStart;
+    }
+
+    Steps.prototype = new Easing();
+
+    /**
+     * Число ступеней
+     * @type {number}
+     * @private
+     */
+    Steps.prototype.stepsAmount = 0;
+
+    /**
+     * Отсчитывать ли ступени с конца (false) или с начала (true)
+     * @type {boolean}
+     * @private
+     */
+    Steps.prototype.countFromStart = true;
+
+    /**
+     * Вернёт значение ординаты ступенчатой функции при известной абсциссе x.
+     * @override
+     * @param {number} x
+     * @return {number}
+     */
+    Steps.prototype.solve = function (x) {
+        if (this.countFromStart) {
+            return min(1.0, ceil(this.stepsAmount * x) / this.stepsAmount);
+        } else {
+            return floor(this.stepsAmount * x) / this.stepsAmount;
+        }
+    };
+
+    /**
+     * Проверка двух лестничных функций на сходство
+     * @param {Steps} easing
+     * @return {boolean}
+     * @override
+     */
+    Steps.prototype.equals = function (easing) {
+        if (!instanceOf(easing, Steps)) {
+            return false;
+        }
+
+        var isAmountEquals = this.stepsAmount === easing.stepsAmount;
+        var isCountSourceEquals = this.countFromStart === easing.countFromStart;
+
+        return isAmountEquals && isCountSourceEquals;
     };

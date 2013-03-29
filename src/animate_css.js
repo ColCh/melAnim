@@ -7,6 +7,26 @@
      */
     var KEYFRAME_PREFIX = (getVendorPropName("animation") === "animation" ? "" : surround(lowPrefix, "-")) + "keyframes";
 
+
+    /**
+     * Поддерживаются ли CSS3 анимации текущим браузером.
+     * @type {boolean}
+     * @const
+     */
+    var CSSANIMATIONS_SUPPORTED = !!getVendorPropName("animation");
+
+    if (ENABLE_DEBUG) {
+        console.log('Detected native CSS3 Animations support.');
+    }
+
+    if (ENABLE_DEBUG) {
+        if (getVendorPropName("animation") === "animation") {
+            console.log('UA supports CSS3 Animations without vendor prefix');
+        } else {
+            console.log('UA supports CSS3 Animations width "' + prefix + '" DOM prefix ("' + lowPrefix + '" CSS prefix)');
+        }
+    }
+
     if (ENABLE_DEBUG) {
         console.log('keyframe prefix is "' + KEYFRAME_PREFIX + '"');
     }
@@ -293,7 +313,7 @@
          */
         var keyframe;
         // добавляются с указанием процентов
-        var percents = position / PERCENT_TO_FRACTION + "%";
+        var percents = position / FRACTION_TO_PERCENT + "%";
         // стиль ключевого кадра пока пуст
         var keyframeBody = "{" + "}";
         var keyframes = this.keyframesRule;
@@ -314,7 +334,7 @@
      */
     CSSAnimation.prototype.lookupKeyframe = function (position) {
         // поиск проходит с указанием процентов
-        var percents = position / PERCENT_TO_FRACTION + "%";
+        var percents = position / FRACTION_TO_PERCENT + "%";
         return this.keyframesRule.findRule(percents);
     };
 
@@ -629,7 +649,7 @@
             } else if (ENABLE_DEBUG) {
                 console.log('easing: cubic bezier invalid absciss "' + points[0] + '" or "' + points[2] + '"');
             }
-        } else if (points.length === 2) {
+        } else if (points.length === 2 || points.length === 1) {
             // лестничная функция
             stepsAmount = parseInt(points[0], 10);
             countFromStart = points[1] === "start";
@@ -646,7 +666,7 @@
             key = normalizeKey(/** @type {(number|string)} */(position));
             if (typeOf.number(key)) {
                 // в долях
-                key = key * PERCENT_TO_FRACTION;
+                key = key * FRACTION_TO_PERCENT;
                 keyframe = this.lookupKeyframe(key) || this.addKeyframe(key);
                 css(keyframe.style, ANIMATION_TIMING_FUNCTION, CSSTimingFunction);
             }
@@ -754,7 +774,7 @@
         var key = typeOf.undefined(position) ? keyAliases["to"] : normalizeKey(/** @type {(number|string)} */ (position));
         if (typeOf.number(key)) {
             // в долях
-            key = key * PERCENT_TO_FRACTION;
+            key = key * FRACTION_TO_PERCENT;
             keyframe = this.lookupKeyframe(key) || this.addKeyframe(key);
             css(keyframe.style, name, value);
 
