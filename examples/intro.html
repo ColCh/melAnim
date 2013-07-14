@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8"/>
+    <title> melAnim.js test </title>
+    <style>
+        article, aside, figure, footer, header, hgroup, menu, nav, section {
+            display: block;
+        }
+
+        .css {
+        }
+
+        .anim {
+            border: 1px black solid;
+            position: absolute;
+            width: 10px;
+        }
+
+        body {
+            background-color: #F4E5DD;
+            color: #010014;
+        }
+        .line {
+            margin-top: -10px;
+            width: 10px;
+            height: 10px;
+            margin-left: -10px;
+            background-color: #010014;
+            border-radius: 10px;
+            padding: 0px;
+            position: absolute;
+            top: 50%;
+            left: 675px;
+        }
+        .name {
+            background-color: #F4E5DD;
+            margin-top: -165px;
+            font-size: 280px;
+            position: absolute;
+            left: 50px;
+            top: 50%;
+            text-shadow: 0px 0px 2px black;
+        }
+        .desc {
+            width: 899px;
+            position: absolute;
+            opacity: 1;
+            margin-top: -20px;
+            left: 250px;
+            top: 50%;
+            text-align: center;
+            text-shadow: 0px 0px 2px black;
+        }
+        .underline {
+            margin-top: -40px;
+            width: 10px;
+            height: 10px;
+            margin-left: -10px;
+            background-color: #010014;
+            padding: 0px;
+            position: absolute;
+            top: 50%;
+            left: 675px;
+            box-shadow: 1px 0px 1px 1px black;
+        }
+    </style>
+    <script type="text/javascript" src="../dist/mel-anim.compiled.js"></script>
+</head>
+<body>
+
+<div class="line" id="line"></div>
+<div class="desc" id="desc">
+    <div style="font-size: 62px;">CSS3 Animation framework</div>
+    <div style="font-size:  42px;">with W3C compatible JavaScript fallback</div>
+</div>
+<div class="name" id="name">melAnim</div>
+<div class="underline" id="underline"></div>
+
+<script type="text/javascript">
+
+    var forceClassic = false;
+    var maxFPS = false;
+
+    melAnim.Ticker.ignoreReflow(!maxFPS);
+    maxFPS && melAnim.Ticker.fps(100);
+
+    melAnim.css(document.getElementById("name"), "opacity", "0");
+    melAnim.css(document.getElementById("name"), "background-color", "transparent");
+    melAnim.css(document.getElementById("desc"), "opacity", "0");
+    melAnim.css(document.getElementById("underline"), "opacity", "0");
+
+    melAnim(document.getElementById("line"), { opacity: "0" }, {
+        iterationCount: "2",
+        duration: "150ms",
+        easing: "swing",
+        fillMode: "none",
+        classicMode: forceClassic,
+        oncomplete: function (e) {
+
+            melAnim.css(e.animationTarget, "border-radius", "0px");
+            melAnim.css(e.animationTarget, "box-shadow", "0px 0px 1px 0px black");
+
+            melAnim(e.animationTarget, { width: "300px", "margin-left": "-150px" }, {
+                duration: "200ms",
+                easing: "ease-in-cubic",
+                classicMode: forceClassic,
+                oncomplete: function (e) {
+
+                    melAnim(e.animationTarget, { transform: "rotate(0.5turn)" }, {
+                        duration: "350ms",
+                        easing: "ease-in-out",
+                        classicMode: forceClassic,
+                        oncomplete: function (e) {
+
+                            var line = e.animationTarget.cloneNode(false);
+                            line.id = "line2";
+                            line.style.cssText = e.animationTarget.style.cssText;
+                            e.animationTarget.parentNode.insertBefore(line, e.animationTarget);
+
+                            melAnim(e.animationTarget, { transform: "rotate(270deg)", left: "40px" }, {
+                                duration: "350ms",
+                                easing: "ease-in",
+                                classicMode: forceClassic,
+                                oncomplete: function (e) {
+                                    melAnim.css(e.animationTarget, "box-shadow", "none");
+                                    melAnim(e.animationTarget, { opacity: "0" }, {
+                                        duration: "300ms",
+                                        easing: "ease-in",
+                                        classicMode: forceClassic,
+                                        oncomplete: function (e) {  }
+                                    });
+                                }
+                            });
+
+                            melAnim(line, { transform: "rotate(270deg)", left: "1320px" }, {
+                                duration: "350ms",
+                                easing: "ease-in",
+                                classicMode: forceClassic,
+                                oncomplete: function (e) {
+                                    melAnim.css(e.animationTarget, "box-shadow", "none");
+                                    melAnim(e.animationTarget, { opacity: "0" }, {
+                                        duration: "300ms",
+                                        easing: "ease-in",
+                                        classicMode: forceClassic,
+                                        oncomplete: function (e) {  }
+                                    });
+                                }
+                            });
+
+                            melAnim(document.getElementById("name"), { opacity: "1" }, {
+                                duration: "400ms",
+                                easing: "ease-in",
+                                delay: "300ms",
+                                classicMode: forceClassic,
+                                oncomplete: function (e) {
+                                    melAnim.css(e.animationTarget, "background-color", "#F4E5DD");
+                                    melAnim(document.getElementById("desc"), { opacity: "1" }, {
+                                        duration: "600ms",
+                                        easing: "ease-in-out",
+                                        classicMode: forceClassic,
+                                        oncomplete: function (e) {
+                                        }
+                                    });
+
+
+                                    melAnim(e.animationTarget, { "font-size": "200px", "margin-top": "-250px", left: "250px" }, {
+                                        duration: "300ms",
+                                        easing: "ease-out",
+                                        classicMode: forceClassic,
+                                        oncomplete: function (e) {
+                                            melAnim(document.getElementById("underline"), { opacity: "1" }, {
+                                                duration: "300ms",
+                                                easing: "ease-in-out",
+                                                classicMode: forceClassic,
+                                                oncomplete: function (e) {
+
+                                                    melAnim(document.getElementById("underline"), { "left": "260px", "width": "899px" }, {
+                                                        duration: "1200ms",
+                                                        easing: "ease-in-out",
+                                                        classicMode: forceClassic,
+                                                        oncomplete: function (e) {
+
+                                                            melAnim(document.getElementById("name"), { opacity: "0" }, {
+                                                                duration: "1800ms",
+                                                                easing: "ease-in-out",
+                                                                delay: "600ms",
+                                                                classicMode: forceClassic
+                                                            });
+                                                            melAnim(document.getElementById("underline"), { opacity: "0" }, {
+                                                                duration: "1200ms",
+                                                                easing: "ease-in-out",
+                                                                classicMode: forceClassic
+                                                            });
+                                                            melAnim(document.getElementById("desc"), { opacity: "0" }, {
+                                                                duration: "1200ms",
+                                                                easing: "ease-in-out",
+                                                                classicMode: forceClassic
+                                                            });
+
+
+                                                        }
+                                                    });
+
+                                                }
+                                            });
+
+                                        }
+                                    });
+                                }
+                            });
+
+                        }
+                    });
+                }
+            });
+        }
+    });
+</script>
+</body>
+</html>
+

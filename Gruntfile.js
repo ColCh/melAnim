@@ -9,7 +9,7 @@ module.exports = function (grunt) {
         concat: {
             options: {
                 separator: '\n\n/*---------------------------------------*/\n\n',
-                banner: '\n/*! melAnim - v<%= meta.version %> - ' +
+                banner: '/** melAnim - v<%= meta.version %> - ' +
                     '<%= grunt.template.today("yyyy-mm-dd") %>\n' +
                     '* Copyright (c) <%= grunt.template.today("yyyy") %> ' +
                     'ColCh; Licensed GPLv3 ' +
@@ -20,36 +20,18 @@ module.exports = function (grunt) {
                 dest:'dist/mel-anim.compiled.js',
 
                 src:[
-                    // Booleans for unreachable code & features
-                    'src/flags.js',
-
-                    // Starting the Main Closure
-                    'src/start.js',
-
-                    // Main useful variables & shortcuts
+                    'goog-base.js',
                     'src/begin.js',
-
-                    // Constants are using funcs from utils. File with main definitions
-                    'src/constants.js',
-
-                    // Mini-framework with funcs like addClass et cetera
+//                    'src/constants.js',
                     'src/utils.js',
-                    // Useful hooks for making support a wide range of props
+                    'src/abstractions.js',
                     'src/hooks.js',
-
-                    // Aliases for times, timing functions and so on
                     'src/aliases.js',
-
-                    // Class, that uses one main interface for both CSS & JS anims
+                    'src/defaults.js',
+                    'src/animate_class.js',
                     'src/animate_wrap.js',
-
-                    // Class for CSS3 Animations
-                    'src/animate_css.js',
-                    // Class for JavaScript fallback
-                    'src/animate_classic.js',
-
-                    // End Main Closure
-                    'src/end.js'
+                    'src/animate_func.js',
+                    'src/exports.js',
                 ]
             }
         },
@@ -57,17 +39,23 @@ module.exports = function (grunt) {
         closureCompiler: {
             options: {
                 src: 'dist/mel-anim.compiled.js',
-                compilerFile: '../compiler-latest/compiler.jar',
+                //compilerFile: '../compiler-latest/compiler.jar',
+                compilerFile: '/usr/share/java/closure-compiler/closure-compiler.jar',
                 checkModified: false,
                 compilerOpts: {
-                    warning_level: 'VERBOSE',
+                    formatting: 'PRETTY_PRINT',
                     language_in: 'ECMASCRIPT5_STRICT',
                     externs: ['externs.js'],
                     compilation_level: 'ADVANCED_OPTIMIZATIONS',
                     use_types_for_optimization: null,
                     summary_detail_level: 3,
-                    output_wrapper: "'(function(){%output%})();'",
-                    define: ["'ENABLE_DEBUG=true'"]
+                    //define: ["'ENABLE_DEBUG=false'"],
+                    //create_source_map: 'melAnim.js.map',
+                    warning_level: 'VERBOSE'//,
+                    //third_party: null
+                    //property_map_output_file: 'property-map.txt',
+                    //variable_map_output_file: 'variable-map.txt'
+                    //output_wrapper: "'(function(){%output%})();'"
                 }
             },
             advanced: {

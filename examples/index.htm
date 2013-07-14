@@ -4,38 +4,11 @@
     <meta charset="UTF-8"/>
     <title> melAnim.js test </title>
     <style>
-
-        @-webkit-keyframes tst {
-            50% {
-                height: 100px;
-            }
-        }
-
-        @keyframes test {
-            50% {
-                height: 100px;
-            }
-        }
-
         article, aside, figure, footer, header, hgroup, menu, nav, section {
             display: block;
         }
 
         .css {
-
-            -webkit-animation-name: tst_;
-            -webkit-animation-duration: 3s;
-            -webkit-animation-iteration-count: infinite;
-            -webkit-animation-timing-function: ease-in;
-            -webkit-animation-delay: 0s;
-            -webkit-animation-fill-mode: both;
-            -webkit-animation-direction: alternate;
-
-            animation-name: test_;
-            animation-duration: 3s;
-            animation-iteration-count: infinite;
-            animation-timing-function: ease-in;
-            animation-play-state: running;
         }
 
         .anim {
@@ -53,69 +26,148 @@
             margin-top: 50px;
         }
     </style>
+    <script type="text/javascript" src="../dist/mel-anim.compiled.js"></script>
 </head>
 <body>
 
-<div id="fps" style="position: absolute; top: 0; left: 0; font-size: 22px; color: red;">FPS HERE</div>
+<div style="top: 10px; border-width: 1px; width: 200px" class="anim css" id="css">Anim me ONE!</div>
 
-<div style="top: 10%;" class="anim css" id="css">Anim me ONE!</div>
-<div style="top: 20%;" class="anim js" id="js">Anim me TWO!</div>
 
-<script>
-    var PROFILE_ENABLED = 0;
-
-    var PROFILE_FPS = 0 && PROFILE_ENABLED;
-    var PROFILE_START = 1 && PROFILE_ENABLED;
-    var PROFILE_CONSTRUCTOR = 1 && PROFILE_ENABLED;
-    var PROFILE_SETUP = 1 && PROFILE_ENABLED;
-    var PROFILE_PROCESS = 1 && PROFILE_ENABLED;
-
-    if (PROFILE_START) console.profile("startup");
-</script>
-<script type="text/javascript" src="../dist/mel-anim.adv.js"></script>
 <script type="text/javascript">
 
-    if (PROFILE_START) console.profileEnd("startup");
+    var element = document.getElementById("css");
 
-    if (PROFILE_CONSTRUCTOR) console.profile("constructor");
-    var anim = new melAnim.Animation();
-    if (PROFILE_CONSTRUCTOR) console.profileEnd("constructor");
+    //console.profile('startup');
+    //console.profile('whole');
 
-    if (PROFILE_SETUP) console.profile("setup");
+    var anim = new melAnim.Animation()//.
+//            target(element).
+//                propAt("width", 100, 'from').
+//                    propAt("width", 300).
+//                        duration('2s').
+//                            delay('1s');
+    anim.setTarget(element);
 
-    anim.addElement(document.getElementById("css"));
+//    anim.propAt("width", 100, 'from');
+//    anim.propAt("width", 300);
 
-    anim.propAt("width", "300px");
-    //anim.propAt("width", "300px", "90%");
-    //anim.propAt("width", "550px", "100%");
+    anim.setDuration(2000);
+//    anim.setDelay(1000);
+//    anim.setIterations(2.3);
 
-    //anim.propAt("height", "50px", "0%");
-    //anim.propAt("height", "250px", "90%");
+//    anim.propAt("width", '30px', 'from');
+//    anim.propAt("width", '3em');
 
-    anim.easing("ease");
-    //anim.easing("ease-out", "30%");
+//    anim.setClassicMode(true);
+    //melAnim.Ticker.ignoreReflow(true);
+    melAnim.Ticker.setFPS(100);
 
-    //anim.direction("alternate");
+    //anim.propAt("opacity", "0");
 
-    anim.duration("2.5s");
+//    anim.propAt("letter-spacing", "30px");
 
-    //anim.iterationCount("infinite");
+//    anim.propAt("text-shadow", "3px 3px rgba(50%, 50%, 50%, 50%), yellow 0 0 4px inset");
+//    anim.propAt("box-shadow", "3px 3px rgb(50%, 30%, 70%), inset 0 0 4px yellow");
+//    anim.propAt("box-shadow", "100px 100px 50px 50px red");
+//    anim.propAt("text-shadow", "100px 0px 0px green");
+//
+//    anim.propAt("width", "300px", "from");
+//    anim.propAt("color", "blue");
+//    anim.propAt("font-size", "36px");
+//    anim.propAt("height", "250px");
+//    anim.propAt("top", "250px");
+//    anim.propAt("width", 700, "100%");
+//
+    anim.propAt("color", "rgb(150, 120, 20)", "from");
+    anim.propAt("color", "hsl(0, 100%, 50%)");
+//
+//    anim.propAt("transform", "skew(180deg, 180deg) scale(1.5, 1.5) rotate(360deg)", "100%");
+//    anim.propAt("transform", "skew(180deg, 180deg)", "100%");
+//    anim.propAt("transform", "skew(90deg, 90deg) scale(0.5, 0.5) rotate(90deg)", "50%");
+//    anim.propAt("transform", "translate(200px, 200px)", "from");
+//    anim.propAt("transform", "rotate(1turn)", "30%");
 
-    //anim.delay("500ms");
+//      anim.propAt("transform", "scale(1, 1) translate(0px, 0px)", "from");
+//      anim.propAt("transform", "scale(2, 2) translate(200px, 200px)", "to");
+//
+//    anim.propAt("width", "300px", "20%");
+//    anim.propAt("width", "700px", "5%");
+//    anim.propAt("width", "100px", "40%");
+//    anim.propAt("width", "140px", "70%");
+//    anim.propAt("width", "450px", "80%");
+//    anim.propAt("width", "250px", "90%");
+//    anim.propAt("width", "150px", "95%");
+//
+//
+//    anim.propAt("height", "50px", "10%");
+//    anim.propAt("height", "524px", "7%");
+//    anim.propAt("height", "79px", "10%");
+//    anim.propAt("height", "350px", "67%");
+//    anim.propAt("height", "40px", "13%");
+//    anim.propAt("height", "250px", "76%");
+//
+//    anim.propAt("border-width", "30px", "20%");
+//    anim.propAt("border-width", "50px", "10%");
+//    anim.propAt("border-width", "1px", "40%");
+//    anim.propAt("border-width", "79px", "10%");
+//    anim.propAt("border-width", "50px", "80%");
+//    anim.propAt("border-width", "40px", "13%");
+//    anim.propAt("border-width", "10px", "95%");
+//
+//    anim.propAt("top", "50px", "10%");
+//    anim.propAt("top", "24px", "7%");
+//    anim.propAt("top", "79px", "10%");
+//    anim.propAt("top", "350px", "67%");
+//    anim.propAt("top", "40px", "13%");
+//    anim.propAt("top", "250px", "76%");
+//
+//
+//    anim.easing("ease-in-out");
+//    anim.easing("ease-in", "20%");
+//    anim.easing("ease-out", "70%");
+//    anim.easing("steps(5, start)");
+//
+//    anim.direction("alternate");
+//
+//    anim.duration("15s");
+//
+//    anim.iterationCount("3");
+//
+//    anim.delay("0s");
+//
+//    anim.fillMode("none");
 
-    anim.fillMode("none");
+//    var i = 3;
+    var i = 1;
 
     anim.onComplete(function () {
+        //console.profileEnd('play');
+        //console.profileEnd('whole');
         document.body.style.backgroundColor = 'green';
-        //anim.destruct();
-        if (PROFILE_PROCESS) console.profileEnd("animation process");
+        this.getTarget().style.color = 'blue';
+        this.getTarget().innerHTML = 'completed';
+        if (--i>0) anim.start();// else console.profileEnd('whole');
     });
 
-    if (PROFILE_SETUP) console.profileEnd("setup");
+    var called = false;
+    false && anim.onStart(function () {
+        if (called) {
+//            debugger;
+        }
+        called = true;
+        this.getTarget().style.color = 'yellow';
+        this.getTarget().innerHTML = 'Started!';
+    });
 
-    if (PROFILE_PROCESS) console.profile("animation process");
-
+    false && anim.onStep(function () {
+        this.getTarget().innerHTML = this.getFractionalTime();
+    });
+    
     anim.start();
+
+    //console.profileEnd('startup');
+    //console.profile('play');
+
 </script>
 </body>
 </html>

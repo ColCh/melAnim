@@ -1,49 +1,475 @@
-(function(){/*
- melAnim.js by melky (coloured_chalk@mail.ru). Dual licensed under the MIT and GPL licenses. */
-'use strict';var f=!0,h=null,i=!1,k,m=window;function n(a,b){return a instanceof b}function r(a){var b=typeof a;"object"===b&&(b=Object.prototype.toString.call(a).slice(8,-1).toLowerCase());return b}function aa(){return"melAnimation"+ba++}function ca(a){var b=s;b.prototype=a;return new b}function t(a,b){b in a&&a.splice(b,1)}
-function da(a,b){var c=r.b(b),d,e,g,j;e=Array.prototype.indexOf;d=-1;if(!c&&e)d=e.call(a,b);else{e=0;for(g=a.length;e<g&&-1===d;e++)j=a[e],c?b(j,e,a)===f&&(d=e):b===j&&(d=e)}return d}function ea(a,b){return a-b}function fa(a,b){return a.key-b.key}function ga(a,b,c){var d,e,g,j;r.a(d)||(d=0);r.a(e)||(e=a.length-1);c=r.b(c)?c:ea;do{if(d>e||!a.length)return-1;g=d+e>>1;if(j=c(b,a[g],g,a))0>j?e=g-1:d=g+1;else return g}while(1)}function u(a,b){return function(){return a.apply(b,arguments)}}
-function v(a,b,c){var d,e,c=c||m;if(r.n(a)){d=0;for(e=a.length;d<e;)if(d in a){if(b.call(c,a[d],d,a)===i)break;d+=1}}else for(d in a)if(a.hasOwnProperty(d)&&b.call(c,a[d],d,a)===i)break}function ha(a){var b=parseFloat,c=[];v(a,function(a,e,g){c.push(b.call(void 0,a,e,g))});return c}function w(a){return!!a}function y(a){var b=(a+"").match(ia);return b?(a=parseFloat(b[1]),b=ja[b[2]]||1,a*b):ka}function la(a){return(a+"").replace(/-[a-z]/g,function(a){return a.charAt(1).toUpperCase()})}
-function z(a,b){var c,d,b=!b?ma:b===f?m:b;a in A?c=A[a]:a in b?c=a:(d=la(a),d in b?c=A[a]=d:(d=d.charAt(0).toUpperCase()+d.slice(1),B&&C?B+d in b?c=A[a]=B+d:C+d in b&&(c=A[a]=C+d):v(na,function(e){var g=String.prototype.toLowerCase.call(e);return e+d in b?(B=e,C=g,c=A[a]=e+d,i):g+d in b?(B=e,C=g,c=A[a]=g+d,i):f})));return c}function D(a){var b=D.e++;D.b||(D.b=setInterval(D.d,1E3/60));D.a[b]=a;return b}function oa(a){var b=D.a;a in b&&delete b[a]}
-function pa(a,b){var c=Math.pow(10,b);return Math.round(a*c)/c}function E(a,b,c,d){this.a=3*a;this.b=3*(c-a)-this.a;this.e=1-this.a-this.b;this.d=3*b;this.g=3*(d-b)-this.d;this.xa=1-this.d-this.g}function F(a,b){this.a=a|0;this.b=b}function G(a){var b;r.g(a)&&(b=a in H?H[a]:parseInt(a,10));return 0<=b&&100>=b?b:ka}
-function K(a,b,c){var d=r.d(c),e=d?"get":"set",g,j,l;a&&(j=z(b),b in qa&&e in qa[b]&&(g=qa[b][e](a,j,c)),d?l=r.d(g)?r.e(a)?(m.getComputedStyle?m.getComputedStyle(a,h):a.currentStyle)[j]:a[j]:g:(l=r.g(c)?c:L(a,b,c,f),r.e(a)?a.style[j]=l:a[j]=l));return l}function L(a,b,c,d){var e,g;g=z(b);b in ra?e=ra[b](a,g,c,d):d?r.a(c)&&!(b in sa)&&(e=c+"px"):(b=c.match(ia)[2],e=ta[b](a,g,c));return e}function M(a,b,c,d,e){return a=a in M.a?M.a[a](b,c,d,e):pa((c-b)*d+b,e)}
-function ua(a,b){r.b(a)&&(this.ba=a);r.o(b)&&(this.ca=b);this.v=u(this.v,this)}
-function va(a,b,c,d,e){var g,j,l,o,p,I,wa,J,q;r.o(c)&&3===arguments.length&&(g=c.classicMode,l=c.onstart,o=c.oniteration,e=c.oncomplete,p=c.onstep,d=c.easing,c=c.duration,j=c.direction,I=c.iterationCount,wa=c.delay,J=c.fillMode);g=g||r.b(d)||!xa;N.log('Animation: created instance is "'+(g?"ClassicAnimation":"CSSAnimation")+'"');q=new (g?O:Q);r.e(a)?q.addElement(a):v(a,q.addElement,q);v(b,function(a,b){v(a,function(a,c){q.G(a,c,b)})});q.C(e);q.ia(o);q.D(l);q.F(p);q.z(wa);q.duration(c);q.direction(j);
-q.f(d);q.A(J);q.B(I);return q}
-function za(a){var b=a.type,c=String.prototype.toLowerCase.call(b);N.log('exclusiveHandler: eventName is "'+b+'"');if(-1!==c.indexOf("start"))c=Aa,N.log('exclusiveHandler: eventName "'+b+'" belongs to animation start events');else if(-1!==c.indexOf("iteration"))c=Ba,N.log('exclusiveHandler: eventName "'+b+'" belongs to animation iteration end events');else if(-1!==c.indexOf("end"))c=Ca,N.log('exclusiveHandler: eventName "'+b+'" belongs to animation end events');else{N.log('exclusiveHandler: unknown animation event type "'+b+
-'"');return}v(c,function(a){R.removeEventListener(a,za,f)});R.addEventListener(b,Da,f);Da(a)}function Q(){this.c=aa();this.t=[];var a="@"+Ea+" "+this.c,b,c=S.cssRules||S.rules,d=c.length;b=b||" ";S.insertRule?S.insertRule(a+" {"+b+"}",d):S.addRule(a,b,c.length);this.k=c[d];this.c!==this.k.name&&N.log('CSSAnimation constructor: anim name "'+this.c+'" and keyframes name "'+this.k.name+'" are different')}function Fa(a,b,c,d){c=d[c+1];return!c||b.key>a?-1:c.key<=a?1:0}
-function T(a,b,c){r.a(a)&&(this.key=a);r.o(b)?this.h=b:this.h={};r.b(c)&&(this.f=c)}function O(){this.q=[];this.H={};this.w={};this.aa={};this.c=aa();this.p=[];this.la={};this.l=1;this.j={};this.u(0,ca(this.j));this.u(1,ca(this.j));this.r=new ua(this.ma,this);return this}var Ga=m.document,ka,N=m.console,R=Ga.documentElement,ma=R.style,B,C,ia=/(-?\d*\.?\d+)(.*)/,ba=0;function s(){}
-var U=/^cubic-bezier\(((?:\s*\d*\.?\d+\s*,\s*){3}\d*\.?\d+\s*)\)$/i,V=/^steps\((\d+(?:,\s*(?:start|end))?)\)$/i,Ha=Ga.getElementsByTagName("head")[0].parentNode.appendChild(Ga.createElement("style")),S=Ha.sheet||Ha.styleSheet;r.e=function(a){return!(!a||!("nodeType"in a&&a.nodeType===Node.ELEMENT_NODE))};r.b=function(a){return w(n(a,Function)||"function"===r(a))};r.n=function(a){return w(n(a,Array)||"array"===r(a))};r.d=function(a){return w(a===ka||"undefined"===r(a))};
-r.a=function(a){return w(n(a,Number)||"number"===r(a))};r.g=function(a){return w(n(a,String)||"string"===r(a))};r.o=function(a){return w(n(a,Object)||"object"===r(a))};var W=Math.floor,Ia=Math.ceil,Ja=Math.min,Ka=Math.max,ja={ms:1,s:1E3},na=["ms","O","Moz","webkit"],A={},La=Date.now||function(){return+new Date},X=m[z("performance",f)],Y,Ma;
-X?(Y=X[z("now",X)])?(Y=u(Y,X),Ma=X.timing.navigationStart,La=function(){return Y()+Ma},N.log("DOMHighResTimeStamp support detected")):N.log('Found window.performance but no "now" method so DOMHighResTimeStamp isn\'t supported.'):N.log("Cannot find window.performance so DOMHighResTimeStamp isn't supported to. Using Date.now as usual.");D.b=h;D.e=0;D.a={};D.d=function(){var a=La();v(D.a,function(b,c,d){b.call(m,a);delete d[c]})};E.prototype.n=function(a){return((this.e*a+this.b)*a+this.a)*a};
-E.prototype.o=function(a){return(3*this.e*a+2*this.b)*a+this.a};E.prototype.va=function(a){return((this.xa*a+this.g)*a+this.d)*a};E.prototype.wa=function(a){a:{var b=u(this.n,this),c=u(this.o,this),d=0,e=1,g=1E-5,j,l,o,p,g=r.a(g)?g:1E-6;p=function(a,b){return Math.abs(a-b)<=g};j=d;l=e;d=a;c=c(d);for(o=8;o-- >0;){e=d-(b(d)-a)/c;if(p(b(e),a)){a=e;break a}d=e}d=j;for(e=l;!p(d,e);){j=b(e)-a;l=b(d)-a;d=e-d;l=j-l;c=e;e=e-j*d/l;d=c}a=e}return this.va(a)};F.prototype.a=0;F.prototype.b=f;
-F.prototype.d=function(a){return this.b?Ja(1,Ia(this.a*a)/this.a):W(this.a*a)/this.a};var qa={},ra={},ta={px:function(a,b,c){return parseFloat(c)}},sa={"fill-opacity":f,"font-weight":f,"line-height":f,opacity:f,orphans:f,widows:f,"z-index":f,zoom:f};M.a={};var Na=m[z("requestAnimationFrame",m)],Oa=Na?Na:D,Pa=Na?m[z("cancelRequestAnimationFrame",m)]:oa;Na?N.log("detected native requestAnimationFrame support"):N.log("requestAnimationFrame is not found. Using imitation.");k=ua.prototype;k.ba=h;
-k.ca=h;k.I=-1;k.start=function(){this.I=Oa(this.v)};k.pa=function(){Pa(this.I);delete this.I};k.v=function(a){this.I=Oa(this.v);this.ba.call(this.ca,a)};var xa=!!z("animation");N.log("Detected native CSS3 Animations support.");"animation"===z("animation")?N.log("UA supports CSS3 Animations without vendor prefix"):N.log('UA supports CSS3 Animations width "'+B+'" DOM prefix ("'+C+'" CSS prefix)');
-var Ca=["animationend","webkitAnimationEnd","OAnimationEnd","MSAnimationEnd"],Ba=["animationiteration","webkitAnimationIteration","OAnimationIteration","MSAnimationIteration"],Aa=["animationiteration","webkitAnimationStart","OAnimationStart","MSAnimationStart"],Z=/,\s+(?=\w)/,H={from:0,to:100},Qa={linear:[0,0,1,1],ease:[0.25,0.1,0.25,1],easeIn:[0.42,0,1,1],easeOut:[0,0,0.58,1],easeInOut:[0.42,0,0.58,1],stepStart:[1,f],stepEnd:[1,i],swing:[0.02,0.01,0.47,1]},Ra={linear:function(a){return a},swing:function(a){return 0.5-
-Math.cos(a*Math.PI)/2}},Ea=("animation"===z("animation")?"":"-"+C+"-")+"keyframes";N.log('keyframe prefix is "'+Ea+'"');xa&&v(Ca.concat(Ba).concat(Aa),function(a){R.addEventListener(a,za,f)});var $={animationend:{},animationiteration:{},animationstart:{}};
-function Da(a){var b=a.animationName,a=a.type,c=String.prototype.toLowerCase.call(a);if(c.indexOf("start")!==-1)a="animationstart";else if(c.indexOf("iteration")!==-1)a="animationiteration";else if(c.indexOf("end")!==-1)a="animationend";else{N.log('animationHandlerDelegator: unknown animation event type "'+a+'"');return}if(a in $){a=$[a];if(b in a){b=a[b];b()}}}k=Q.prototype;k.L="0s";k.M="forwards";k.K="400ms";k.N="1";k.J="normal";k.U="ease";k.oncomplete=s;k.c="";k.t=h;k.k=h;
-k.V=function(a){var a=a/0.01+"%",b=this.k,c=b.appendRule||b.insertRule,d=[a+" {}"];r.b(c)&&c.apply(b,d);return b.findRule(a)};k.W=function(a){return this.k.findRule(a/0.01+"%")};
-k.qa=function(a){var b,c,d,e,g,j,l,o;b=K(a,"animation-name");if(b.indexOf(this.c)!==-1)N.log('applyStyle: animation style for "'+this.c+'" already applied : "'+b+'"');else{b=b.split(Z);c=K(a,"animation-play-state").split(Z);d=K(a,"animation-duration").split(Z);e=K(a,"animation-timing-function").split(Z);g=K(a,"animation-delay").split(Z);j=K(a,"animation-iteration-count").split(Z);l=K(a,"animation-direction").split(Z);o=K(a,"animation-fill-mode").split(Z);if(b.length===0||b.length===1&&(b[0]===""||
-b[0]==="none")){N.log("applyStyle: element doesn't has any animations applied");b=[this.c];c=["paused"];d=[this.K];e=[this.U];g=[this.L];j=[this.N];l=[this.J];o=[this.M]}else{N.log('applyStyle: element has "'+b.length+'" applied animations.');b.push(this.c);c.push("paused");d.push(this.K);e.push(this.U);g.push(this.L);j.push(this.N);l.push(this.J);o.push(this.M)}K(a,"animation-name",b.join(", "));K(a,"animation-play-state",c.join(", "));K(a,"animation-duration",d.join(", "));K(a,"animation-timing-function",
-e.join(", "));K(a,"animation-delay",g.join(", "));K(a,"animation-iteration-count",j.join(", "));K(a,"animation-direction",l.join(", "));K(a,"animation-fill-mode",o.join(", "))}};
-k.ya=function(a){var b=K(a,"animation-name").split(Z),c=K(a,"animation-play-state").split(Z),d=K(a,"animation-duration").split(Z),e=K(a,"animation-timing-function").split(Z),g=K(a,"animation-delay").split(Z),j=K(a,"animation-iteration-count").split(Z),l=K(a,"animation-direction").split(Z),o=K(a,"animation-fill-mode").split(Z),p=da(b,this.c);t(b,p);t(c,p);t(d,p);t(e,p);t(g,p);t(j,p);t(l,p);t(o,p);K(a,"animation-name",b.join(", "));K(a,"animation-play-state",c.join(", "));K(a,"animation-duration",d.join(", "));
-K(a,"animation-timing-function",e.join(", "));K(a,"animation-delay",g.join(", "));K(a,"animation-iteration-count",j.join(", "));K(a,"animation-direction",l.join(", "));K(a,"animation-fill-mode",o.join(", "))};k.addElement=function(a){r.e(a)?this.t.push(a):N.log('addElement: passed variable is non-HTMLElement "'+a+'"')};k.z=function(a){var b;if(r.a(a)){b=a;a=a+"ms"}else b=y(a);isFinite(b)?this.L=a:N.log('delay: passed value "'+a+'" (numeric : "'+b+'") is non-finite')};
-k.duration=function(a){var b;if(r.a(a)){b=a;a=a+"ms"}else b=y(a);if(b<0){N.log('duration: dur "'+a+'" is negative (numeric val : "'+b+'") so setting it to "0"');b=0;a="0s"}isFinite(b)?this.K=a:N.log('duration: non-integer value "'+a+'" (numeric val: "'+b+'")')};k.direction=function(a){a==="normal"||a==="reverse"||a==="alternate"||a==="alternate-reverse"?this.J=a:N.log('direction: invalid value "'+a+'"')};
-k.f=function(a,b){var c,d,e,g;g="";if(r.n(a))c=a;else if(r.g(a)){d=a.replace(/^\s+|\s+$/g,"");e=la(d);e in Qa?c=Qa[e]:U.test(d)?c=d.match(U)[1].split(","):V.test(d)&&(c=d.match(V)[1].split(","))}if(r.n(c)){if(c.length===4){c=ha(c);c[0]>=0&&c[0]<=1&&c[2]>=0&&c[2]<=1?g="cubic-bezier("+c.join(", ")+")":N.log('easing: cubic bezier invalid absciss "'+c[0]+'" or "'+c[2]+'"')}else if(c.length===2){d=parseInt(c[0],10);c=c[1]==="start";r.a(d)?g="steps("+d.toString()+", "+(c?"start":"end")+")":N.log('easing: invalid steps amount for staircase timing function "'+
-d+'"')}if(r.d(b))this.U=g;else{c=G(b);if(r.a(c)){c=c*0.01;c=this.W(c)||this.V(c);K(c.style,"animation-timing-function",g)}}}else N.log('easing: invalid argument "'+a+'"')};k.A=function(a){a==="forwards"||a==="backwards"||a==="both"||a==="none"?this.M=a:N.log('fillMode: invalid value "'+a+'"')};k.B=function(a){var b;if(a!=="infinite"){b=parseFloat(a);if(!isFinite(b)||b<0){N.log('iterationCount: passed iterations is not a number or is negative "'+a+'"');return}}this.N=a};
-k.C=function(a){if(r.b(a)){$.animationend[this.c]=u(a,this);this.oncomplete=a}};k.ia=function(a){r.b(a)&&($.animationiteration[this.c]=u(a,this))};k.D=function(a){r.b(a)&&($.animationstart[this.c]=u(a,this))};k.G=function(a,b,c){var d=r.d(c)?H.to:G(c);if(r.a(d)){d=d*0.01;c=this.W(d)||this.V(d);K(c.style,a,b)}else N.log('propAt: passed key "'+c+'" (numeric val: "'+d+'") is invalid')};
-k.start=function(){v(this.t,function(a){this.qa(a);var b=K(a,"animation-play-state").split(Z);b[b.length-1]="running";K(a,"animation-play-state",b.join(", "))},this);N.log('start: animation "'+this.c+'" started')};k.na=function(){};
-k.da=function(){v(this.t,function(a){var c=K(a,"animation-name").split(Z),c=da(c,this.c),d=K(a,"animation-play-state").split(Z);d[c]="paused";K(a,"animation-play-state",d.join(", "));this.ya(a)},this);var a=da(S.cssRules||S.rules,this.k);N.assert(a!==-1,"removeRule: internal usage but undefined rule;");(S.deleteRule||S.removeRule).call(S,a);N.log('destruct: animation "'+this.c+'" totally destructed')};k.F=function(a){r.b(a)};Q.prototype.addElement=Q.prototype.addElement;Q.prototype.delay=Q.prototype.z;
-Q.prototype.duration=Q.prototype.duration;Q.prototype.direction=Q.prototype.direction;Q.prototype.easing=Q.prototype.f;Q.prototype.fillMode=Q.prototype.A;Q.prototype.iterationCount=Q.prototype.B;Q.prototype.onComplete=Q.prototype.C;Q.prototype.onIteration=Q.prototype.ia;Q.prototype.propAt=Q.prototype.G;Q.prototype.start=Q.prototype.start;Q.prototype.stop=Q.prototype.na;Q.prototype.destruct=Q.prototype.da;Q.prototype.onStart=Q.prototype.D;Q.prototype.onStep=Q.prototype.F;T.prototype.key=0;
-T.prototype.f=s;T.prototype.h={};k=O.prototype;k.i=y("0s");k.Q="forwards";k.P=y("400ms");k.l=1;k.ga=W(1);k.O="normal";k.ka=Ra.ease;k.oncomplete=s;k.oa=s;k.Y=s;k.Z=s;k.m=5;k.aa=h;k.w=h;k.H=h;k.c="";k.q=h;k.p=h;k.j=h;k.la=h;k.T=0;k.S=0;k.fa=0;k.R=0;k.r=h;k.addElement=function(a){var b;if(r.e(a)){b=aa();a.setAttribute("melAnimation-data-id",b);this.aa[b]={};this.H[b]={};this.w[b]={};this.q.push(a)}else N.log('addElement: passed variable is non-HTMLElement "'+a+'"')};
-k.duration=function(a){var b=r.a(a)?a:y(a);if(r.a(b)){if(b<0){N.log('duration: argument has a negative value "'+b+'" so setting it to "0"');b=0}this.P=b;this.m=W(Math.log(this.P*60)*Math.LOG10E)-2;N.log('duration: computed epsilon is "'+this.m+'" digits')}else N.warn('duration: bad value "'+a+'"')};k.C=function(a){r.b(a)?this.oncomplete=a:N.warn("onComplete: callback is not a function : %o",a)};k.D=function(a){if(r.b(a))this.Y=a};
-k.f=function(a,b,c){var d,e,g,j;if(r.b(a))d=a;else if(r.g(a)){j=a.replace(/^\s+|\s+$/g,"");g=la(j);g in Ra?d=Ra[g]:g in Qa?e=Qa[g]:U.test(j)?e=j.match(U)[1].split(","):V.test(j)&&(e=j.match(V)[1].split(","));if(e)if(e.length===4){e=ha(e);e[0]>=0&&e[0]<=1&&(e[2]>=0&&e[2]<=1)&&(d=new E(e[0],e[1],e[2],e[3]))}else if(e.length===2){g=parseInt(e[0],10);e=e[1]==="start";r.a(g)&&(d=new F(g,e))}}if(r.b(d)||n(d,E)||n(d,F))if(r.g(c))this.la[c]=d;else if(r.d(b))this.ka=d;else{a=G(b);if(r.a(a)){a=a*0.01;a=this.X(a)||
-this.u(a);a.f=d}}else N.warn("easing: cannot form a function from arguments %o",a)};k.direction=function(a){a==="normal"||a==="reverse"||a==="alternate"||a==="alternate-reverse"?this.O=a:N.log('direction: invalid value "'+a+'"')};k.z=function(a){var b=y(a);r.a(b)?this.i=b:N.warn('delay: cannot parse value "%s"',a)};k.A=function(a){a==="forwards"||a==="backwards"||a==="both"||a==="none"?this.Q=a:N.log('fillMode: invalid value "'+a+'"')};
-k.B=function(a){var b;if(a==="infinite")b=Number.POSITIVE_INFINITY;else{b=parseFloat(a);if(!isFinite(b)||b<0){N.log('iterationCount: passed iterations is not a number or is negative "'+a+'"');return}}this.l=b;this.ga=W(b)};
-k.start=function(){if(this.i>0){N.log("start: "+this.c+' has positite delay "'+this.i+'" ms');setTimeout(u(function(){this.r.start();this.Y()},this.r),this.i)}else{N.log("start: "+this.c+' has non-positite delay "'+this.i+'" so starting right now.');this.r.start()}v(this.q,function(a){var b=a.getAttribute("melAnimation-data-id"),c=this.H[b];v(this.j,function(b,e){var g=K(a,e);c[e]=L(a,e,g,i)},this)},this);this.T=La();this.ma(this.T);N.log('start: animation "'+this.c+'" started')};
-k.$=function(){var a;this.r.pa();if(this.Q==="forwards"||this.Q==="both"){a=this.ha(this.l)?1:0;N.log('stop: animation fills forwards and has direction "'+this.O+'" and iteration count "'+this.l+'" so fetching with keyframe "'+a+'"');this.ea(a);this.ja()}N.log('stop: animation "'+this.c+'" stopped')};k.F=function(a){if(r.b(a))this.Z=a};
-k.G=function(a,b,c){var d;d=r.d(c)?H.to:G(c);d=d*0.01;if(r.a(d)){c=this.X(d)||this.u(d);this.j[a]=h;c.h[a]=b}else N.warn('propAt: passed keyframe key is invalid "%s"',c)};k.u=function(a,b){var c,d;if(r.a(a)){c=new T(a,b,void 0);d=this.p;d.push(c);var e=fa,g,j,l,o,p;r.a(g)||(g=0);r.a(j)||(j=d.length-1);r.b(e)||(e=ea);for(o=g;o<j;o=o+1)for(l=g;l<j-o;l=l+1)if(e(d[l],d[l+1],l,d)>0){p=d[l];d[l]=d[l+1];d[l+1]=p}}return c};k.X=function(a){a=ga(this.p,a,function(a,c){return a-c.key});return this.p[a]};
-k.ea=function(a){var b,c,d,e,g,j,l,o,p,I;b=this.p;o=this.ka;p=ga(b,a,Fa);if(p!==-1&&b[p].f!==s)o=b[p].f;v(this.q,function(p){var J,q,ya;J=p.getAttribute("melAnimation-data-id");q=this.H[J];ya=this.w[J];v(this.j,function(J,x){var P;c=b[0];d=b[b.length-1];v(b,function(b){var e=b.key;if(x in b.h){if(a<e||a===1&&e===1){d=b;return i}c=b}return f});j=c.key;l=1/(d.key-c.key);P=(a-j)*l;I=n(o,E)?o.wa(P):n(o,F)?o.d(P):o(P);I=pa(I,this.m);if(c.h[x]===h)e=q[x];else{e=c.h[x];e=L(p,x,e,i)}if(d.h[x]===h)g=q[x];
-else{g=d.h[x];g=L(p,x,g,i)}P=M(x,e,g,I,this.m);ya[x]=P},this)},this)};k.ja=function(){v(this.q,function(a){var b=a.style,a=a.getAttribute("melAnimation-data-id");v(this.w[a],function(a,d){K(b,d,a)},this)},this)};k.ma=function(a){var b,c,d;b=this.l;c=this.S;a=this.R=this.ua(a);d=this.S=this.ta(this.R);this.fa=this.sa(this.R,this.S);if(d!==c){N.log('tick: "'+this.c+'" - iteration "'+d+'" of total "'+b+'"');this.oa()}else{if(a>=b){this.$();this.oncomplete();return}this.Z()}this.ea(this.fa);this.ja()};
-k.ua=function(a){a=this.ra(a)/this.P;return a=pa(a,this.m)};k.ta=function(a){a=W(a);return Ja(a,this.ga)};k.sa=function(a,b){var c;c=Ja(a-b,1);this.ha(b)&&(c=1-c);return c};k.ra=function(a){a<1E12&&(a=a+Ma);a=a-this.T;a=a+-1*this.i;return a=Ka(a,0)};k.ha=function(a){var b;b=this.O;a=(a&1)===1;return b==="reverse"||b==="alternate"&&a||b==="alternate-reverse"&&!a};O.prototype.addElement=O.prototype.addElement;O.prototype.delay=O.prototype.z;O.prototype.duration=O.prototype.duration;
-O.prototype.direction=O.prototype.direction;O.prototype.easing=O.prototype.f;O.prototype.fillMode=O.prototype.A;O.prototype.iterationCount=O.prototype.B;O.prototype.onComplete=O.prototype.C;O.prototype.propAt=O.prototype.G;O.prototype.start=O.prototype.start;O.prototype.stop=O.prototype.$;O.prototype.onStep=O.prototype.F;O.prototype.onStart=O.prototype.D;
-var Sa=m.melAnim=function(a,b,c,d,e){var g={};g[H.to]={};v(b,function(a,b){g[H.to][a]=b});var j=va(a,g,c,d,function(){r.b(e)&&e();j.da()});j.start();return j};Sa.Animation=va;Sa.CSSAnimation=Q;Sa.ClassicAnimation=O;})();
+(function(){'use strict';var b = null, d = !1, i = Object, j = Function, E, Y, Z, $, fa;
+function m(a, c) {
+  return a.toString = c
+}
+function n(a, c) {
+  return a.prototype = c
+}
+var p = "push", q = "match", r = "length", s = "propertyIsEnumerable", t = "prototype", u = "call";
+function v(a) {
+  return function(c) {
+    this[a] = c
+  }
+}
+function w(a) {
+  return function() {
+    return this[a]
+  }
+}
+function y() {
+}
+function z(a) {
+  var c = typeof a, e;
+  if("object" == c) {
+    if(a) {
+      if(a instanceof Array) {
+        return"array"
+      }
+      if(a instanceof i) {
+        return c
+      }
+      e = i[t].toString[u](a);
+      if("[object Window]" == e) {
+        return"object"
+      }
+      if("[object Array]" == e || "number" == typeof a[r] && "undefined" != typeof a.splice && "undefined" != typeof a[s] && !a[s]("splice")) {
+        return"array"
+      }
+      if("[object Function]" == e || "undefined" != typeof a[u] && "undefined" != typeof a[s] && !a[s]("call")) {
+        return"function"
+      }
+    }else {
+      return"null"
+    }
+  }else {
+    if("function" == c && "undefined" == typeof a[u]) {
+      return"object"
+    }
+  }
+  return c
+}
+function A(a) {
+  return void 0 !== a
+}
+function B(a) {
+  return"string" == typeof a
+}
+function C(a) {
+  return"number" == typeof a
+}
+function D(a, c) {
+  var e = a.split("."), g = E, f;
+  !(e[0] in g) && g.execScript && g.execScript("var " + e[0]);
+  for(;e[r] && (f = e.shift());) {
+    !e[r] && A(c) ? g[f] = c : g = g[f] ? g[f] : g[f] = {}
+  }
+}
+function F(a) {
+  var c = G, e = j();
+  n(e, c[t]);
+  a.Ca = c[t];
+  n(a, new e)
+}
+function H(a, c) {
+  for(var e = 0;e < a[r];e++) {
+    if(!0 === c(a[e], e, a)) {
+      return e
+    }
+  }
+  return-1
+}
+function G() {
+  this.Q = I++
+}
+function J(a, c, e, g) {
+  this.j = a;
+  this.v = c;
+  this.k = e;
+  this.w = g
+}
+function K(a, c, e) {
+  var g = 3 * e, f = 1 - e;
+  return g * f * (f * a + g * c) + e * e * e
+}
+function L(a, c) {
+  return 3 * ((c * (3 * c - 4) + 1) * a.j + c * ((2 - 3 * c) * a.k + c))
+}
+function M(a, c) {
+  this.e = a;
+  this.m = c
+}
+function N() {
+  this.L = "melAnimation" + I++;
+  this.c = []
+}
+function O() {
+  N[u](this)
+}
+function P(a, c, e, g, f) {
+  var h = new O, k, l;
+  3 === arguments[r] && (e = c.duration, g = c.easing, k = c.progress, f = c.complete, h.O(c.delay), h.R(c.fillMode), h.direction(c.direction), h.W(c.iterationCount));
+  h.duration(e);
+  h.P(g);
+  "function" == z(k) && h.$(k);
+  "function" == z(f) && h.Z(f);
+  for(l in c) {
+    h.aa(l, c[l])
+  }
+  h.start();
+  return h
+}
+E = j("return this")();
+E.Aa = !0;
+var I = 0, aa = "document" in E ? document.documentElement : b, ba = /([\w-]+?)\(([^)]*?)\)/, R = /^(-?\d*\.?\d+)(.*)$/, S = "performance" in E ? function() {
+  return E.performance.timing.navigationStart + E.performance.now()
+} : "now" in Date ? Date.now : function() {
+  return+new Date
+}, T = {f:[], Y:function(a) {
+  var c = I++;
+  this.f[p]({ma:a, za:c});
+  this.i || this.M();
+  return c
+}, X:function(a) {
+  var c = H(this.f, function(c) {
+    return c.za === a
+  });
+  this.f.splice(c, 1);
+  0 === this.f[r] && this.i && this.xa()
+}, la:d, i:d, S:1E3 / 60, M:function() {
+  this.i || (this.u = this.n = S(), this.i = !0);
+  this.qa = this.la ? requestAnimationFrame(this.A, aa) : setTimeout(this.A, this.S)
+}, xa:function() {
+  this.i && (this.i = d, this.u = this.n = this.D = 0);
+  (this.la ? cancelRequestAnimationFrame : clearTimeout)(this.qa)
+}, n:0, u:0, D:0, A:function() {
+  T.n = S();
+  T.D = T.n - T.u;
+  for(var a = 0, c = T.f[r];a < c;a++) {
+    T.f[a].ma(T.D)
+  }
+  T.u = T.n;
+  T.f[r] && T.M()
+}, wa:function(a) {
+  this.S = 1E3 / a
+}};
+T.attach = T.Y;
+T.detach = T.X;
+T.setFPS = T.wa;
+var ca = /-[a-z]/g, U = j(), da = "create" in i ? i.create : function(a) {
+  n(U, a);
+  return new U
+}, V = [];
+G[t].Q = I++;
+G[t].d = function(a) {
+  return a
+};
+G[t].F = function(a) {
+  return this.d === a.d
+};
+m(G[t], function() {
+  return"" + this.Q
+});
+F(J);
+J[t].d = function(a) {
+  var c = a, e, g = 3, f, h = 0.0055 + a;
+  do {
+    f = L(this, c), e = K(this.j, this.k, c) - a, c = e = c - e / L(this, c - e / (2 * f))
+  }while(0 !== g-- && 0 !== f && K(this.j, this.k, e) > h);
+  return K(this.v, this.w, e)
+};
+J[t].F = function(a) {
+  var c = this.v === a.v, e = this.k === a.k, g = this.w === a.w;
+  return this.j === a.j && c && e && g
+};
+m(J[t], function() {
+  return"cubic-bezier(" + this.j + ", " + this.v + ", " + this.k + ", " + this.w + ")"
+});
+F(M);
+M[t].e = 0;
+M[t].m = !0;
+M[t].d = function(a) {
+  return this.m ? Math.min(Math.ceil(this.e * a) / this.e, 1) : Math.floor(this.e * a) / this.e
+};
+M[t].F = function(a) {
+  var c = this.m === a.m;
+  return this.e === a.e && c
+};
+m(M[t], function() {
+  return"steps(" + this.e + ", " + (this.m ? "start" : "end") + ")"
+});
+var W = {easeInCubic:[0.55, 0.055, 0.675, 0.19]}, X = {easeInCubic:function(a) {
+  return a * a * a
+}}, ea = new G;
+D("Animation", N);
+N[t].L = "none";
+N[t].q = b;
+N[t].ka = v("q");
+N[t].setTarget = N[t].ka;
+N[t].pa = w("q");
+N[t].getTarget = N[t].pa;
+N[t].c = b;
+N[t].ja = function(a, c, e) {
+  var g, f, h;
+  g = H(this.c, function(c) {
+    return c.K === a
+  });
+  -1 === g ? (f = {K:a, N:[], Ba:"", g:0, c:[]}, this.c[p](f)) : f = this.c[g];
+  g = H(f.c, function(a) {
+    return a.a === e
+  });
+  if(-1 === g) {
+    g = {a:e, z:c, ra:d};
+    f.c[p](g);
+    c = f.c;
+    for(g = 0;g < c[r] - 1;g += 1) {
+      for(h = 0;h < c[r] - 1 - g;h += 1) {
+        if(1 === (c[h].a === c[h + 1].a ? 0 : c[h].a < c[h + 1].a ? -1 : 1)) {
+          f = c[h], c[h] = c[h + 1], c[h + 1] = f
+        }
+      }
+    }
+  }else {
+    g = f.c[g], g.z = c.slice(0), g.ra = d
+  }
+};
+N[t].setPropAt = N[t].ja;
+N[t].V = function(a, c) {
+  var e, g;
+  e = H(this.c, function(c) {
+    return c.K === a
+  });
+  return-1 !== e && (g = this.c[e], e = H(g.c, function(a) {
+    return a.a === c
+  }), -1 !== e) ? g.c[e].z : b
+};
+N[t].getPropAt = N[t].V;
+N[t].ba = function(a, c) {
+  this.q.style[a] = c[0] + "px"
+};
+N[t].ua = v("ba");
+N[t].replaceRenderer = N[t].ua;
+N[t].h = 0;
+N[t].da = v("h");
+N[t].setDelay = N[t].da;
+N[t].C = 400;
+N[t].fa = v("C");
+N[t].setDuration = N[t].fa;
+N[t].t = 1;
+N[t].r = 1;
+N[t].ia = function(a) {
+  a === Number.POSITIVE_INFINITY ? this.t = this.r = Number.POSITIVE_INFINITY : isFinite(a) && 0 <= a && (this.t = a, this.r = Math.floor(a))
+};
+N[t].setIterations = N[t].ia;
+N[t].I = d;
+N[t].s = d;
+N[t].ea = function(a) {
+  this.I = 0 !== (a & 2);
+  this.s = 0 !== (a & 1)
+};
+N[t].setDirection = N[t].ea;
+N[t].T = function() {
+  var a = 0;
+  this.I && (a &= 2);
+  this.s && (a &= 1);
+  return a
+};
+N[t].getDirection = N[t].T;
+N[t].H = !0;
+N[t].G = d;
+N[t].ha = function(a) {
+  this.H = 0 !== (a & 2);
+  this.G = 0 !== (a & 1)
+};
+N[t].setFillMode = N[t].ha;
+N[t].U = function() {
+  var a = 0;
+  this.H && (a &= 2);
+  this.G && (a &= 1);
+  return a
+};
+N[t].getFillMode = N[t].U;
+N[t].elapsedTime = 0;
+N[t].p = ea;
+N[t].ga = v("p");
+N[t].setEasing = N[t].ga;
+N[t].na = w("p");
+N[t].getEasing = N[t].na;
+N[t].l = 0;
+N[t].b = 0;
+N[t].B = 0;
+N[t].oa = w("b");
+N[t].getFractionalTime = N[t].oa;
+N[t].A = function(a) {
+  var c, e;
+  this.elapsedTime += a;
+  c = Math.max(this.elapsedTime - this.h, 0);
+  this.l = c / this.C;
+  e = Math.floor(this.l);
+  0 < e ? (this.B = e > this.r ? this.r : e, e = this.l - e) : e = this.l;
+  1 < e && (e = 1);
+  (this.I ? this.s ? 0 === this.B % 2 : 1 === this.B % 2 : this.s) && (e = 1 - e);
+  this.b = e;
+  if(this.l < this.t) {
+    this.update(), 0 < this.h && c <= a && this.elapsedTime >= this.h ? this.o !== y && this.o() : this.J !== y && 0 !== this.b && this.J()
+  }else {
+    if(this.stop(), this.oncomplete !== y) {
+      this.oncomplete()
+    }
+  }
+};
+N[t].update = function() {
+  for(var a = this.c, c = this.p.d(this.b), e, g = 0;g < a[r];g++) {
+    var f = a[g], h = f.c, k, l;
+    if(0 === this.b || 1 === this.b) {
+      e = this.b, k = l = 0 === this.b ? h[0] : h[h[r] - 1]
+    }else {
+      k = h[f.g];
+      l = h[f.g + 1];
+      if(k.a > this.b || this.b >= l.a) {
+        do {
+          (!l || k.a > this.b) && f.g--, l.a < this.b && f.g++, k = h[f.g], l = h[f.g + 1]
+        }while(k.a > this.b || l.a < this.b)
+      }
+      e = 0 === k.a && 1 === l.a ? c : this.p.d((this.b - k.a) / (l.a - k.a))
+    }
+    h = k.z;
+    l = l.z;
+    k = f.N;
+    for(var Q = d, x = 0, ga = h[r];x < ga;x++) {
+      Q = k[x] !== (k[x] = (l[x] - h[x]) * e + h[x] | 0) || Q
+    }
+    Q && this.ba(f.K, f.N)
+  }
+};
+m(N[t], w("L"));
+N[t].start = function() {
+  this.elapsedTime = 0;
+  this.G && this.update();
+  0 >= this.h && this.o !== y && this.o();
+  this.ca()
+};
+N[t].start = N[t].start;
+N[t].stop = function() {
+  this.H && (this.b = 1, this.update());
+  this.pause()
+};
+N[t].stop = N[t].stop;
+N[t].ca = function() {
+  var a = this;
+  this.ya = T.Y(function(c) {
+    a.A(c)
+  })
+};
+N[t].resume = N[t].ca;
+N[t].pause = function() {
+  T.X(this.ya)
+};
+N[t].pause = N[t].pause;
+N[t].va = function() {
+};
+N[t].setClassicMode = N[t].va;
+N[t].oncomplete = y;
+N[t].Z = v("oncomplete");
+N[t].onComplete = N[t].Z;
+N[t].o = y;
+N[t].ta = v("o");
+N[t].onStart = N[t].ta;
+N[t].J = y;
+N[t].$ = v("J");
+N[t].onStep = N[t].$;
+N[t].sa = function() {
+};
+N[t].onIteration = N[t].sa;
+n(O, da(N[t]));
+O[t].target = function(a) {
+  var c = typeof a;
+  return"object" == c && a != b || "function" == c ? (this.ka(a), this) : this.q
+};
+D("AnimationWrap.prototype.target", O[t].target);
+Y = {from:0, half:0.5, to:1};
+O[t].aa = function(a, c, e) {
+  var g = 1;
+  if(A(e)) {
+    if(C(e)) {
+      g = e
+    }else {
+      if(B(e)) {
+        if(e in Y) {
+          g = Y[e]
+        }else {
+          if(e = e[q](R), "array" == z(e) && (!e[2] || "%" === e[2])) {
+            g = 1 * e[1]
+          }
+        }
+      }
+    }
+    1 < g && (g /= 100);
+    if(0 > g || 1 < g) {
+      g = 1
+    }
+  }
+  return A(c) ? (c = [c], this.ja(a, c, g), this) : this.V(a, g)
+};
+D("AnimationWrap.prototype.propAt", O[t].aa);
+Z = {slow:600, fast:200};
+O[t].duration = function(a) {
+  return A(a) ? (B(a) && (a in Z ? a = Z[a] : (a = a[q](R), a = a[1] * ("s" === a[2] ? 1E3 : 1)), 0 <= a && this.fa(a)), this) : this.C
+};
+D("AnimationWrap.prototype.duration", O[t].duration);
+O[t].O = function(a) {
+  return A(a) ? (B(a) && (a = a[q](R), a = a[1] * ("s" === a[2] ? 1E3 : 1), isFinite(a) && this.da(a)), this) : this.h
+};
+D("AnimationWrap.prototype.delay", O[t].O);
+O[t].W = function(a) {
+  return A(a) ? (a = "infinite" === a ? Number.POSITIVE_INFINITY : 1 * a, this.ia(a), this) : this.t
+};
+D("AnimationWrap.prototype.iterationCount", O[t].W);
+$ = {normal:0, reverse:1, alternate:2, "alternate-reverse":0};
+O[t].direction = function(a) {
+  var c = -1;
+  return A(a) ? (C(a) ? c = a : a in $ && (c = $[a]), -1 !== c && this.ea(c), this) : this.T()
+};
+D("AnimationWrap.prototype.direction", O[t].direction);
+fa = {none:0, forwards:2, backwards:1, both:0};
+O[t].R = function(a) {
+  var c = -1;
+  return A(a) ? (C(a) ? c = a : a in fa && (c = fa[a]), -1 !== c && this.ha(c), this) : this.U()
+};
+D("AnimationWrap.prototype.fillMode", O[t].R);
+O[t].P = function(a) {
+  var c, e, g, f;
+  if(A(a)) {
+    if(a instanceof G) {
+      e = a
+    }else {
+      if("function" == z(a)) {
+        e = new G, e.d = a
+      }else {
+        B(a) ? (f = a.replace(/^\s+|\s+$/g, ""), g = f.replace(ca, function(a) {
+          return a.charAt(1).toUpperCase()
+        }), g in W ? f = W[g] : (f = f[q](ba), f = f[2].replace(/\s+/g, "").split(","))) : "array" == z(a) && (f = a);
+        a = f[r];
+        if(4 == a) {
+          f[0] = +f[0], f[1] = +f[1], f[2] = +f[2], f[3] = +f[3], 0 <= f[0] && (1 >= f[0] && 0 <= f[2] && 1 >= f[2]) && (c = new J(f[0], f[1], f[2], f[3]), g in X && (c.d = X[g]))
+        }else {
+          if(1 == a || 2 == a) {
+            g = parseInt(f[0], 10), f = "start" === f[1], C(g) && (c = new M(g, f))
+          }
+        }
+        e = A(c) ? c : b
+      }
+    }
+    -1 === H(V, function(a) {
+      return a.F(e)
+    }) && V[p](e);
+    c = e;
+    c === b || this.ga(c);
+    return this
+  }
+  return this.p
+};
+D("AnimationWrap.prototype.easing", O[t].P);
+E.melAnim = P;
+P.Animation = O;
+P.Ticker = T;
+})();

@@ -1,391 +1,1801 @@
+/** melAnim - v0.1.0 - 2013-07-07
+* Copyright (c) 2013 ColCh; Licensed GPLv3 */
+// Copyright 2006 The Closure Library Authors. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS-IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
-/*! melAnim - v0.1.0 - 2013-03-15
-* Copyright (c) 2013 ColCh; Licensed MIT */
-    /****************************************************
-     *                  ФЛАГИ
-     * Здесь собраны булевы значения, определяющие
-     * код, который будет использоваться.
-     * Соответственно при использовании продвинутого
-     * режим неиспользуемый код будет удалён
-     * из скрипта
-     * ***************************************************/
+/**
+ * @fileoverview Bootstrap for the Google JS Library (Closure).
+ *
+ * In uncompiled mode base.js will write out Closure's deps file, unless the
+ * global <code>CLOSURE_NO_DEPS</code> is set to true.  This allows projects to
+ * include their own deps file(s) from different locations.
+ *
+ */
+
+
+/**
+ * @define {boolean} Overridden to true by the compiler when --closure_pass
+ *     or --mark_as_compiled is specified.
+ */
+var COMPILED = false;
+
+
+/**
+ * Base namespace for the Closure library.  Checks to see goog is
+ * already defined in the current scope before assigning to prevent
+ * clobbering if base.js is loaded more than once.
+ *
+ * @const
+ */
+var goog = goog || {}; // Identifies this file as the Closure base.
+
+
+/**
+ * Reference to the global context.  In most cases this will be 'window'.
+ */
+goog.global = Function('return this')();;
+
+/**
+ * @define {boolean} DEBUG is provided as a convenience so that debugging code
+ * that should not be included in a production js_binary can be easily stripped
+ * by specifying --define goog.DEBUG=false to the JSCompiler. For example, most
+ * toString() methods should be declared inside an "if (goog.DEBUG)" conditional
+ * because they are generally used for debugging purposes and it is difficult
+ * for the JSCompiler to statically determine whether they are used.
+ */
+goog.DEBUG = true;
+
+
+/**
+ * @define {string} LOCALE defines the locale being used for compilation. It is
+ * used to select locale specific data to be compiled in js binary. BUILD rule
+ * can specify this value by "--define goog.LOCALE=<locale_name>" as JSCompiler
+ * option.
+ *
+ * Take into account that the locale code format is important. You should use
+ * the canonical Unicode format with hyphen as a delimiter. Language must be
+ * lowercase, Language Script - Capitalized, Region - UPPERCASE.
+ * There are few examples: pt-BR, en, en-US, sr-Latin-BO, zh-Hans-CN.
+ *
+ * See more info about locale codes here:
+ * http://www.unicode.org/reports/tr35/#Unicode_Language_and_Locale_Identifiers
+ *
+ * For language codes you should use values defined by ISO 693-1. See it here
+ * http://www.w3.org/WAI/ER/IG/ert/iso639.htm. There is only one exception from
+ * this rule: the Hebrew language. For legacy reasons the old code (iw) should
+ * be used instead of the new code (he), see http://wiki/Main/IIISynonyms.
+ */
+goog.LOCALE = 'en';  // default to en
+
+
+/**
+ * @define {boolean} Whether this code is running on trusted sites.
+ *
+ * On untrusted sites, several native functions can be defined or overridden by
+ * external libraries like Prototype, Datejs, and JQuery and setting this flag
+ * to false forces closure to use its own implementations when possible.
+ *
+ * If your javascript can be loaded by a third party site and you are wary about
+ * relying on non-standard implementations, specify
+ * "--define goog.TRUSTED_SITE=false" to the JSCompiler.
+ */
+goog.TRUSTED_SITE = true;
+
+
+/**
+ * Creates object stubs for a namespace.  The presence of one or more
+ * goog.provide() calls indicate that the file defines the given
+ * objects/namespaces.  Build tools also scan for provide/require statements
+ * to discern dependencies, build dependency files (see deps.js), etc.
+ * @see goog.require
+ * @param {string} name Namespace provided by this file in the form
+ *     "goog.package.part".
+ */
+goog.provide = function(name) {
+  if (!COMPILED) {
+    // Ensure that the same namespace isn't provided twice. This is intended
+    // to teach new developers that 'goog.provide' is effectively a variable
+    // declaration. And when JSCompiler transforms goog.provide into a real
+    // variable declaration, the compiled JS should work the same as the raw
+    // JS--even when the raw JS uses goog.provide incorrectly.
+    if (goog.isProvided_(name)) {
+      throw Error('Namespace "' + name + '" already declared.');
+    }
+    delete goog.implicitNamespaces_[name];
+
+    var namespace = name;
+    while ((namespace = namespace.substring(0, namespace.lastIndexOf('.')))) {
+      if (goog.getObjectByName(namespace)) {
+        break;
+      }
+      goog.implicitNamespaces_[namespace] = true;
+    }
+  }
+
+  goog.exportPath_(name);
+};
+
+
+/**
+ * Marks that the current file should only be used for testing, and never for
+ * live code in production.
+ * @param {string=} opt_message Optional message to add to the error that's
+ *     raised when used in production code.
+ */
+goog.setTestOnly = function(opt_message) {
+  if (COMPILED && !goog.DEBUG) {
+    opt_message = opt_message || '';
+    throw Error('Importing test-only code into non-debug environment' +
+                opt_message ? ': ' + opt_message : '.');
+  }
+};
+
+
+if (!COMPILED) {
+
+  /**
+   * Check if the given name has been goog.provided. This will return false for
+   * names that are available only as implicit namespaces.
+   * @param {string} name name of the object to look for.
+   * @return {boolean} Whether the name has been provided.
+   * @private
+   */
+  goog.isProvided_ = function(name) {
+    return !goog.implicitNamespaces_[name] && !!goog.getObjectByName(name);
+  };
+
+  /**
+   * Namespaces implicitly defined by goog.provide. For example,
+   * goog.provide('goog.events.Event') implicitly declares
+   * that 'goog' and 'goog.events' must be namespaces.
+   *
+   * @type {Object}
+   * @private
+   */
+  goog.implicitNamespaces_ = {};
+}
+
+
+/**
+ * Builds an object structure for the provided namespace path,
+ * ensuring that names that already exist are not overwritten. For
+ * example:
+ * "a.b.c" -> a = {};a.b={};a.b.c={};
+ * Used by goog.provide and goog.exportSymbol.
+ * @param {string} name name of the object that this file defines.
+ * @param {*=} opt_object the object to expose at the end of the path.
+ * @param {Object=} opt_objectToExportTo The object to add the path to; default
+ *     is |goog.global|.
+ * @private
+ */
+goog.exportPath_ = function(name, opt_object, opt_objectToExportTo) {
+  var parts = name.split('.');
+  var cur = opt_objectToExportTo || goog.global;
+
+  // Internet Explorer exhibits strange behavior when throwing errors from
+  // methods externed in this manner.  See the testExportSymbolExceptions in
+  // base_test.html for an example.
+  if (!(parts[0] in cur) && cur.execScript) {
+    cur.execScript('var ' + parts[0]);
+  }
+
+  // Certain browsers cannot parse code in the form for((a in b); c;);
+  // This pattern is produced by the JSCompiler when it collapses the
+  // statement above into the conditional loop below. To prevent this from
+  // happening, use a for-loop and reserve the init logic as below.
+
+  // Parentheses added to eliminate strict JS warning in Firefox.
+  for (var part; parts.length && (part = parts.shift());) {
+    if (!parts.length && goog.isDef(opt_object)) {
+      // last part and we have an object; use it
+      cur[part] = opt_object;
+    } else if (cur[part]) {
+      cur = cur[part];
+    } else {
+      cur = cur[part] = {};
+    }
+  }
+};
+
+
+/**
+ * Returns an object based on its fully qualified external name.  If you are
+ * using a compilation pass that renames property names beware that using this
+ * function will not find renamed properties.
+ *
+ * @param {string} name The fully qualified name.
+ * @param {Object=} opt_obj The object within which to look; default is
+ *     |goog.global|.
+ * @return {?} The value (object or primitive) or, if not found, null.
+ */
+goog.getObjectByName = function(name, opt_obj) {
+  var parts = name.split('.');
+  var cur = opt_obj || goog.global;
+  for (var part; part = parts.shift(); ) {
+    if (goog.isDefAndNotNull(cur[part])) {
+      cur = cur[part];
+    } else {
+      return null;
+    }
+  }
+  return cur;
+};
+
+
+/**
+ * Globalizes a whole namespace, such as goog or goog.lang.
+ *
+ * @param {Object} obj The namespace to globalize.
+ * @param {Object=} opt_global The object to add the properties to.
+ * @deprecated Properties may be explicitly exported to the global scope, but
+ *     this should no longer be done in bulk.
+ */
+goog.globalize = function(obj, opt_global) {
+  var global = opt_global || goog.global;
+  for (var x in obj) {
+    global[x] = obj[x];
+  }
+};
+
+
+/**
+ * Adds a dependency from a file to the files it requires.
+ * @param {string} relPath The path to the js file.
+ * @param {Array} provides An array of strings with the names of the objects
+ *                         this file provides.
+ * @param {Array} requires An array of strings with the names of the objects
+ *                         this file requires.
+ */
+goog.addDependency = function(relPath, provides, requires) {
+  if (!COMPILED) {
+    var provide, require;
+    var path = relPath.replace(/\\/g, '/');
+    var deps = goog.dependencies_;
+    for (var i = 0; provide = provides[i]; i++) {
+      deps.nameToPath[provide] = path;
+      if (!(path in deps.pathToNames)) {
+        deps.pathToNames[path] = {};
+      }
+      deps.pathToNames[path][provide] = true;
+    }
+    for (var j = 0; require = requires[j]; j++) {
+      if (!(path in deps.requires)) {
+        deps.requires[path] = {};
+      }
+      deps.requires[path][require] = true;
+    }
+  }
+};
+
+
+
+
+// NOTE(nnaze): The debug DOM loader was included in base.js as an orignal
+// way to do "debug-mode" development.  The dependency system can sometimes
+// be confusing, as can the debug DOM loader's asyncronous nature.
+//
+// With the DOM loader, a call to goog.require() is not blocking -- the
+// script will not load until some point after the current script.  If a
+// namespace is needed at runtime, it needs to be defined in a previous
+// script, or loaded via require() with its registered dependencies.
+// User-defined namespaces may need their own deps file.  See http://go/js_deps,
+// http://go/genjsdeps, or, externally, DepsWriter.
+// http://code.google.com/closure/library/docs/depswriter.html
+//
+// Because of legacy clients, the DOM loader can't be easily removed from
+// base.js.  Work is being done to make it disableable or replaceable for
+// different environments (DOM-less JavaScript interpreters like Rhino or V8,
+// for example). See bootstrap/ for more information.
+
+
+/**
+ * @define {boolean} Whether to enable the debug loader.
+ *
+ * If enabled, a call to goog.require() will attempt to load the namespace by
+ * appending a script tag to the DOM (if the namespace has been registered).
+ *
+ * If disabled, goog.require() will simply assert that the namespace has been
+ * provided (and depend on the fact that some outside tool correctly ordered
+ * the script).
+ */
+goog.ENABLE_DEBUG_LOADER = true;
+
+
+/**
+ * Implements a system for the dynamic resolution of dependencies
+ * that works in parallel with the BUILD system. Note that all calls
+ * to goog.require will be stripped by the JSCompiler when the
+ * --closure_pass option is used.
+ * @see goog.provide
+ * @param {string} name Namespace to include (as was given in goog.provide())
+ *     in the form "goog.package.part".
+ */
+goog.require = function(name) {
+
+  // if the object already exists we do not need do do anything
+  // TODO(arv): If we start to support require based on file name this has
+  //            to change
+  // TODO(arv): If we allow goog.foo.* this has to change
+  // TODO(arv): If we implement dynamic load after page load we should probably
+  //            not remove this code for the compiled output
+  if (!COMPILED) {
+    if (goog.isProvided_(name)) {
+      return;
+    }
+
+    if (goog.ENABLE_DEBUG_LOADER) {
+      var path = goog.getPathFromDeps_(name);
+      if (path) {
+        goog.included_[path] = true;
+        goog.writeScripts_();
+        return;
+      }
+    }
+
+    var errorMessage = 'goog.require could not find: ' + name;
+    if (goog.global.console) {
+      goog.global.console['error'](errorMessage);
+    }
+
+
+      throw Error(errorMessage);
+
+  }
+};
+
+
+/**
+ * Path for included scripts
+ * @type {string}
+ */
+goog.basePath = '';
+
+
+/**
+ * A hook for overriding the base path.
+ * @type {string|undefined}
+ */
+goog.global.CLOSURE_BASE_PATH;
+
+
+/**
+ * Whether to write out Closure's deps file. By default,
+ * the deps are written.
+ * @type {boolean|undefined}
+ */
+goog.global.CLOSURE_NO_DEPS = true;
+
+
+/**
+ * A function to import a single script. This is meant to be overridden when
+ * Closure is being run in non-HTML contexts, such as web workers. It's defined
+ * in the global scope so that it can be set before base.js is loaded, which
+ * allows deps.js to be imported properly.
+ *
+ * The function is passed the script source, which is a relative URI. It should
+ * return true if the script was imported, false otherwise.
+ */
+goog.global.CLOSURE_IMPORT_SCRIPT;
+
+
+/**
+ * Null function used for default values of callbacks, etc.
+ * @return {void} Nothing.
+ */
+goog.nullFunction = function() {};
+
+
+/**
+ * The identity function. Returns its first argument.
+ *
+ * @param {*=} opt_returnValue The single value that will be returned.
+ * @param {...*} var_args Optional trailing arguments. These are ignored.
+ * @return {?} The first argument. We can't know the type -- just pass it along
+ *      without type.
+ * @deprecated Use goog.functions.identity instead.
+ */
+goog.identityFunction = function(opt_returnValue, var_args) {
+  return opt_returnValue;
+};
+
+
+/**
+ * When defining a class Foo with an abstract method bar(), you can do:
+ *
+ * Foo.prototype.bar = goog.abstractMethod
+ *
+ * Now if a subclass of Foo fails to override bar(), an error
+ * will be thrown when bar() is invoked.
+ *
+ * Note: This does not take the name of the function to override as
+ * an argument because that would make it more difficult to obfuscate
+ * our JavaScript code.
+ *
+ * @type {!Function}
+ * @throws {Error} when invoked to indicate the method should be
+ *   overridden.
+ */
+goog.abstractMethod = function() {
+  throw Error('unimplemented abstract method');
+};
+
+
+/**
+ * Adds a {@code getInstance} static method that always return the same instance
+ * object.
+ * @param {!Function} ctor The constructor for the class to add the static
+ *     method to.
+ */
+goog.addSingletonGetter = function(ctor) {
+  ctor.getInstance = function() {
+    if (ctor.instance_) {
+      return ctor.instance_;
+    }
+    if (goog.DEBUG) {
+      // NOTE: JSCompiler can't optimize away Array#push.
+      goog.instantiatedSingletons_[goog.instantiatedSingletons_.length] = ctor;
+    }
+    return ctor.instance_ = new ctor;
+  };
+};
+
+
+/**
+ * All singleton classes that have been instantiated, for testing. Don't read
+ * it directly, use the {@code goog.testing.singleton} module. The compiler
+ * removes this variable if unused.
+ * @type {!Array.<!Function>}
+ * @private
+ */
+goog.instantiatedSingletons_ = [];
+
+
+if (!COMPILED && goog.ENABLE_DEBUG_LOADER) {
+  /**
+   * Object used to keep track of urls that have already been added. This
+   * record allows the prevention of circular dependencies.
+   * @type {Object}
+   * @private
+   */
+  goog.included_ = {};
+
+
+  /**
+   * This object is used to keep track of dependencies and other data that is
+   * used for loading scripts
+   * @private
+   * @type {Object}
+   */
+  goog.dependencies_ = {
+    pathToNames: {}, // 1 to many
+    nameToPath: {}, // 1 to 1
+    requires: {}, // 1 to many
+    // used when resolving dependencies to prevent us from
+    // visiting the file twice
+    visited: {},
+    written: {} // used to keep track of script files we have written
+  };
+
+
+  /**
+   * Tries to detect whether is in the context of an HTML document.
+   * @return {boolean} True if it looks like HTML document.
+   * @private
+   */
+  goog.inHtmlDocument_ = function() {
+    var doc = goog.global.document;
+    return typeof doc != 'undefined' &&
+           'write' in doc;  // XULDocument misses write.
+  };
+
+
+  /**
+   * Tries to detect the base path of the base.js script that bootstraps Closure
+   * @private
+   */
+  goog.findBasePath_ = function() {
+    if (goog.global.CLOSURE_BASE_PATH) {
+      goog.basePath = goog.global.CLOSURE_BASE_PATH;
+      return;
+    } else if (!goog.inHtmlDocument_()) {
+      return;
+    }
+    var doc = goog.global.document;
+    var scripts = doc.getElementsByTagName('script');
+    // Search backwards since the current script is in almost all cases the one
+    // that has base.js.
+    for (var i = scripts.length - 1; i >= 0; --i) {
+      var src = scripts[i].src;
+      var qmark = src.lastIndexOf('?');
+      var l = qmark == -1 ? src.length : qmark;
+      if (src.substr(l - 7, 7) == 'base.js') {
+        goog.basePath = src.substr(0, l - 7);
+        return;
+      }
+    }
+  };
+
+
+  /**
+   * Imports a script if, and only if, that script hasn't already been imported.
+   * (Must be called at execution time)
+   * @param {string} src Script source.
+   * @private
+   */
+  goog.importScript_ = function(src) {
+    var importScript = goog.global.CLOSURE_IMPORT_SCRIPT ||
+        goog.writeScriptTag_;
+    if (!goog.dependencies_.written[src] && importScript(src)) {
+      goog.dependencies_.written[src] = true;
+    }
+  };
+
+
+  /**
+   * The default implementation of the import function. Writes a script tag to
+   * import the script.
+   *
+   * @param {string} src The script source.
+   * @return {boolean} True if the script was imported, false otherwise.
+   * @private
+   */
+  goog.writeScriptTag_ = function(src) {
+    if (goog.inHtmlDocument_()) {
+      var doc = goog.global.document;
+
+      // If the user tries to require a new symbol after document load,
+      // something has gone terribly wrong. Doing a document.write would
+      // wipe out the page.
+      if (doc.readyState == 'complete') {
+        // Certain test frameworks load base.js multiple times, which tries
+        // to write deps.js each time. If that happens, just fail silently.
+        // These frameworks wipe the page between each load of base.js, so this
+        // is OK.
+        var isDeps = /\bdeps.js$/.test(src);
+        if (isDeps) {
+          return false;
+        } else {
+          throw Error('Cannot write "' + src + '" after document load');
+        }
+      }
+
+      doc.write(
+          '<script type="text/javascript" src="' + src + '"></' + 'script>');
+      return true;
+    } else {
+      return false;
+    }
+  };
+
+
+  /**
+   * Resolves dependencies based on the dependencies added using addDependency
+   * and calls importScript_ in the correct order.
+   * @private
+   */
+  goog.writeScripts_ = function() {
+    // the scripts we need to write this time
+    var scripts = [];
+    var seenScript = {};
+    var deps = goog.dependencies_;
+
+    function visitNode(path) {
+      if (path in deps.written) {
+        return;
+      }
+
+      // we have already visited this one. We can get here if we have cyclic
+      // dependencies
+      if (path in deps.visited) {
+        if (!(path in seenScript)) {
+          seenScript[path] = true;
+          scripts.push(path);
+        }
+        return;
+      }
+
+      deps.visited[path] = true;
+
+      if (path in deps.requires) {
+        for (var requireName in deps.requires[path]) {
+          // If the required name is defined, we assume that it was already
+          // bootstrapped by other means.
+          if (!goog.isProvided_(requireName)) {
+            if (requireName in deps.nameToPath) {
+              visitNode(deps.nameToPath[requireName]);
+            } else {
+              throw Error('Undefined nameToPath for ' + requireName);
+            }
+          }
+        }
+      }
+
+      if (!(path in seenScript)) {
+        seenScript[path] = true;
+        scripts.push(path);
+      }
+    }
+
+    for (var path in goog.included_) {
+      if (!deps.written[path]) {
+        visitNode(path);
+      }
+    }
+
+    for (var i = 0; i < scripts.length; i++) {
+      if (scripts[i]) {
+        goog.importScript_(goog.basePath + scripts[i]);
+      } else {
+        throw Error('Undefined script input');
+      }
+    }
+  };
+
+
+  /**
+   * Looks at the dependency rules and tries to determine the script file that
+   * fulfills a particular rule.
+   * @param {string} rule In the form goog.namespace.Class or project.script.
+   * @return {?string} Url corresponding to the rule, or null.
+   * @private
+   */
+  goog.getPathFromDeps_ = function(rule) {
+    if (rule in goog.dependencies_.nameToPath) {
+      return goog.dependencies_.nameToPath[rule];
+    } else {
+      return null;
+    }
+  };
+
+  goog.findBasePath_();
+
+  // Allow projects to manage the deps files themselves.
+  if (!goog.global.CLOSURE_NO_DEPS) {
+    goog.importScript_(goog.basePath + 'deps.js');
+  }
+}
+
+
+
+//==============================================================================
+// Language Enhancements
+//==============================================================================
+
+
+/**
+ * This is a "fixed" version of the typeof operator.  It differs from the typeof
+ * operator in such a way that null returns 'null' and arrays return 'array'.
+ * @param {*} value The value to get the type of.
+ * @return {string} The name of the type.
+ */
+goog.typeOf = function(value) {
+  var s = typeof value;
+  if (s == 'object') {
+    if (value) {
+      // Check these first, so we can avoid calling Object.prototype.toString if
+      // possible.
+      //
+      // IE improperly marshals tyepof across execution contexts, but a
+      // cross-context object will still return false for "instanceof Object".
+      if (value instanceof Array) {
+        return 'array';
+      } else if (value instanceof Object) {
+        return s;
+      }
+
+      // HACK: In order to use an Object prototype method on the arbitrary
+      //   value, the compiler requires the value be cast to type Object,
+      //   even though the ECMA spec explicitly allows it.
+      var className = Object.prototype.toString.call(
+          /** @type {Object} */ (value));
+      // In Firefox 3.6, attempting to access iframe window objects' length
+      // property throws an NS_ERROR_FAILURE, so we need to special-case it
+      // here.
+      if (className == '[object Window]') {
+        return 'object';
+      }
+
+      // We cannot always use constructor == Array or instanceof Array because
+      // different frames have different Array objects. In IE6, if the iframe
+      // where the array was created is destroyed, the array loses its
+      // prototype. Then dereferencing val.splice here throws an exception, so
+      // we can't use goog.isFunction. Calling typeof directly returns 'unknown'
+      // so that will work. In this case, this function will return false and
+      // most array functions will still work because the array is still
+      // array-like (supports length and []) even though it has lost its
+      // prototype.
+      // Mark Miller noticed that Object.prototype.toString
+      // allows access to the unforgeable [[Class]] property.
+      //  15.2.4.2 Object.prototype.toString ( )
+      //  When the toString method is called, the following steps are taken:
+      //      1. Get the [[Class]] property of this object.
+      //      2. Compute a string value by concatenating the three strings
+      //         "[object ", Result(1), and "]".
+      //      3. Return Result(2).
+      // and this behavior survives the destruction of the execution context.
+      if ((className == '[object Array]' ||
+           // In IE all non value types are wrapped as objects across window
+           // boundaries (not iframe though) so we have to do object detection
+           // for this edge case
+           typeof value.length == 'number' &&
+           typeof value.splice != 'undefined' &&
+           typeof value.propertyIsEnumerable != 'undefined' &&
+           !value.propertyIsEnumerable('splice')
+
+          )) {
+        return 'array';
+      }
+      // HACK: There is still an array case that fails.
+      //     function ArrayImpostor() {}
+      //     ArrayImpostor.prototype = [];
+      //     var impostor = new ArrayImpostor;
+      // this can be fixed by getting rid of the fast path
+      // (value instanceof Array) and solely relying on
+      // (value && Object.prototype.toString.vall(value) === '[object Array]')
+      // but that would require many more function calls and is not warranted
+      // unless closure code is receiving objects from untrusted sources.
+
+      // IE in cross-window calls does not correctly marshal the function type
+      // (it appears just as an object) so we cannot use just typeof val ==
+      // 'function'. However, if the object has a call property, it is a
+      // function.
+      if ((className == '[object Function]' ||
+          typeof value.call != 'undefined' &&
+          typeof value.propertyIsEnumerable != 'undefined' &&
+          !value.propertyIsEnumerable('call'))) {
+        return 'function';
+      }
+
+
+    } else {
+      return 'null';
+    }
+
+  } else if (s == 'function' && typeof value.call == 'undefined') {
+    // In Safari typeof nodeList returns 'function', and on Firefox
+    // typeof behaves similarly for HTML{Applet,Embed,Object}Elements
+    // and RegExps.  We would like to return object for those and we can
+    // detect an invalid function by making sure that the function
+    // object has a call method.
+    return 'object';
+  }
+  return s;
+};
+
+
+/**
+ * Returns true if the specified value is not |undefined|.
+ * WARNING: Do not use this to test if an object has a property. Use the in
+ * operator instead.  Additionally, this function assumes that the global
+ * undefined variable has not been redefined.
+ * @param {*} val Variable to test.
+ * @return {boolean} Whether variable is defined.
+ */
+goog.isDef = function(val) {
+  return val !== undefined;
+};
+
+
+/**
+ * Returns true if the specified value is |null|
+ * @param {*} val Variable to test.
+ * @return {boolean} Whether variable is null.
+ */
+goog.isNull = function(val) {
+  return val === null;
+};
+
+
+/**
+ * Returns true if the specified value is defined and not null
+ * @param {*} val Variable to test.
+ * @return {boolean} Whether variable is defined and not null.
+ */
+goog.isDefAndNotNull = function(val) {
+  // Note that undefined == null.
+  return val != null;
+};
+
+
+/**
+ * Returns true if the specified value is an array
+ * @param {*} val Variable to test.
+ * @return {boolean} Whether variable is an array.
+ */
+goog.isArray = function(val) {
+  return goog.typeOf(val) == 'array';
+};
+
+
+/**
+ * Returns true if the object looks like an array. To qualify as array like
+ * the value needs to be either a NodeList or an object with a Number length
+ * property.
+ * @param {*} val Variable to test.
+ * @return {boolean} Whether variable is an array.
+ */
+goog.isArrayLike = function(val) {
+  var type = goog.typeOf(val);
+  return type == 'array' || type == 'object' && typeof val.length == 'number';
+};
+
+
+/**
+ * Returns true if the object looks like a Date. To qualify as Date-like
+ * the value needs to be an object and have a getFullYear() function.
+ * @param {*} val Variable to test.
+ * @return {boolean} Whether variable is a like a Date.
+ */
+goog.isDateLike = function(val) {
+  return goog.isObject(val) && typeof val.getFullYear == 'function';
+};
+
+
+/**
+ * Returns true if the specified value is a string
+ * @param {*} val Variable to test.
+ * @return {boolean} Whether variable is a string.
+ */
+goog.isString = function(val) {
+  return typeof val == 'string';
+};
+
+
+/**
+ * Returns true if the specified value is a boolean
+ * @param {*} val Variable to test.
+ * @return {boolean} Whether variable is boolean.
+ */
+goog.isBoolean = function(val) {
+  return typeof val == 'boolean';
+};
+
+
+/**
+ * Returns true if the specified value is a number
+ * @param {*} val Variable to test.
+ * @return {boolean} Whether variable is a number.
+ */
+goog.isNumber = function(val) {
+  return typeof val == 'number';
+};
+
+
+/**
+ * Returns true if the specified value is a function
+ * @param {*} val Variable to test.
+ * @return {boolean} Whether variable is a function.
+ */
+goog.isFunction = function(val) {
+  return goog.typeOf(val) == 'function';
+};
+
+
+/**
+ * Returns true if the specified value is an object.  This includes arrays
+ * and functions.
+ * @param {*} val Variable to test.
+ * @return {boolean} Whether variable is an object.
+ */
+goog.isObject = function(val) {
+  var type = typeof val;
+  return type == 'object' && val != null || type == 'function';
+  // return Object(val) === val also works, but is slower, especially if val is
+  // not an object.
+};
+
+
+/**
+ * Gets a unique ID for an object. This mutates the object so that further
+ * calls with the same object as a parameter returns the same value. The unique
+ * ID is guaranteed to be unique across the current session amongst objects that
+ * are passed into {@code getUid}. There is no guarantee that the ID is unique
+ * or consistent across sessions. It is unsafe to generate unique ID for
+ * function prototypes.
+ *
+ * @param {Object} obj The object to get the unique ID for.
+ * @return {number} The unique ID for the object.
+ */
+goog.getUid = function(obj) {
+  // TODO(arv): Make the type stricter, do not accept null.
+
+  // In Opera window.hasOwnProperty exists but always returns false so we avoid
+  // using it. As a consequence the unique ID generated for BaseClass.prototype
+  // and SubClass.prototype will be the same.
+  return obj[goog.UID_PROPERTY_] ||
+      (obj[goog.UID_PROPERTY_] = ++goog.uidCounter_);
+};
+
+
+/**
+ * Removes the unique ID from an object. This is useful if the object was
+ * previously mutated using {@code goog.getUid} in which case the mutation is
+ * undone.
+ * @param {Object} obj The object to remove the unique ID field from.
+ */
+goog.removeUid = function(obj) {
+  // TODO(arv): Make the type stricter, do not accept null.
+
+  // DOM nodes in IE are not instance of Object and throws exception
+  // for delete. Instead we try to use removeAttribute
+  if ('removeAttribute' in obj) {
+    obj.removeAttribute(goog.UID_PROPERTY_);
+  }
+  /** @preserveTry */
+  try {
+    delete obj[goog.UID_PROPERTY_];
+  } catch (ex) {
+  }
+};
+
+
+/**
+ * Name for unique ID property. Initialized in a way to help avoid collisions
+ * with other closure javascript on the same page.
+ * @type {string}
+ * @private
+ */
+goog.UID_PROPERTY_ = 'closure_uid_' + ((Math.random() * 1e9) >>> 0);
+
+
+/**
+ * Counter for UID.
+ * @type {number}
+ * @private
+ */
+goog.uidCounter_ = 0;
+
+
+/**
+ * Adds a hash code field to an object. The hash code is unique for the
+ * given object.
+ * @param {Object} obj The object to get the hash code for.
+ * @return {number} The hash code for the object.
+ * @deprecated Use goog.getUid instead.
+ */
+goog.getHashCode = goog.getUid;
+
+
+/**
+ * Removes the hash code field from an object.
+ * @param {Object} obj The object to remove the field from.
+ * @deprecated Use goog.removeUid instead.
+ */
+goog.removeHashCode = goog.removeUid;
+
+
+/**
+ * Clones a value. The input may be an Object, Array, or basic type. Objects and
+ * arrays will be cloned recursively.
+ *
+ * WARNINGS:
+ * <code>goog.cloneObject</code> does not detect reference loops. Objects that
+ * refer to themselves will cause infinite recursion.
+ *
+ * <code>goog.cloneObject</code> is unaware of unique identifiers, and copies
+ * UIDs created by <code>getUid</code> into cloned results.
+ *
+ * @param {*} obj The value to clone.
+ * @return {*} A clone of the input value.
+ * @deprecated goog.cloneObject is unsafe. Prefer the goog.object methods.
+ */
+goog.cloneObject = function(obj) {
+  var type = goog.typeOf(obj);
+  if (type == 'object' || type == 'array') {
+    if (obj.clone) {
+      return obj.clone();
+    }
+    var clone = type == 'array' ? [] : {};
+    for (var key in obj) {
+      clone[key] = goog.cloneObject(obj[key]);
+    }
+    return clone;
+  }
+
+  return obj;
+};
+
+
+/**
+ * A native implementation of goog.bind.
+ * @param {Function} fn A function to partially apply.
+ * @param {Object|undefined} selfObj Specifies the object which |this| should
+ *     point to when the function is run.
+ * @param {...*} var_args Additional arguments that are partially
+ *     applied to the function.
+ * @return {!Function} A partially-applied form of the function bind() was
+ *     invoked as a method of.
+ * @private
+ * @suppress {deprecated} The compiler thinks that Function.prototype.bind
+ *     is deprecated because some people have declared a pure-JS version.
+ *     Only the pure-JS version is truly deprecated.
+ */
+goog.bindNative_ = function(fn, selfObj, var_args) {
+  return /** @type {!Function} */ (fn.call.apply(fn.bind, arguments));
+};
+
+
+/**
+ * A pure-JS implementation of goog.bind.
+ * @param {Function} fn A function to partially apply.
+ * @param {Object|undefined} selfObj Specifies the object which |this| should
+ *     point to when the function is run.
+ * @param {...*} var_args Additional arguments that are partially
+ *     applied to the function.
+ * @return {!Function} A partially-applied form of the function bind() was
+ *     invoked as a method of.
+ * @private
+ */
+goog.bindJs_ = function(fn, selfObj, var_args) {
+  if (!fn) {
+    throw new Error();
+  }
+
+  if (arguments.length > 2) {
+    var boundArgs = Array.prototype.slice.call(arguments, 2);
+    return function() {
+      // Prepend the bound arguments to the current arguments.
+      var newArgs = Array.prototype.slice.call(arguments);
+      Array.prototype.unshift.apply(newArgs, boundArgs);
+      return fn.apply(selfObj, newArgs);
+    };
+
+  } else {
+    return function() {
+      return fn.apply(selfObj, arguments);
+    };
+  }
+};
+
+
+/**
+ * Partially applies this function to a particular 'this object' and zero or
+ * more arguments. The result is a new function with some arguments of the first
+ * function pre-filled and the value of |this| 'pre-specified'.<br><br>
+ *
+ * Remaining arguments specified at call-time are appended to the pre-
+ * specified ones.<br><br>
+ *
+ * Also see: {@link #partial}.<br><br>
+ *
+ * Usage:
+ * <pre>var barMethBound = bind(myFunction, myObj, 'arg1', 'arg2');
+ * barMethBound('arg3', 'arg4');</pre>
+ *
+ * @param {Function} fn A function to partially apply.
+ * @param {Object|undefined} selfObj Specifies the object which |this| should
+ *     point to when the function is run.
+ * @param {...*} var_args Additional arguments that are partially
+ *     applied to the function.
+ * @return {!Function} A partially-applied form of the function bind() was
+ *     invoked as a method of.
+ * @suppress {deprecated} See above.
+ */
+goog.bind = function(fn, selfObj, var_args) {
+  // TODO(nicksantos): narrow the type signature.
+  if (Function.prototype.bind &&
+      // NOTE(nicksantos): Somebody pulled base.js into the default
+      // Chrome extension environment. This means that for Chrome extensions,
+      // they get the implementation of Function.prototype.bind that
+      // calls goog.bind instead of the native one. Even worse, we don't want
+      // to introduce a circular dependency between goog.bind and
+      // Function.prototype.bind, so we have to hack this to make sure it
+      // works correctly.
+      Function.prototype.bind.toString().indexOf('native code') != -1) {
+    goog.bind = goog.bindNative_;
+  } else {
+    goog.bind = goog.bindJs_;
+  }
+  return goog.bind.apply(null, arguments);
+};
+
+
+/**
+ * Like bind(), except that a 'this object' is not required. Useful when the
+ * animationTarget function is already bound.
+ *
+ * Usage:
+ * var g = partial(f, arg1, arg2);
+ * g(arg3, arg4);
+ *
+ * @param {Function} fn A function to partially apply.
+ * @param {...*} var_args Additional arguments that are partially
+ *     applied to fn.
+ * @return {!Function} A partially-applied form of the function bind() was
+ *     invoked as a method of.
+ */
+goog.partial = function(fn, var_args) {
+  var args = Array.prototype.slice.call(arguments, 1);
+  return function() {
+    // Prepend the bound arguments to the current arguments.
+    var newArgs = Array.prototype.slice.call(arguments);
+    newArgs.unshift.apply(newArgs, args);
+    return fn.apply(this, newArgs);
+  };
+};
+
+
+/**
+ * Copies all the members of a source object to a animationTarget object. This method
+ * does not work on all browsers for all objects that contain keys such as
+ * toString or hasOwnProperty. Use goog.object.extend for this purpose.
+ * @param {Object} target Target.
+ * @param {Object} source Source.
+ */
+goog.mixin = function(target, source) {
+  for (var x in source) {
+    target[x] = source[x];
+  }
+
+  // For IE7 or lower, the for-in-loop does not contain any properties that are
+  // not enumerable on the prototype object (for example, isPrototypeOf from
+  // Object.prototype) but also it will not include 'replace' on objects that
+  // extend String and change 'replace' (not that it is common for anyone to
+  // extend anything except Object).
+};
+
+
+/**
+ * @return {number} An integer value representing the number of milliseconds
+ *     between midnight, January 1, 1970 and the current time.
+ */
+goog.now = (goog.TRUSTED_SITE && Date.now) || (function() {
+  // Unary plus operator converts its operand to a number which in the case of
+  // a date is done by calling getTime().
+  return +new Date();
+});
+
+
+/**
+ * Evals javascript in the global scope.  In IE this uses execScript, other
+ * browsers use goog.global.eval. If goog.global.eval does not evaluate in the
+ * global scope (for example, in Safari), appends a script tag instead.
+ * Throws an exception if neither execScript or eval is defined.
+ * @param {string} script JavaScript string.
+ */
+goog.globalEval = function(script) {
+  if (goog.global.execScript) {
+    goog.global.execScript(script, 'JavaScript');
+  } else if (goog.global.eval) {
+    // Test to see if eval works
+    if (goog.evalWorksForGlobals_ == null) {
+      goog.global.eval('var _et_ = 1;');
+      if (typeof goog.global['_et_'] != 'undefined') {
+        delete goog.global['_et_'];
+        goog.evalWorksForGlobals_ = true;
+      } else {
+        goog.evalWorksForGlobals_ = false;
+      }
+    }
+
+    if (goog.evalWorksForGlobals_) {
+      goog.global.eval(script);
+    } else {
+      var doc = goog.global.document;
+      var scriptElt = doc.createElement('script');
+      scriptElt.type = 'text/javascript';
+      scriptElt.defer = false;
+      // Note(user): can't use .innerHTML since "t('<test>')" will fail and
+      // .text doesn't work in Safari 2.  Therefore we append a text node.
+      scriptElt.appendChild(doc.createTextNode(script));
+      doc.body.appendChild(scriptElt);
+      doc.body.removeChild(scriptElt);
+    }
+  } else {
+    throw Error('goog.globalEval not available');
+  }
+};
+
+
+/**
+ * Indicates whether or not we can call 'eval' directly to eval code in the
+ * global scope. Set to a Boolean by the first call to goog.globalEval (which
+ * empirically tests whether eval works for globals). @see goog.globalEval
+ * @type {?boolean}
+ * @private
+ */
+goog.evalWorksForGlobals_ = null;
+
+
+/**
+ * Optional map of CSS class names to obfuscated names used with
+ * goog.getCssName().
+ * @type {Object|undefined}
+ * @private
+ * @see goog.setCssNameMapping
+ */
+goog.cssNameMapping_;
+
+
+/**
+ * Optional obfuscation style for CSS class names. Should be set to either
+ * 'BY_WHOLE' or 'BY_PART' if defined.
+ * @type {string|undefined}
+ * @private
+ * @see goog.setCssNameMapping
+ */
+goog.cssNameMappingStyle_;
+
+
+/**
+ * Handles strings that are intended to be used as CSS class names.
+ *
+ * This function works in tandem with @see goog.setCssNameMapping.
+ *
+ * Without any mapping set, the arguments are simple joined with a
+ * hyphen and passed through unaltered.
+ *
+ * When there is a mapping, there are two possible styles in which
+ * these mappings are used. In the BY_PART style, each part (i.e. in
+ * between hyphens) of the passed in css name is rewritten according
+ * to the map. In the BY_WHOLE style, the full css name is looked up in
+ * the map directly. If a rewrite is not specified by the map, the
+ * compiler will output a warning.
+ *
+ * When the mapping is passed to the compiler, it will replace calls
+ * to goog.getCssName with the strings from the mapping, e.g.
+ *     var x = goog.getCssName('foo');
+ *     var y = goog.getCssName(this.baseClass, 'active');
+ *  becomes:
+ *     var x= 'foo';
+ *     var y = this.baseClass + '-active';
+ *
+ * If one argument is passed it will be processed, if two are passed
+ * only the modifier will be processed, as it is assumed the first
+ * argument was generated as a result of calling goog.getCssName.
+ *
+ * @param {string} className The class name.
+ * @param {string=} opt_modifier A modifier to be appended to the class name.
+ * @return {string} The class name or the concatenation of the class name and
+ *     the modifier.
+ */
+goog.getCssName = function(className, opt_modifier) {
+  var getMapping = function(cssName) {
+    return goog.cssNameMapping_[cssName] || cssName;
+  };
+
+  var renameByParts = function(cssName) {
+    // Remap all the parts individually.
+    var parts = cssName.split('-');
+    var mapped = [];
+    for (var i = 0; i < parts.length; i++) {
+      mapped.push(getMapping(parts[i]));
+    }
+    return mapped.join('-');
+  };
+
+  var rename;
+  if (goog.cssNameMapping_) {
+    rename = goog.cssNameMappingStyle_ == 'BY_WHOLE' ?
+        getMapping : renameByParts;
+  } else {
+    rename = function(a) {
+      return a;
+    };
+  }
+
+  if (opt_modifier) {
+    return className + '-' + rename(opt_modifier);
+  } else {
+    return rename(className);
+  }
+};
+
+
+/**
+ * Sets the map to check when returning a value from goog.getCssName(). Example:
+ * <pre>
+ * goog.setCssNameMapping({
+ *   "goog": "a",
+ *   "disabled": "b",
+ * });
+ *
+ * var x = goog.getCssName('goog');
+ * // The following evaluates to: "a a-b".
+ * goog.getCssName('goog') + ' ' + goog.getCssName(x, 'disabled')
+ * </pre>
+ * When declared as a map of string literals to string literals, the JSCompiler
+ * will replace all calls to goog.getCssName() using the supplied map if the
+ * --closure_pass flag is set.
+ *
+ * @param {!Object} mapping A map of strings to strings where keys are possible
+ *     arguments to goog.getCssName() and values are the corresponding values
+ *     that should be returned.
+ * @param {string=} opt_style The style of css name mapping. There are two valid
+ *     options: 'BY_PART', and 'BY_WHOLE'.
+ * @see goog.getCssName for a description.
+ */
+goog.setCssNameMapping = function(mapping, opt_style) {
+  goog.cssNameMapping_ = mapping;
+  goog.cssNameMappingStyle_ = opt_style;
+};
+
+
+/**
+ * To use CSS renaming in compiled mode, one of the input files should have a
+ * call to goog.setCssNameMapping() with an object literal that the JSCompiler
+ * can extract and use to replace all calls to goog.getCssName(). In uncompiled
+ * mode, JavaScript code should be loaded before this base.js file that declares
+ * a global variable, CLOSURE_CSS_NAME_MAPPING, which is used below. This is
+ * to ensure that the mapping is loaded before any calls to goog.getCssName()
+ * are made in uncompiled mode.
+ *
+ * A hook for overriding the CSS name mapping.
+ * @type {Object|undefined}
+ */
+goog.global.CLOSURE_CSS_NAME_MAPPING;
+
+
+if (!COMPILED && goog.global.CLOSURE_CSS_NAME_MAPPING) {
+  // This does not call goog.setCssNameMapping() because the JSCompiler
+  // requires that goog.setCssNameMapping() be called with an object literal.
+  goog.cssNameMapping_ = goog.global.CLOSURE_CSS_NAME_MAPPING;
+}
+
+
+/**
+ * Gets a localized message.
+ *
+ * This function is a compiler primitive. If you give the compiler a localized
+ * message bundle, it will replace the string at compile-time with a localized
+ * version, and expand goog.getMsg call to a concatenated string.
+ *
+ * Messages must be initialized in the form:
+ * <code>
+ * var MSG_NAME = goog.getMsg('Hello {$placeholder}', {'placeholder': 'world'});
+ * </code>
+ *
+ * @param {string} str Translatable string, places holders in the form {$foo}.
+ * @param {Object=} opt_values Map of place holder name to value.
+ * @return {string} message with placeholders filled.
+ */
+goog.getMsg = function(str, opt_values) {
+  var values = opt_values || {};
+  for (var key in values) {
+    var value = ('' + values[key]).replace(/\$/g, '$$$$');
+    str = str.replace(new RegExp('\\{\\$' + key + '\\}', 'gi'), value);
+  }
+  return str;
+};
+
+
+/**
+ * Gets a localized message. If the message does not have a translation, gives a
+ * fallback message.
+ *
+ * This is useful when introducing a new message that has not yet been
+ * translated into all languages.
+ *
+ * This function is a compiler primtive. Must be used in the form:
+ * <code>var x = goog.getMsgWithFallback(MSG_A, MSG_B);</code>
+ * where MSG_A and MSG_B were initialized with goog.getMsg.
+ *
+ * @param {string} a The preferred message.
+ * @param {string} b The fallback message.
+ * @return {string} The best translated message.
+ */
+goog.getMsgWithFallback = function(a, b) {
+  return a;
+};
+
+
+/**
+ * Exposes an unobfuscated global namespace path for the given object.
+ * Note that fields of the exported object *will* be obfuscated,
+ * unless they are exported in turn via this function or
+ * goog.exportProperty
+ *
+ * <p>Also handy for making public items that are defined in anonymous
+ * closures.
+ *
+ * ex. goog.exportSymbol('public.path.Foo', Foo);
+ *
+ * ex. goog.exportSymbol('public.path.Foo.staticFunction',
+ *                       Foo.staticFunction);
+ *     public.path.Foo.staticFunction();
+ *
+ * ex. goog.exportSymbol('public.path.Foo.prototype.myMethod',
+ *                       Foo.prototype.myMethod);
+ *     new public.path.Foo().myMethod();
+ *
+ * @param {string} publicPath Unobfuscated name to export.
+ * @param {*} object Object the name should point to.
+ * @param {Object=} opt_objectToExportTo The object to add the path to; default
+ *     is |goog.global|.
+ */
+goog.exportSymbol = function(publicPath, object, opt_objectToExportTo) {
+  goog.exportPath_(publicPath, object, opt_objectToExportTo);
+};
+
+
+/**
+ * Exports a property unobfuscated into the object's namespace.
+ * ex. goog.exportProperty(Foo, 'staticFunction', Foo.staticFunction);
+ * ex. goog.exportProperty(Foo.prototype, 'myMethod', Foo.prototype.myMethod);
+ * @param {Object} object Object whose static property is being exported.
+ * @param {string} publicName Unobfuscated name to export.
+ * @param {*} symbol Object the name should point to.
+ */
+goog.exportProperty = function(object, publicName, symbol) {
+  object[publicName] = symbol;
+};
+
+
+/**
+ * Inherit the prototype methods from one constructor into another.
+ *
+ * Usage:
+ * <pre>
+ * function ParentClass(a, b) { }
+ * ParentClass.prototype.foo = function(a) { }
+ *
+ * function ChildClass(a, b, c) {
+ *   goog.base(this, a, b);
+ * }
+ * goog.inherits(ChildClass, ParentClass);
+ *
+ * var child = new ChildClass('a', 'b', 'see');
+ * child.foo(); // works
+ * </pre>
+ *
+ * In addition, a superclass' implementation of a method can be invoked
+ * as follows:
+ *
+ * <pre>
+ * ChildClass.prototype.foo = function(a) {
+ *   ChildClass.superClass_.foo.call(this, a);
+ *   // other code
+ * };
+ * </pre>
+ *
+ * @param {Function} childCtor Child class.
+ * @param {Function} parentCtor Parent class.
+ */
+goog.inherits = function(childCtor, parentCtor) {
+  /** @constructor */
+  var tempCtor = Function();
+  tempCtor.prototype = parentCtor.prototype;
+  childCtor.superClass_ = parentCtor.prototype;
+  childCtor.prototype = new tempCtor();
+  /** @override */
+  childCtor.prototype.constructor = childCtor;
+};
+
+
+/**
+ * Call up to the superclass.
+ *
+ * If this is called from a constructor, then this calls the superclass
+ * contructor with arguments 1-N.
+ *
+ * If this is called from a prototype method, then you must pass
+ * the name of the method as the second argument to this function. If
+ * you do not, you will get a runtime error. This calls the superclass'
+ * method with arguments 2-N.
+ *
+ * This function only works if you use goog.inherits to express
+ * inheritance relationships between your classes.
+ *
+ * This function is a compiler primitive. At compile-time, the
+ * compiler will do macro expansion to remove a lot of
+ * the extra overhead that this function introduces. The compiler
+ * will also enforce a lot of the assumptions that this function
+ * makes, and treat it as a compiler error if you break them.
+ *
+ * @param {!Object} me Should always be "this".
+ * @param {*=} opt_methodName The method name if calling a super method.
+ * @param {...*} var_args The rest of the arguments.
+ * @return {*} The return value of the superclass method.
+ */
+goog.base = function(me, opt_methodName, var_args) {
+  var caller = arguments.callee.caller;
+  if (caller.superClass_) {
+    // This is a constructor. Call the superclass constructor.
+    return caller.superClass_.constructor.apply(
+        me, Array.prototype.slice.call(arguments, 1));
+  }
+
+  var args = Array.prototype.slice.call(arguments, 2);
+  var foundCaller = false;
+  for (var ctor = me.constructor;
+       ctor; ctor = ctor.superClass_ && ctor.superClass_.constructor) {
+    if (ctor.prototype[opt_methodName] === caller) {
+      foundCaller = true;
+    } else if (foundCaller) {
+      return ctor.prototype[opt_methodName].apply(me, args);
+    }
+  }
+
+  // If we did not find the caller in the prototype chain,
+  // then one of two things happened:
+  // 1) The caller is an instance method.
+  // 2) This method was not called by the right caller.
+  if (me[opt_methodName] === caller) {
+    return me.constructor.prototype[opt_methodName].apply(me, args);
+  } else {
+    throw Error(
+        'goog.base called from a method of one name ' +
+        'to a method of a different name');
+  }
+};
+
+
+/**
+ * Allow for aliasing within scope functions.  This function exists for
+ * uncompiled code - in compiled code the calls will be inlined and the
+ * aliases applied.  In uncompiled code the function is simply run since the
+ * aliases as written are valid JavaScript.
+ * @param {function()} fn Function to call.  This function can contain aliases
+ *     to namespaces (e.g. "var dom = goog.dom") or classes
+ *    (e.g. "var Timer = goog.Timer").
+ */
+goog.scope = function(fn) {
+  fn.call(goog.global);
+};
+
+
+
+
+/*---------------------------------------*/
+
+    /**********************************
+     *      ОБЩИЕ ВВОДНЫЕ ПЕРЕМЕННЫЕ
+     * ********************************/
+
+    /** @const */
+    var mel = "melAnimation";
+
+    /** @type {number} */
+    var counter = 0;
+
+    /** @const */
+    var rootElement = 'document' in goog.global ? document.documentElement:null;
+
 
     /**
-     * Разрешить ли вывод отладочных сообщений
-     * Заставляет анимацию выводить пояснения в
-     * лог: все нестандартные действия или же
-     * отладучную информацию вроде поддерживаемых фич
-     * @define {boolean}
-     */
-    var ENABLE_DEBUG = true;
-
-    /**
-     * Разрешено ли использовать кеш для вычислений
-     * Относится к функции fetch классической анимации
-     * Потребляет память, но повышает плавность.
-     * @type {boolean}
+     * Абстрактная рега для парсинга CSS функций (в том числе transform-функций)
+     * @type {RegExp}
      * @const
+     * @example
+     *  skewX(3deg, 5deg) ---> [ "skewX(3deg, 5deg)", "skewX", "3deg, 5deg" ]
+     *  steps(4, start) ---> [ "steps(4, start)", "steps", "3, start" ]
+     *  rgb(1, 2, 3) ---> [ "rgb(1, 2, 3)", "rgb", "1, 2, 3" ]
      */
-    // TODO сделать кеш для fetch'инга.
-    var FETCH_USE_CACHE = false;
+    var cssFunctionReg = new RegExp([
+        "([\\w-]+?)",  // Сама функция
+        "\\(",
+            "([^)]*?)", // Аргументы к функции
+        "\\)"
+    ].join(""));
 
+    /**
+     * @const
+     * @type {number}
+     */
+    var FUNCREG_SOURCE = 0;
+    /**
+     * @const
+     * @type {number}
+     */
+    var FUNCREG_FUNC = 1;
+    /**
+     * @const
+     * @type {number}
+     */
+    var FUNCREG_ARGS = 2;
 
-/*---------------------------------------*/
+    /**
+     * Разделитель аргументов в функциях CSS
+     * ( аргумент в String.split )
+     * @const
+     * @type {string}
+     */
+    var cssFuncArgsSeparator = ",";
 
+    /**
+     * Регвыр для выделения численного значения и размерности у значений CSS свойств
+     * Вывод:
+     *      [  0: SOURCE, 1: NUMERIC_VALUE, 2: PROPERTY_DIMENSION  ]
+     * @type {RegExp}
+     * @const
+     * @example
+     *      "2" ---> ["2", "2", ""]
+     *      "2px" ---> ["2px", "2", "px"]
+     */
+    var cssNumericValueReg = new RegExp([
+        "^",
+            "(",
+                "-?\\d*\\.?\\d+",   // Численное значение как пригодный аргумент в parseFloat
+            ")",
+            "(",
+                ".*",               // Размерность свойства
+            ")",
+        "$"
+    ].join(""));;
 
-/**@license melAnim.js by melky (coloured_chalk@mail.ru). Dual licensed under the MIT and GPL licenses. */
-(function (window) {
-	"use strict";
-
-
-/*---------------------------------------*/
-
-    var
-
-        /**
-         * Префикс к разным строкам, которые не могут начинаться с числа
-         * @type {string}
-         * @const
-         * */
-        mel = "melAnimation",
-
-        /**
-         * Шорткат для document
-         * @type {Document}
-         * @const
-         * */
-        doc = window.document,
-
-        /**
-         * Правильная undefined.
-         * @type {undefined}
-         * @const
-         */
-        undefined,
-
-        /**
-         * Шорткат для объекта отладочного вывода
-         * @inheritDoc
-         */
-        console = window.console,
-
-        /**
-         * Шорткат для корневого элемента html
-         * для делегирования событий анимации.
-         * @const
-         */
-        rootElement = doc.documentElement,
-
-        /**
-         * Стиль, где можно смотреть CSS-свойства
-         * @type {CSSStyleDeclaration}
-         * @const
-         */
-        dummy = rootElement.style,
-
-        /**
-         * Вендорный префикс к текущему браузеру
-         * @type {string}
-         */
-        prefix,
-
-        /**
-         * Вендорный префикс к текущему браузеру в нижнем регистре
-         * @type {string}
-         */
-        lowPrefix,
-
-        /**
-         * Регвыр для выделения численного значения и размерности у значений CSS свойств
-         * @type {RegExp}
-         * @const
-         */
-        cssNumericValueReg = /(-?\d*\.?\d+)(.*)/,
-
-        /**
-         * Инкремент для генерации уникальной строки
-         * @type {number}
-         */
-        animCount = 0,
-
-        /**
-         * Пустая функция
-         * @const
-         */
-        noop = function () {},
-
-        /**
-         * Регвыр для временной функции CSS кубической кривой Безье
-         * @type {RegExp}
-         * @const
-         */
-        cubicBezierReg = /^cubic-bezier\(((?:\s*\d*\.?\d+\s*,\s*){3}\d*\.?\d+\s*)\)$/i,
-
-        /**
-         * Регвыр для временной функции CSS лестничной функции
-         * @type {RegExp}
-         * @const
-         */
-        stepsReg = /^steps\((\d+(?:,\s*(?:start|end))?)\)$/i,
-
-        /**
-         * Свой тег <style> для возможности CSS3 анимаций
-         * Используется так же в анимации на JavaScript для ускорения.
-         * @type {HTMLStyleElement}
-         * @const
-         */
-        style = doc.getElementsByTagName("head")[0].parentNode.appendChild(doc.createElement("style")),
-
-        /**
-         * Каскадная таблица из тега <style>
-         * @type {CSSStyleSheet}
-         * @const
-         */
-        stylesheet = style.sheet || style.styleSheet;
-
+    /**
+     * @const
+     * @type {number}
+     */
+    var VALREG_SOURCE = 0;
+    /**
+     * @const
+     * @type {number}
+     */
+    var VALREG_VALUE = 1;
+    /**
+     * @const
+     * @type {number}
+     */
+    var VALREG_DIMENSION = 2;
 
 /*---------------------------------------*/
 
     /**
-     * Проверит, является ли объект x экземпляром constructor.
-     * @param {*} x
-     * @param {Object} constructor
-     * @return {boolean}
+     * @return {number}
      */
-    function instanceOf (x, constructor) {
-        return x instanceof constructor;
+    function uuid () {
+        return counter++;
     }
 
     /**
-     * Вернёт строковое представление типа аргумента.
-     * При необходимости вернёт [[Class]] в нижнем регистре.
-     *
-     * @param {*} x
      * @return {string}
      */
-    function typeOf(x) {
-        var type = typeof(x);
-        if (type === "object") {
-            type = Object.prototype.toString.call(/** @type {Object} */ (x)).slice(8, -1).toLowerCase();
-        }
-        return type;
+    function generateId () {
+        return /** @type {string} */ (mel + uuid());
     }
 
     /**
-     * Проверит, является ли аргумент HTML элементом.
-     *
-     * @param {*} x
-     * @return {boolean}
-     */
-    typeOf.element = function (x) {
-        return toBool(x && "nodeType" in x && x.nodeType === Node.ELEMENT_NODE);
-    };
-
-    /**
-     * Проверит, является ли аргумент функцией.
-     *
-     * @param {*} x
-     * @return {boolean}
-     */
-    typeOf.func = function (x) {
-        return toBool(instanceOf(x, Function) || typeOf(x) === "function");
-    };
-
-    /**
-     * Проверит, является ли аргумент массивом
-     * @param x
-     * @return {boolean}
-     */
-    typeOf.array = function (x) {
-        return toBool(instanceOf(x, Array) || typeOf(x) === "array");
-    };
-
-    /**
-     * Проверит, является ли значение аргумента undefined.
-     * @param x
-     * @return {boolean}
-     */
-    typeOf.undefined = function (x) {
-        return toBool(x === undefined || typeOf(x) === "undefined");
-    };
-
-    /**
-     * Проверит, является ли аргумент числом
-     * @param {*} x
-     * @return {boolean}
-     */
-    typeOf.number = function (x) {
-        return toBool(instanceOf(x, Number) || typeOf(x) === "number");
-    };
-
-    /**
-     * Проверит, является ли аргумент строковым значением
-     * @param x
-     * @return {boolean}
-     */
-    typeOf.string = function (x) {
-        return toBool(instanceOf(x, String) || typeOf(x) === "string");
-    };
-
-    /**
-     * Проверит, является ли аргумент объектом
-     * @param {*} x
-     * @return {boolean}
-     */
-    typeOf.object = function (x) {
-        return toBool(instanceOf(x, Object) || typeOf(x) === "object");
-    };
-
-    /**
-     * Шорткат для Math.floor
-     * @inheritDoc
-     */
-    var floor = Math.floor;
-
-    /**
-     * Шорткат для Math.ceil
-     * @inheritDoc
-     */
-    var ceil = Math.ceil;
-
-    /**
-     * Шорткат для Math.min
-     * @inheritDoc
-     */
-    var min = Math.min;
-
-    /**
-     * Шорткат для Math.max
-     * @inheritDoc
-     */
-    var max = Math.max;
-
-    /**
-     * Вернёт true, если число нечётное; и false, если чётное.
-     * @param number
-     * @return {boolean}
-     */
-    function isOdd (number) {
-        return (number & 1) === 1;
-    }
-
-    /**
-     * Проверит, принадлежит ли число диапазону
-     * @param {number} num
-     * @param {number} lowbound нижняя граница
-     * @param {number} highbound верхняя граница
-     * @param {boolean=} including включая ли границы
-     * @return {boolean}
-     */
-    function inRange(num, lowbound, highbound, including) {
-        return including ? (num >= lowbound && num <= highbound) : (num > lowbound && num < highbound);
-    }
-
-    /**
-     * Сгенерирует уникальную строку.
-     * @return {string}
-     */
-    function generateId() {
-        return /** @type {string} */ (mel) + animCount++;
-    }
-
-    /**
-     * Аналог Object.create
-     * @param {Object} parent
-     * @return {Object}
-     */
-    function createObject(parent) {
-        /** @constructor */
-        var F = noop;
-        F.prototype = parent;
-        return new F;
-    }
-
-    /**
-     * Удалит из массива элементэлемент с указанным индексом
-     * @param {Array} array
-     * @param {number} index
-     */
-    function removeAtIndex (array, index) {
-        if (index in array) {
-            array.splice(index, 1);
-        }
-    }
-
-    /**
-     * Классический шаблон итератора
-     * @param {Array} collection
-     * @constructor
-     * @class
-     */
-    function Iterator(collection) {
-        this.collection = collection;
-        this.length = collection.length;
-    }
-
-    /**
-     * Индекс текущего элемента в коллекции
+     * @const
      * @type {number}
-     * @private
      */
-    Iterator.prototype.index = -1;
+    var NOT_FOUND = -1;
 
     /**
-     * Запомненная длина коллекции
-     * @type {number}
-     * @private
+     * Линейный поиск по массиву с функцией обратного вызова
+     * @param {!Array} array
+     * @param {function (*, number, Array): boolean} callback
      */
-    Iterator.prototype.length = -1;
+    function linearSearch (array, callback) {
+        for (var i = 0; i < array.length; i++) {
+            if (callback(array[i], i, array) === true) {
+                return i;
+            }
+        }
+        return NOT_FOUND;
+    }
 
     /**
-     * Коллекция
-     * @type {Array}
-     * @private
-     */
-    Iterator.prototype.collection = null;
+     * @type {function (): number}
+     * @const
+     *  */
+    var now = 'performance' in goog.global && 'now' in goog.global.performance ? function () { return goog.global.performance.timing.navigationStart + goog.global.performance.now(); } : 'now' in Date ? Date.now : function () { return +new Date(); };
 
-    /**
-     * Возвратит текущий элемент коллекции
-     * @return {*}
-     */
-    Iterator.prototype.current = function () {
-        return this.collection[this.index];
+    /** @const */
+    var Ticker = {
+        /** @type {Array.<{
+        *   clb: !Function,
+        *   timeoutId: number
+        * }>}
+         */
+        listeners: [],
+        /**
+         * @param {!Function} callback
+         * @return {number}
+         * */
+        on: function (callback) {
+            var id = uuid();
+            var descriptor = {
+                clb: callback,
+                timeoutId: id
+            };
+            this.listeners.push(descriptor);
+            if (!this.isAwaken) {
+                this.awake();
+            }
+            return id;
+        },
+        /**
+         * @param {number} id
+         */
+        off: function (id) {
+            var index = linearSearch(this.listeners, function (descriptor, i, listeners) {
+                return descriptor.timeoutId === id;
+            });
+            this.listeners.splice(index, 1);
+            if (this.listeners.length === 0 && this.isAwaken) {
+                this.sleep();
+            }
+        },
+
+        useRAF: false,
+        isAwaken: false,
+        frequency: 1e3 / 60,
+
+        awake: function () {
+            if (!this.isAwaken) {
+                this.lastReflow = this.currentTimeStamp = now();
+                this.isAwaken = true;
+            }
+            this.intervalId = this.useRAF ? requestAnimationFrame(this.tick, rootElement) : setTimeout(this.tick, this.frequency);
+        },
+        sleep: function () {
+            if (this.isAwaken) {
+                this.isAwaken = false;
+                this.lastReflow = this.currentTimeStamp = this.delta = 0;
+            }
+            (this.useRAF ? cancelRequestAnimationFrame : clearTimeout)(this.intervalId);
+        },
+
+        /** @type {number} */
+        currentTimeStamp: 0,
+        /** @type {number} */
+        lastReflow: 0,
+        /** @type {number} */
+        delta: 0,
+
+        /** @this {Window} */
+        tick: function () {
+
+            Ticker.currentTimeStamp = now();
+
+            Ticker.delta = Ticker.currentTimeStamp - Ticker.lastReflow;
+
+            for (var i = 0, m = Ticker.listeners.length; i < m; i++) {
+                Ticker.listeners[i].clb(Ticker.delta);
+            }
+
+            Ticker.lastReflow = Ticker.currentTimeStamp;
+
+            if (Ticker.listeners.length) {
+                Ticker.awake();
+            }
+        },
+
+        /** @type {number} */
+        fps: 60,
+
+        /**
+         * @param {number} fps
+         */
+        setFPS: function (fps) {
+            this.frequency = 1e3 / fps;
+        }
     };
 
-    /**
-     * Возвратит следующий элемент коллекции или значение по-умолчанию
-     * @return {*}
-     */
-    Iterator.prototype.next = function () {
-        return this.index < this.length ? this.collection[this.index++] : undefined;
-    };
+    goog.exportProperty(Ticker, "attach", Ticker.on);
+    goog.exportProperty(Ticker, "detach", Ticker.off);
+    goog.exportProperty(Ticker, "setFPS", Ticker.setFPS);
+
+    /** @const */
+    var SORT_BIGGER = -1;
+    /** @const */
+    var SORT_EQUALS = 0;
+    /** @const */
+    var SORT_SMALLER = 1;
 
     /**
-     * Возвратит предыдущий элемент коллекции или значение по-умолчанию
-     * @return {*}
+     * @param {!Array} array
+     * @param {!function (*, *, number, Array): number} compare
      */
-    Iterator.prototype.previous = function () {
-        return this.index > 0 ? this.collection[this.index--] : undefined;
-    };
+    function bubbleSort(array, compare) {
 
-    /**
-     * Сортировка массива методом пузырька
-     * @param {Array} array массив
-     * @param {Function=} compare функция сравнения. если не указать, будут сравниваться, как числа
-     * @param {number=} low нижняя граница (по умол. начало массива)
-     * @param {number=} high верхняя граница (по умол. конец массива)
-     */
-    function bubbleSort(array, compare, low, high) {
+        var cache;
 
-        var i, j, cache;
-
-        if (!typeOf.number(low)) low = 0;
-        if (!typeOf.number(high)) high = array.length - 1;
-        if (!typeOf.func(compare)) compare = compareNumbers;
-
-        for (j = low; j < high; j += 1) {
-            for (i = low; i < high - j; i += 1) {
-                if (compare(array[i], array[i + 1], i, array) > 0) {
+        for (var j = 0; j < array.length - 1; j += 1) {
+            for (var i = 0; i < array.length - 1 - j; i += 1) {
+                if (compare(array[i], array[i + 1], i, array) === SORT_SMALLER) {
                     cache = array[i];
                     array[i] = array[i + 1];
                     array[i + 1] = cache;
@@ -395,534 +1805,381 @@
     }
 
     /**
-     * Обычный линейный поиск значения в массиве
-     * @param {(Array|CSSRuleList)} arr массив
-     * @param {(Function|*)} val Значение (или функция сравнения; должна вернуть 0 при равенстве)
-     * @return {number}
-     */
-    function LinearSearch(arr, val) {
-
-        var callable = typeOf.func(val),
-            index, i, m, curr,
-            indexOf = Array.prototype.indexOf,
-            EQUALS = true, NOT_FOUND = -1;
-
-        index = NOT_FOUND;
-
-        if (!callable && indexOf) {
-            index = indexOf.call(arr, val);
-        } else {
-            for (i = 0, m = arr.length; i < m && index === NOT_FOUND; i++) {
-                curr = arr[i];
-                if (callable) {
-                    if (/** @type {Function} */(val)(curr, i, arr) === EQUALS) index = i;
-                } else {
-                    if (val === curr) index = i;
-                }
-            }
-        }
-
-        return index;
-    }
-
-    /**
-     * Функция для сравнения 2 чисел.
-     * @param {number} a
-     * @param {number} b
-     * @return {number}
-     * @see Array.sort
-     */
-    function compareNumbers(a, b) {
-        return a - b;
-    }
-
-    /**
-     * Сравнит 2 ключевых кадра по их ключам
-     * @param {Keyframe} a
-     * @param {Keyframe} b
-     * @return {number} отрицальное число, если a < b, положительное число, если a > b, и 0, если они равны
-     * @see compareNumbers
-     */
-    function compareKeyframes(a, b) {
-        return compareNumbers(a.key, b.key);
-    }
-
-    /**
-     * Алгоритм бинарного поиска для нахождения
-     * искомой величины в отсортированном массиве
-     * @param {Array} array отсортированный массив
-     * @param {*} value искомая величина
-     * @param {Function=} compare функция сравнения; если не указать, будут сравниваться, как числа
-     * @param {number=} lowBound нижняя граница (по умол. начало массива)
-     * @param {number=} upperBound верхняя граница (по умол. конец массива)
-     * @return {number} найденный индекс величины или -1
-     * @see Array.sort
-     */
-    function binarySearch(array, value, compare, lowBound, upperBound) {
-
-        var mid, comp;
-
-        if (!typeOf.number(lowBound)) lowBound = 0;
-        if (!typeOf.number(upperBound)) upperBound = array.length - 1;
-
-        compare = typeOf.func(compare) ? compare : compareNumbers;
-
-        do {
-
-            if (lowBound > upperBound || !array.length) {
-                return -1;
-            }
-
-            mid = lowBound + upperBound >> 1;
-
-            comp = compare(value, array[mid], mid, array);
-
-            if (!comp) {
-            // comp === 0
-                return mid;
-            } else if (comp < 0) {
-            // comp === -1
-                upperBound = mid - 1;
-            } else {
-            // comp === 1
-                lowBound = mid + 1;
-            }
-
-        } while (true);
-
-    }
-
-    /**
-     * Просто вызовет функцию с аргументами
-     * @param {Function} func функция
-     * @param {Array=} args массив аргументов
-     * @param {Object=} ctx контекст
-     * @return {*}
-     */
-    function apply(func, args, ctx) {
-        return typeOf.func(func) && func.apply(ctx, args);
-    }
-
-    /**
-     * Частичное применение функции с возможностью привязывания контекста.
-     *
-     * @param {Function} fn функция
-     * @param {Array} args аргументы
-     * @param {Object=} ctx контекст исполнения функции
-     * @return {Function} частично применённая функция
-     */
-    function partial(fn, args, ctx) {
-        return function () {
-            return apply(fn, args.concat(slice(arguments)), ctx);
-        };
-    }
-
-    /**
-     * Привяжет функцию к контексту
-     * @param {Function} fn
-     * @param {Object} ctx
-     */
-    function bind(fn, ctx) {
-        return function () {
-            return fn.apply(ctx, arguments);
-        };
-    }
-
-    /**
-     * Применит Array.slice а аргументу
-     * @param {Object} arrayLike Любой объект, похожий на массив
-     * @param {number=} start Начальное смещение
-     * @param {number=} end Конечное смещение
-     * @return {Array}
-     */
-    function slice(arrayLike, start, end) {
-        return Array.prototype.slice.call(arrayLike, start, end);
-    }
-
-    /**
-     * Пройдётся по элементам массива или свойствам объекта.
-     * Итерирование прервётся, если callback вернёт false.
-     * @param {Array|Object} arg
-     * @param {Function} callback
-     * @param {Object=} context контекст исполнения callback'а
-     */
-    function each(arg, callback, context) {
-        var i, b;
-        context = context || window;
-        if (typeOf.array(arg)) {
-            i = 0;
-            b = arg.length;
-            while (i < b) if (i in arg) {
-                if (callback.call(context, arg[i], i, arg) === false) {
-                    break;
-                }
-                i += 1;
-            }
-        } else {
-            for (i in arg) if (arg.hasOwnProperty(i)) {
-                if (callback.call(context, arg[i], i, arg) === false) {
-                    break;
-                }
-            }
-        }
-    }
-
-    /**
-     * Пройдётся по элементам массива \ объекта и соберёт новый
-     * из возвращённых значений функции
-     * @param {Array|Object} arg
-     * @param {Function} callback
-     * @param {Object=} ctx контекст callback'а
-     * @return {Array}
-     */
-    function map(arg, callback, ctx) {
-        var accum = [];
-        each(arg, function (value, index, object) {
-            accum.push(callback.call(ctx, value, index, object));
-        });
-        return accum;
-    }
-
-    /**
-     * Приведёт аргумент к строковому типу
-     * @param {*} x
-     * @return {string}
-     * @inheritDoc
-     */
-    function toString (x) {
-        return x + "";
-    }
-
-    /**
-     * Преобразует аргумент в булевому типу
-     * @param {*} x
+     * @param {!Array.<number>} from
+     * @param {!Array.<number>} to
+     * @param {number} progress
+     * @param {!Array.<number>} currentValue
      * @return {boolean}
      */
-    function toBool (x) {
-        return !!x;
-    }
+    function blend (from, to, progress, currentValue) {
 
-    /**
-     * Преобразует строку в верхний регистр
-     * шорткат.
-     * @param {string} str
-     * @return {string}
-     */
-    function toUpperCase(str) {
-        return String.prototype.toUpperCase.call(/** @type {String} */(str));
-    }
-    /**
-     * Преобразует строку в нижний регистр.
-     * шорткат.
-     * @param {string} str
-     * @return {string}
-     */
-    function toLowerCase(str) {
-        return String.prototype.toLowerCase.call(/** @type {String} */(str));
-    }
-
-    /**
-     * Размерности для parseTimeString
-     * @type {Object}
-     */
-    var timeStringModificators = {
-        "ms": 1,
-        "s": 1e3
-    };
-
-    /**
-     * Обработает строку времени вида %время%+%размерность%
-     * @param {(string|number)} timeString
-     * @return {(number|undefined)} обработанное время в миллисекундах или undefined в случае неудачи
-     */
-    function parseTimeString(timeString) {
-
-        var matched = toString(timeString).match(cssNumericValueReg);
-        var numeric, coefficient;
-
-        if (matched) {
-            numeric = parseFloat(matched[1]);
-            coefficient = timeStringModificators[ matched[2] ] || 1;
-            return numeric * coefficient;
+        var valueIsChanged = false;
+        for (var i = 0, m = from.length; i < m; i++) {
+            valueIsChanged = (currentValue[i] !== (currentValue[i] = ( (to[i] - from[i]) * progress + from[i] ) | 0 )) || valueIsChanged;
         }
-
-        return undefined;
+        return valueIsChanged;
     }
 
+
     /**
-     * Заменит дефисы и следующие за ним символы
-     * в верхний регистр
-     *
-     * Для перевода строк CSS-правил к DOM-стилю.
      * @param {string} string
      * @return {string}
      */
-    function camelCase(string) {
-        return toString(string).replace(/-[a-z]/g, function (match) {
+    function trim (string) {
+        return string.replace(/^\s+|\s+$/g, "");
+    }
+
+    /**
+     * @type {RegExp}
+     * @const
+     */
+    var camelCaseReg = new RegExp([
+        "-",
+        "[",
+            "a-z",  // строчные латинские буквы, следующие за знаком минуса
+        "]"
+    ].join(""), "g");
+
+    /**
+     * @param {string} string
+     * @return {string}
+     */
+    function camelCase (string) {
+        return string.replace(camelCaseReg, function (match) {
             return match.charAt(1).toUpperCase();
         });
     }
 
     /**
-     * Попытается вернуть верное имя свойства, подобрав при возможности вендорный префикс.
-     * Возвращает undefined в случае неудачи.
-     *
-     * @param {string} property Имя свойства.
-     * @param {(Object|boolean)=} target Где смотреть наличие свойств - в стилях при falsy (!), и в window при true, или в указанном объекте.
-     *
-     * @return {string?}
-     * */
-    function getVendorPropName(property, target) {
-        var result, camelCased;
+     * @param {string} string
+     * @return {string}
+     */
+    function removeSpaces (string) {
+        return string.replace(/\s+/g, "");
+    }
 
-        target = !target ? dummy : (target === true ? window : target);
+    /** @constructor */
+    var F = Function();
 
-        if (property in gVPNCache) {
-            result = gVPNCache[property];
-        } else if (property in target) {
-            result = property;
-        } else {
-            camelCased = camelCase(property);
+    /** @type {function (!Object): !Object} */
+    var objectCreate = 'create' in Object ? Object.create : function (proto) { F.prototype = proto; return new F; };
 
-            if (camelCased in target) {
-                result = gVPNCache[property] = camelCased;
-            } else {
-                camelCased = camelCased.charAt(0).toUpperCase() + camelCased.slice(1);
-                if (prefix && lowPrefix) {
-                    if (prefix + camelCased in target) {
-                        result = gVPNCache[property] = prefix + camelCased;
-                    } else if (lowPrefix + camelCased in target) {
-                        result = gVPNCache[property] = lowPrefix + camelCased;
-                    }
-                } else {
-                    each(vendorPrefixes, function (probePrefix) {
+    /**
+     * @const
+     * @type {!CSSStyleDeclaration}
+     */
+    var dummy = rootElement.style;
 
-                        var probeLowPrefix = toLowerCase(probePrefix), STOP = false;
 
-                        if (probePrefix + camelCased in target) {
-                            // вендорные префиксы определены в самом начале скрипта
-                            prefix = probePrefix;
-                            lowPrefix = probeLowPrefix;
-                            result = gVPNCache[property] = probePrefix + camelCased;
-                            return STOP;
-                        } else if (probeLowPrefix + camelCased in target) {
-                            prefix = probePrefix;
-                            lowPrefix = probeLowPrefix;
-                            result = gVPNCache[property] = probeLowPrefix + camelCased;
-                            return STOP;
-                        }
+    /**
+     * @type {Array.<string>}
+     * @const
+     */
+    var vendorPrefixes = "Ms O Moz WebKit".split(" ");
 
-                        return !STOP;
-                    });
+    /** @type {string} */
+    var prefix;
+    /** @type {string} */
+    var lowPrefix;
+
+    /**
+     * @param {string} propertyName
+     * @param {boolean=} global
+     * @return {string}
+     */
+    function getVendorPropName (propertyName, global) {
+        var obj = global ? goog.global : dummy;
+        if (propertyName in obj) {
+            // 'width', 'left' ...
+            return propertyName;
+        }
+        var camelCased = camelCase(propertyName);
+        if (camelCased in obj) {
+            // 'font-size', 'border-color' ...
+            return camelCased;
+        }
+        // 'Transform', 'Animation' ...
+        var capPropName = camelCased.charAt(0).toUpperCase() + camelCased.substr(1);
+        if (!goog.isDef(prefix)) {
+            for (var i = 0, m = vendorPrefixes.length; i < m; i++) {
+                if (vendorPrefixes[i] + capPropName in obj || vendorPrefixes[i].toLowerCase() + capPropName in obj) {
+                    prefix = vendorPrefixes[i];
+                    lowPrefix = vendorPrefixes[i].toLowerCase();
                 }
             }
         }
-        return result;
-    }
-
-    /**
-     * Какие префиксы будет пробовать getVendorPropName
-     * @type {Array.<string>}
-     */
-    var vendorPrefixes = "ms O Moz webkit".split(" ");
-
-    /**
-     * Где getVendorPropName запоминает результаты вычислений имени свойства (кеш)
-     * @type {Object}
-     */
-    var gVPNCache = {};
-
-    /**
-     * Вернёт кол-во миллисекунд с 1 Января 1970 00:00:00 UTC
-     * @return {number}
-     */
-    var now = Date.now || function () {
-        return +new Date;
-    };
-
-    /**
-     * Объект window.peformance
-     * @type {(undefined|Object)}
-     */
-    var performance = window[ getVendorPropName("performance", true) ];
-
-    /**
-     * Измерит и вернёт точное время, прошедшее с момента navigationStart.
-     * (если поддерживается)
-     * @type {(undefined|Function)}
-     */
-    var perfNow;
-
-    /**
-     * Время navigationStart
-     * @type {(undefined|number)}
-     */
-    var navigStart;
-
-    if (performance) {
-        perfNow = performance[ getVendorPropName("now", performance) ];
-        if (perfNow){
-            perfNow = bind(perfNow, performance);
-            navigStart = performance["timing"]["navigationStart"];
-            now = function () {
-                return perfNow() + navigStart;
-            };
-            if (ENABLE_DEBUG) {
-                console.log("DOMHighResTimeStamp support detected");
+        if (goog.isDef(prefix)) {
+            if (prefix + capPropName in obj) {
+                // 'WebKitCSSMatrix' ...
+                return prefix + capPropName;
             }
-        } else if (ENABLE_DEBUG) {
-            console.log('Found window.performance but no "now" method so DOMHighResTimeStamp isn\'t supported.');
+            if (lowPrefix + capPropName in obj) {
+                // 'webkitAudioContext' ...
+                return lowPrefix + capPropName;
+            }
         }
-    } else if (ENABLE_DEBUG) {
-        console.log("Cannot find window.performance so DOMHighResTimeStamp isn't supported to. Using Date.now as usual.");
+        return '';
     }
 
     /**
-     * Замена для requestAnimationFrame.
-     * @param {function(number)} callback
-     * @return {number} ID таймаута
-     */
-    function rAF_imitation(callback) {
-        var id = rAF_imitation.unique++;
-
-        if (!rAF_imitation.timerID) rAF_imitation.timerID = setInterval(rAF_imitation.looper, 1e3 / FRAMES_PER_SECOND);
-        rAF_imitation.queue[id] = callback;
-        return id;
-    }
-
-    /**
-     * Замена для cancelRequestAnimationFrame
-     * @param {number} id
-     */
-    function rAF_imitation_dequeue(id) {
-        var queue = rAF_imitation.queue;
-        if (id in queue) {
-            delete queue[id];
-        }
-    }
-
-    /**
-     * ID таймаута "перерисовки"
-     * @type {?number}
-     * @private
-     */
-    rAF_imitation.timerID = null;
-
-    /**
-     * Для генерации ID таймаута.
-     * @type {number}
-     */
-    rAF_imitation.unique = 0;
-
-    /**
-     * Очередь обработчиков и их контекстов
-     * @type {Object}
      * @const
+     * @type {boolean}
      */
-    rAF_imitation.queue = {};
+    var USEDSTYLE_SUPPORTED = 'getComputedStyle' in goog.global;
 
     /**
-     * Таймер "отрисовки" - пройдется по обработчикам и повызывает их,
-     * передав как первый аргумент временную метку "отрисовки"
-     * @private
+     * @param {!Element} elem
+     * @param {string} propName
+     * @param {boolean} usedValue вернуть ли значение из вычисленного стиля
+     * @return {string}
      */
-    rAF_imitation.looper = function () {
-        var reflowTimeStamp = now();
-        each(rAF_imitation.queue, function (callback, id, queue) {
-            callback.call(window, reflowTimeStamp);
-            delete queue[id];
-        });
+    function getStyle (elem, propName, usedValue) {
+        var propertyName = getVendorPropName(propName, false);
+        if (!usedValue) {
+            return elem.style[propertyName];
+        }
+        var style;
+        if (USEDSTYLE_SUPPORTED) {
+            style = goog.global.getComputedStyle(elem, null);
+        }
+    }
+
+    /**
+     * @param {!Element} elem
+     * @param {string} propName
+     * @param {string} propValue
+     * @param {string=} vendorizedPropName
+     */
+    function setStyle (elem, propName, propValue, vendorizedPropName) {
+        vendorizedPropName = vendorizedPropName || getVendorPropName(propName);
+        elem.style[vendorizedPropName] = propValue;
+    }
+
+    var tempElement = document.createElement('div');
+
+    /**
+     * @const
+     * @type {RegExp}
+     */
+    var horizAxisReg = new RegExp([
+        "(?:",
+            ["left", "right", "width"].join("|"),
+        ")"
+    ].join(''), "i");
+
+    /**
+     * @param {!Element} element
+     * @param {string} propertyName
+     * @param {string} propertyValue
+     * @param {string} vendorizedPropName
+     * @return {!Array.<number>}
+     */
+    function toNumericValue (elem, propertyName, propertyValue, vendorizedPropName) {
+
+        if (goog.isNumber(propertyValue)) {
+            return [ propertyValue ];
+        }
+
+        if (vendorizedPropName.indexOf('color') !== NOT_FOUND) {
+            return toNumericValueHooks['color'](elem, propertyName,  propertyValue, vendorizedPropName);
+        }
+
+        var valueDescriptor = propertyValue.match(cssNumericValueReg);
+
+        var value = valueDescriptor[ VALREG_VALUE ];
+        var numericValue = parseFloat(value);
+        var unit = valueDescriptor[ VALREG_DIMENSION ];
+        var isHoriz;
+
+        if (unit === '' || unit === 'px') {
+            return [ numericValue ];
+        }
+
+        isHoriz = horizAxisReg.test(vendorizedPropName);
+
+        if (unit === '%' && vendorizedPropName.indexOf('border') !== -1) {
+            numericValue /= 100;
+            numericValue *= isHoriz ? elem.clientWidth : elem.clientHeight;
+            return [ numericValue ];
+        }
+
+        tempElement.style.cssText = "border-style:solid; border-width:0; position:absolute; line-height:0;";
+
+        var ctx = elem;
+
+        if (unit === '%' || !ctx.appendChild) {
+            ctx = elem.parentNode || document.body;
+            tempElement.style[ isHoriz ? "width" : "height" ] = propertyValue;
+        } else {
+            tempElement.style[ isHoriz ? "borderLeftWidth" : "borderTopWidth" ] = propertyValue;
+        }
+
+        ctx.appendChild(tempElement);
+        var normalized = tempElement[ isHoriz ? "offsetWidth" : "offsetHeight" ];
+        ctx.removeChild(tempElement);
+
+        return [ normalized ];
+    }
+
+    /** @type {Object.<CSSStyleDeclaration, function (!Element, string, string, string): !Array.<number>>} */
+    var toNumericValueHooks = {};
+
+    /**
+     * @param {!Element} element
+     * @param {string} propertyName
+     * @param {!Array.<number>} numericValue
+     * @param {string} vendorizedPropName
+     * @return {string}
+     */
+    function toStringValue (elem, propertyName, numericValue, vendorizedPropName) {
+        if (propertyName in toStringValueHooks) {
+            return toStringValueHooks[propertyName](elem, propertyName, numericValue, vendorizedPropName);
+        }
+        return numericValue + ( propertyName in toStringValueNoPX ? '' : 'px' );
+    }
+
+    /** @type {Object.<CSSStyleDeclaration, function (!Element, string, !Array.<number>, string): string>} */
+    var toStringValueHooks = {};
+
+    /** @type {Object.<CSSStyleDeclaration, boolean>} */
+    var toStringValueNoPX = {
+        "fill-opacity": true,
+        "font-weight": true,
+        "line-height": true,
+        "opacity": true,
+        "orphans": true,
+        "widows": true,
+        "z-index": true,
+        "zoom": true
+    };
+
+    var blendHooks = {};
+
+/*---------------------------------------*/
+
+    /** @const */
+    var EasingRegistry = {
+        /**
+         * @type {!Array.<Easing>}
+         */
+        easings: [],
+        /**
+         * @param {*} req
+         * @return {?Easing}
+         */
+        request: function (req) {
+            var timingFunction;
+
+            var self = EasingRegistry;
+
+            if (req instanceof Easing) {
+                // Передан уже созданный экземпляр обёртки
+                timingFunction = /** @type {Easing} */ (req);
+            } else if (goog.isFunction(req)) {
+                // Передана кастомная JS-функция
+                timingFunction = new Easing();
+                /** @override */
+                timingFunction.compute = /** @type {function (number): number} */ (req);
+            } else {
+                // Переданы аргументы к функции CSS в виде массива\строки или алиас к функции JS\CSS
+                timingFunction = self.build( /** @type {(string|!Array)} */ (req) );
+            }
+
+            var index = linearSearch(self.easings, function (easing, i, easingsArray) {
+                return easing.equals(timingFunction);
+            });
+
+            if (index === NOT_FOUND) {
+                self.easings.push(timingFunction);
+            }
+
+            return /** @type {!Easing} */ (timingFunction);
+        },
+        /**
+         * @param {!(string|Array)} contain
+         * @return {?Easing}
+         */
+        build: function (contain) {
+            var numericArgs, timingFunction;
+            var stepsAmount, countFromStart;
+            var camelCased, trimmed;
+            var matched, cssFunction, args;
+            var argsLength;
+
+            if (goog.isString(contain)) {
+                trimmed = trim(contain);
+                camelCased = camelCase(trimmed);
+                if (camelCased in cssEasingAliases) {
+                    // Передан алиас к аргументам смягчения CSS
+                    args = cssEasingAliases[ camelCased ];
+                } else {
+                    // Передана строка временной функции CSS
+                    // строка аргументов к временной функции. разделены запятой
+                    matched = trimmed.match(cssFunctionReg);
+                    cssFunction = matched[FUNCREG_FUNC];
+                    args = removeSpaces(matched[FUNCREG_ARGS]).split(cssFuncArgsSeparator);
+                }
+            } else if (goog.isArray(contain)) {
+                args = /** @type {!Array} */ (contain);
+            }
+
+            argsLength = args.length;
+
+            if (argsLength == 4) {
+                // заинлайненный цикл
+                args[0] = +args[0]; args[1] = +args[1]; args[2] = +args[2]; args[3] = +args[3];
+                // ограничение абсцисс точек по промежутку [0;1]
+                if (args[0] >= MINIMAL_PROGRESS && args[0] <= MAXIMAL_PROGRESS && args[2] >= MINIMAL_PROGRESS && args[2] <= MAXIMAL_PROGRESS) {
+                    timingFunction = new CubicBezier(args[0], args[1], args[2], args[3]);
+                    if (camelCased in cubicBezierApproximations) {
+                        // JS-функция приближения к кубической кривой
+                        timingFunction.compute = cubicBezierApproximations[ camelCased ];
+                    }
+                }
+            } else if (argsLength == 1 || argsLength == 2) {
+                stepsAmount = parseInt(args[0], 10);
+                countFromStart = args[1] === 'start';
+                if (goog.isNumber(stepsAmount)) {
+                    timingFunction = new Steps(stepsAmount, countFromStart);
+                }
+            }
+
+            return goog.isDef(timingFunction) ? timingFunction : null;
+        }
     };
 
     /**
-     * Вернёт логарифм числа x по основанию 10 (десятичный логарифм)
-     * @param {number} x
-     * @return {number}
-     * */
-    function lg (x) {
-        return Math.log(x) * Math.LOG10E;
+     * Общий конструктор для смягчений
+     * @constructor
+     */
+    function Easing () {
+        this.easingId = uuid();
     }
+
+    /** @type {number} */
+    Easing.prototype.easingId = uuid();
+
+
+    /** @type {function (number): number} */
+    Easing.prototype.compute = function (x) {
+        return x;
+    };
 
     /**
-     * Округлит число до указанного знака
-     * @param {number} x число
-     * @param {number} digits количество знаков после запятой
-     * @return {number}
+     * @param {!Easing} easing
+     * @return {boolean}
      */
-    function round (x, digits) {
-        var factor = Math.pow(10, digits);
-        return Math.round( x * factor ) / factor;
-    }
+    Easing.prototype.equals = function (easing) {
+        return this.compute === easing.compute;
+    };
 
     /**
-     * Найдёт корень уравнения вида f(x)=val с указанной точностью итерационным способом
-     * Если не указать сжимающее отображение, то будет использован метод хорд
-     * @param {Function} F уравнение
-     * @param {number} Y значение уравнения в искомой точке
-     * @param {number} X0 начальное приближение (или значение уравнения)
-     * @param {number} X1 след. приближение
-     * @param {number} epsilon минимальная разница между двумя приближениями (или 10^-6)
-     * @param {Function} derivative производная функции F (для метода касательных)
-     * @return {number} приближённое значение корня уравнения
+     * @override
+     * @return {string}
      */
-    function findEquationRoot(F, Y, X0, X1, epsilon, derivative) {
-
-        var F1, F0, DELTA_X, DELTA_F, X0d;
-        /**
-         * Значение погрешности по умолчанию
-         * @type {number}
-         * @const
-         */
-        var DEFAULT_EPSILON = 1e-6;
-        var i, stopCondition, cache;
-        var savedX0, savedX1;
-
-        epsilon = typeOf.number(epsilon) ? epsilon : DEFAULT_EPSILON;
-        stopCondition = function (X0, X1) { return Math.abs(X0 - X1) <= epsilon; };
-
-        // сохраним для метода хорд
-        savedX0 = X0;
-        savedX1 = X1;
-
-        // для начала пробуем метод касательных (метод Ньютона), у которого
-        // больше скорость сходимости, чем у метода хорд
-        X0 = Y;
-        // используем метод одной касательной
-        X0d = derivative(X0);
-
-        // ограничим количество итераций метода касательных
-        i = 8;
-
-        while (i-->0) {
-
-            X1 = X0 - ( (F(X0) - Y ) / X0d );
-
-            if (stopCondition(F(X1), Y)) {
-                return X1;
-            }
-
-            X0 = X1;
-        }
-
-        // теперь пробуем метод хорд
-        // без ограничений по количеству итераций
-        X0 = savedX0;
-        X1 = savedX1;
-
-        while (!stopCondition(X0, X1)) {
-            F1 = F(X1) - Y;
-            F0 = F(X0) - Y;
-
-            DELTA_X = X1 - X0;
-            DELTA_F = F1 - F0;
-
-            cache = X1;
-            X1 = X1 - F1 * DELTA_X / DELTA_F;
-            X0 = cache;
-        }
-
-        return X1;
-    }
+    Easing.prototype.toString = function () {
+        return '' + this.easingId;
+    };
 
     /**
      * Представление кубической кривой Безье для смягчения анимации
@@ -932,3077 +2189,1603 @@
      * @param {number} p2x
      * @param {number} p2y
      * @constructor
+     * @extends Easing
      */
     function CubicBezier (p1x, p1y, p2x, p2y) {
-        // Кривая записана в полиноминальной форме
-        this.cx = 3.0 * p1x;
-        this.bx = 3.0 * (p2x - p1x) - this.cx;
-        this.ax = 1.0 - this.cx - this.bx;
-
-        this.cy = 3.0 * p1y;
-        this.by = 3.0 * (p2y - p1y) - this.cy;
-        this.ay = 1.0 - this.cy - this.by;
+        this.p1x = p1x;
+        this.p1y = p1y;
+        this.p2x = p2x;
+        this.p2y = p2y;
     }
 
+    goog.inherits(CubicBezier, Easing);
+
     /**
-     * Вернёт значение кривой в координатах x,t при переданном t.
+     * @param {number} t
+     * @param {number} p1
+     * @param {number} p2
+     * @return {number}
+     */
+    CubicBezier.prototype.B = function (p1, p2, t) {
+        // (3*t * (1 - t)^2) * P1  + (3*t^2 *  (1 - t) )* P2 + (t^3);
+        // --------->
+        // 3*t * (1 - t) * (  (1 - t) * P1  +  3*t * P2 ) + t^3
+
+        var t3 = 3 * t;
+        var revt = 1 - t;
+        return t3 * revt * (revt * p1 + t3 * p2) + t * t * t;
+    };
+
+    /**
      * @param {number} t
      * @return {number}
-     * @private
      */
     CubicBezier.prototype.B_absciss = function (t) {
-        return ((this.ax * t + this.bx) * t + this.cx) * t;
+        return this.B(this.p1x, this.p2x, t);
     };
 
     /**
-     * Вернёт значение производной в координатах x,t при переданном времени t.
      * @param {number} t
      * @return {number}
-     * @private
      */
-    CubicBezier.prototype.B_derivative_absciss = function (t) {
-        return (3.0 * this.ax * t + 2.0 * this.bx) * t + this.cx;
+    CubicBezier.prototype.B_derivative_I_absciss = function (t) {
+        // ( 9 * t^2 - 12*t+ 3 ) * P1 + ( 6*t  -  9 * t^2 ) * P2  +  3 * t^2
+        // ----->
+        // 3 * (  (t*(3*t - 4) + 1) * P1  +  t * (  ( 2 - 3*t ) * P2 + t  )  )
+         var B1d = t * (3 * t - 4)  + 1;
+         var B2d = 2 - 3 * t;
+         return 3 * ( B1d * this.p1x + t * ( B2d * this.p2x + t ) );
     };
 
     /**
-     * Вернёт значение кривой в координатах y,t при переданном времени t.
      * @param {number} t
      * @return {number}
-     * @private
      */
     CubicBezier.prototype.B_ordinate = function (t) {
-        return ((this.ay * t + this.by) * t + this.cy) * t;
+        return this.B(this.p1y, this.p2y, t);
     };
 
     /**
-     * Вычислит значение ординаты (Y) кубической кривой при известной абсциссе (X)
+     * @const
+     * @type {number}
+     */
+    var BEZIER_EPSILON = 0.0055;
+
+    /**
+     * @override
      * @param {number} y
      * @return {number}
      */
-    CubicBezier.prototype.calc = function (y) {
+    CubicBezier.prototype.compute = function (y) {
 
-        var B_bindedToX = bind(this.B_absciss, this);
-        var derivative_X = bind(this.B_derivative_absciss, this);
+        var t;
 
-        var t = findEquationRoot(B_bindedToX, y, 0, 1, 1e-5, derivative_X);
+        var X0 = y, X1;
+        var F;
+        var i = 3;
+        var derivative;
+        var range = BEZIER_EPSILON + y;
+
+        // усовершенствованный метод Ньютона
+        // обычно проходит в 1-2 итерации при точности 0.001
+        do {
+            derivative = this.B_derivative_I_absciss(X0);
+            F =  this.B_absciss(X0) - y;
+            X1 = X0 - F / this.B_derivative_I_absciss( X0 - F / ( 2 * derivative ) );
+            X0 = X1;
+        } while ( i-- !== 0 && derivative !== 0 && this.B_absciss(X1) > range);
+
+        t = X1;
 
         return this.B_ordinate(t);
     };
 
     /**
+     * @param {!(CubicBezier|Easing)} easing
+     * @return {boolean}
+     * @override
+     */
+    CubicBezier.prototype.equals = function (easing) {
+        var isFirstAbscissEquals = this.p1x === easing.p1x;
+        var isFirstOrdinateEquals = this.p1y === easing.p1y;
+        var isSecondAbscissEquals = this.p2x === easing.p2x;
+        var isSecondOrdinateEquals = this.p2y === easing.p2y;
+        return isFirstAbscissEquals && isFirstOrdinateEquals && isSecondAbscissEquals && isSecondOrdinateEquals;
+    };
+
+    CubicBezier.prototype.toString = function () {
+        return "cubic-bezier" + "(" + this.p1x + ', ' + this.p1y + ', ' + this.p2x + ', ' + this.p2y + ")";
+    };
+
+    /**
      * Ступенчатая функция, ограничивающая область выходных значений до определенного числа.
-     * Ступени отсчитываются с конца, или с начала.
-     * @param {number} stepsAmount Количество ступеней
-     * @param {boolean} countFromStart Отсчитывать с начала (true) или с конца (false).
+     * Целочисленное количество ступеней отсчитывается с конца, или с начала.
+     * @param {number} stepsAmount
+     * @param {boolean} countFromStart
      * @constructor
+     * @extends Easing
      */
     function Steps(stepsAmount, countFromStart) {
-        // количество ступеней - строго целочисленное
-        this.stepsAmount = stepsAmount | 0;
+        this.stepsAmount = stepsAmount;
         this.countFromStart = countFromStart;
     }
 
-    /**
-     * Количество ступеней
-     * @type {number}
-     * @private
-     */
+    goog.inherits(Steps, Easing);
+
+    /** @type {number} */
     Steps.prototype.stepsAmount = 0;
 
-    /**
-     * Отсчитывать ли ступени с конца (false) или с начала (true)
-     * @type {boolean}
-     * @private
-     */
+    /** @type {boolean} */
     Steps.prototype.countFromStart = true;
 
     /**
-     * Вернёт значение ординаты ступенчатой функции при известной абсциссе x.
+     * @override
      * @param {number} x
      * @return {number}
      */
-    Steps.prototype.calc = function (x) {
+    Steps.prototype.compute = function (x) {
         if (this.countFromStart) {
-            return min(1.0, ceil(this.stepsAmount * x) / this.stepsAmount);
+            return Math.min(Math.ceil(this.stepsAmount * x) / this.stepsAmount, MAXIMAL_PROGRESS);
         } else {
-            return floor(this.stepsAmount * x) / this.stepsAmount;
+            return (Math.floor(this.stepsAmount * x) ) / this.stepsAmount;
         }
     };
 
     /**
-     * Вернёт вычисленный стиль элемента
-     * @param {Element} element
-     * @return {CSSStyleDeclaration}
+     * @param {!(Steps|Easing)} easing
+     * @return {boolean}
+     * @override
      */
-    function getComputedStyle(element) {
-        return window.getComputedStyle ? window["getComputedStyle"](element, null) : /** @type {CSSStyleDeclaration} */ (element.currentStyle);
+    Steps.prototype.equals = function (easing) {
+        /** @type {!Steps} */(easing);
+        var isAmountEquals = this.stepsAmount === easing.stepsAmount;
+        var isCountSourceEquals = this.countFromStart === easing.countFromStart;
+        return isAmountEquals && isCountSourceEquals;
+    };
+
+    Steps.prototype.toString = function () {
+        return 'steps' + "(" + this.stepsAmount + ", " + (this.countFromStart ? "start" : "end") + ")";
+    };
+
+/*---------------------------------------*/
+
+    /* ------------------   РАБОТА С ЦВЕТАМИ   --------------------- */
+    toNumericValueHooks["color"] = function (elem, propertyName,  propertyValue, vendorizedPropName) {
+        var red, green, blue;
+
+        if (propertyValue in colorsAliases) {
+            // Алиас
+            return colorsAliases[ propertyValue ];
+        } else if (propertyValue.indexOf("#") !== -1) {
+            // HEX
+            var hex = parseInt(propertyValue, 16);
+            red = hex >> 16 & 0xFF;
+            green = hex >> 8 & 0xFF;
+            blue = hex & 0xFF;
+            return [ red, green, blue ];
+        } else {
+            // Цветовая CSS-функция
+            // RGB, RGBa, HSL, HSLa ...
+            var matched = propertyValue.match(cssFunctionReg);
+            var func = matched[1];
+            var args = removeSpaces(matched[2]).split(cssFuncArgsSeparator);
+
+            for (var i = 0; i < args.length; i++) {
+                matched = args[i].match(cssNumericValueReg);
+                args[i] = [ parseInt(matched[1]), matched[2] ];
+            }
+
+            if (func in colorFunctions) {
+                return colorFunctions[func](args);
+            }
+
+            return [ 0, 0, 0 ];
+
+        }
+    };
+
+
+    /** @type {function(number, number, number): number} */
+    function hueToRGB (m1, m2, hue) {
+        if (hue < 0) {
+            hue = hue + 1;
+        }
+        if (hue > 1) {
+            hue = hue - 1;
+        }
+        if (hue * 6 < 1) {
+            return m1 + (m2 - m1) * hue * 6;
+        }
+        if (hue * 2 < 1) {
+            return m2;
+        }
+        if (hue * 3 < 2) {
+            return m1 + (m2 - m1) * (2/3 - hue) * 6;
+        }
+        return m1;
     }
 
-    /**
-     * Окружит строку подстрокой в начале и в конце
-     * @param {string} str
-     * @param {string} substring
-     * @return {string}
-     */
-    function surround(str, substring) {
-        return substring + str + substring;
+    /** @enum {function (!Array.<number>): !Array.<number>} */
+    var colorFunctions = {
+
+        // http://www.w3.org/TR/2011/REC-css3-color-20110607/#hsl-color
+        "hsl": function (args) {
+            var hue = args[0][0];
+            var saturation = args[1][0] / 100;
+            var lightness = args[2][0] / 100;
+            var m2 = (lightness <= 0.5) ? lightness * (saturation + 1) : (lightness + saturation - lightness * saturation);
+            var m1 = lightness * 2 - m2;
+            var red = hueToRGB(m1, m2, hue + 1/3) * 255;
+            var green = hueToRGB(m1, m2, hue) * 255;
+            var blue = hueToRGB(m1, m2, hue - 1/3) * 255;
+            return [ red, green, blue ];
+        },
+
+        "rgb": function (args) {
+
+            var red, green, blue;
+
+            for (var i = 0; i < args.length; i++) {
+                // Цветовой канал передан в процентах
+                if (args[i][1] === "%") {
+                    //  переводим из проценты в доли
+                    args[i][0] /= 100;
+                    // умножаем на максимум
+                    args[i][0] *= 255;
+                }
+                // проверяем интервал
+                if (args[i][0] < 0) {
+                    args[i][0] = 0;
+                } else if (args[i][0] > 255) {
+                    args[i][0] = 255;
+                }
+            }
+
+            red = args[0][0];
+            green = args[1][0];
+            blue = args[2][0];
+
+            return [ red, green, blue ];
+        }
+
+    };
+
+
+    toStringValueHooks["color"] = function (elem, propertyName, numericValue, vendorizedPropName) {
+        return "rgb" + "(" + numericValue + ")";
+    };
+
+    blendHooks["color"] = function (from, to, easing, current, id) {
+        var changed = false;
+
+        current[id] = id in current ? current[id] : ( current[id] = [ 0, 0, 0 ] );
+
+        // Цветовой канал лежит в интервале [ 0, 255 ]
+        if (easing < MINIMAL_PROGRESS) {
+            easing = MINIMAL_PROGRESS;
+        } else if (easing > MAXIMAL_PROGRESS) {
+            easing = MAXIMAL_PROGRESS;
+        }
+
+
+        for (var i = 0; i < 3; i++) {
+            changed = blend(from[i], to[i], easing, current[id], '' + i) || changed;
+        }
+
+        return changed;
+    };
+
+
+    /* ------------------   РАБОТА С TRANSFORM   --------------------- */
+
+    var TRANSFORMDATA_ROTATE = 0;
+
+    var TRANSFORMDATA_SCALE_X = 1;
+    var TRANSFORMDATA_SCALE_Y = 2;
+
+    var TRANSFORMDATA_SKEW_X = 3;
+    var TRANSFORMDATA_SKEW_Y = 4;
+
+    var TRANSFORMDATA_TRANSLATE_X = 5;
+    var TRANSFORMDATA_TRANSLATE_Y = 6;
+
+    function TransformData () {
+        // Матрица преобразований
+        this.matrix = [ 0, 0, 0, 0, 0, 0 ];
+        // Декомпозированные из матрицы данные
+        this.data = [ 0, 100, 100, 0, 0, 0, 0 ];
     }
 
-    /**
-     * Добавит пробел в начале и в конце строки
-     * @param {string} string
-     * @return {string}
-     */
-    surround.bySpaces = function (string) {
-        return surround(string, " ");
+    TransformData.prototype.setData = function (value) {
+
+        if (value === "none" || value === "") {
+            return;
+        }
+
+        var matched;
+
+        var transforms = value.split(cssTransformFuncReg);
+
+        for (var i = 0; i < transforms.length; i++) {
+
+            matched = transforms[i].match(cssFunctionReg);
+
+            var func = matched[1]+"";
+            var args = removeSpaces(matched[2]+"").split(cssFuncArgsSeparator);
+
+            this.setters[func](args, this.data);
+        }
+
     };
 
     /**
-     * Обрежет пробелы в начале строки и в конце
-     * @param {string} string
-     * @return {string}
+     * @enum {function (!Array, !Array.<Array>)}
      */
-    function trim(string) {
-        return string.replace(/^\s+|\s+$/g, "");
+    TransformData.prototype.setters = {
+
+        "scaleX": function (args, data) {
+            data[TRANSFORMDATA_SCALE_X] = parseFloat(args[0]) * 100;
+        },
+        "scaleY": function (args, data) {
+            data[TRANSFORMDATA_SCALE_Y] = parseFloat(args[0]) * 100;
+        },
+        "scale": function (args, data) {
+            data[TRANSFORMDATA_SCALE_X] = parseFloat(args[0]) * 100;
+            data[TRANSFORMDATA_SCALE_Y] = parseFloat(args[1]) * 100;
+        },
+
+        "rotate": function (args, data) {
+            data[TRANSFORMDATA_ROTATE] = toDeg(args[0]);
+        },
+
+        "skewX": function (args, data) {
+            data[TRANSFORMDATA_SKEW_X] = parseInt(args[0]);
+        },
+        "skewY": function (args, data) {
+            data[TRANSFORMDATA_SKEW_Y] = parseInt(args[0]);
+        },
+        "skew": function (args, data) {
+            data[TRANSFORMDATA_SKEW_X] = parseInt(args[0]);
+            data[TRANSFORMDATA_SKEW_Y] = parseInt(args[1]);
+        },
+
+        "translateX": function (args, data) {
+            data[TRANSFORMDATA_TRANSLATE_X] = parseFloat(args[0]);
+        },
+        "translateY": function (args, data) {
+            data[TRANSFORMDATA_TRANSLATE_Y] = parseFloat(args[0]);
+        },
+        "translate": function (args, data) {
+            data[TRANSFORMDATA_TRANSLATE_Y] = parseFloat(args[0]);
+            data[TRANSFORMDATA_TRANSLATE_X] = parseFloat(args[1]);
+        },
+
+
+        "matrix": function (args, data) {
+
+            //       0  1  2  3  4  5
+            //matrix(a, b, c, d, e, f)   <--- 2D
+
+            for (var i = 0; i < args.length; i++) {
+                args[i] = parseFloat(args[i]);
+            }
+
+            // Проводим декомпозицию матрицы
+
+            data[ TRANSFORMDATA_TRANSLATE_X ] = args[4];
+            data[ TRANSFORMDATA_TRANSLATE_Y ] = args[5];
+
+            var row_1_length = Math.sqrt(args[0] * args[0] + args[1] * args[1]);
+
+            data[ TRANSFORMDATA_SCALE_X ] = row_1_length * 100;
+
+            // Нормализируем первый столбец
+            args[0] /= row_1_length;
+            args[1] /= row_1_length;
+
+            var dot_product_1 = args[0] * args[2] + args[1] * args[3];
+
+            data[ TRANSFORMDATA_SKEW_X ] = toDegModificators["rad"]( dot_product_1 );
+
+            // Combine
+            args[2] -= dot_product_1 * args[0];
+            args[3] -= dot_product_1 * args[1];
+
+            var row_2_length = Math.sqrt(args[2] * args[2] + args[3] * args[3]);
+
+            data[ TRANSFORMDATA_SCALE_Y ] = row_2_length * 100;
+
+            // Нормализируем второй столбец
+            args[2] /= row_2_length;
+            args[3] /= row_2_length;
+
+
+            var dot_product_2 = args[0] * args[4] + args[1] * args[5];
+
+            data[ TRANSFORMDATA_SKEW_Y ] = toDegModificators["rad"]( dot_product_2 );
+
+            // Combine
+            args[4] -= dot_product_2 * args[0];
+            args[5] -= dot_product_2 * args[1];
+
+            var row_3_length = Math.sqrt(args[4] * args[4] + args[5] * args[5]);
+
+            // Нормализируем третий столбец
+            args[4] /= row_3_length;
+            args[5] /= row_3_length;
+
+            data[ TRANSFORMDATA_ROTATE ] = toDegModificators["rad"]( Math.atan2(args[1], args[0]) );
+
+         }
+
+    };
+
+    TransformData.toArray = function () {
+        //TODO экспорт TransformData как матрицу
+        return this.matrix;
+    };
+
+    TransformData.prototype.toString = function () {
+        var data = this.data;
+
+        var currentTransforms = "";
+
+        if (data[TRANSFORMDATA_SCALE_X] !== 100 || data[TRANSFORMDATA_SCALE_Y] !== 100) {
+            currentTransforms += " " +  "scale(" + data[TRANSFORMDATA_SCALE_X] / 100 + "," + data[TRANSFORMDATA_SCALE_Y] / 100 + ")";
+        }
+
+        if ( data[TRANSFORMDATA_ROTATE] % 360 !== 0 ) {
+            currentTransforms += " " + "rotate(" + data[TRANSFORMDATA_ROTATE] + "deg" + ")";
+        }
+
+        if (data[TRANSFORMDATA_SKEW_X] !== 0 || data[TRANSFORMDATA_SKEW_Y] !== 0 ) {
+            currentTransforms += " " + "skew(" + data[TRANSFORMDATA_SKEW_X] + "deg" + "," + data[TRANSFORMDATA_SKEW_Y] + "deg" + ")";
+        }
+
+        if (data[TRANSFORMDATA_TRANSLATE_X] !== 0 || data[TRANSFORMDATA_TRANSLATE_Y] !== 0) {
+            currentTransforms += " " + "translate(" + data[TRANSFORMDATA_TRANSLATE_X] + "px" + "," + data[TRANSFORMDATA_TRANSLATE_Y] + "px" + ")";
+            console.log("translate(" + data[TRANSFORMDATA_TRANSLATE_X] + "px" + "," + data[TRANSFORMDATA_TRANSLATE_Y] + "px" + ")");
+        }
+
+        return currentTransforms;
+    };
+
+    toNumericValueHooks["transform"] = function (propertyValue) {
+        var transformData = new TransformData();
+        transformData.setData(propertyValue);
+        return transformData;
+    };
+    blendHooks["transform"] = function (from, to, easing, current, id) {
+
+        var changed = false;
+
+        current[id] = id in current ? current[id] : ( current[id] = new TransformData() );
+
+        var data = current[id].data;
+
+        for (var i = 0, m = data.length; i < m; i++) {
+            if (blend(from.data[i], to.data[i], easing, data, '' + i) && !changed) {
+                changed = true;
+            }
+        }
+
+        return changed;
+    };
+
+    /* ------------------   РАБОТА С SHADOW   --------------------- */
+    var SHADOW_X = 0;
+    var SHADOW_Y = 1;
+    var SHADOW_BLUR = 2;
+    var SHADOW_SPREAD = 3;
+    var SHADOW_COLOR = 4;
+
+    function Shadow () {
+        // Initial данные тени - нет смещений, размытия, длины и чёрный цвет
+        this.data = [ 0, 0, 0, 0, [0, 0, 0]];
     }
 
+    Shadow.prototype.inset = false;
+    Shadow.prototype.isNone = false;
+
+    Shadow.prototype.parse = function (shadow) {
+
+        if (shadow === "none") {
+            this.isNone = true;
+            return;
+        }
+
+        // все параметры тени, кроме цвета
+        var props = shadow.match(/(?:inset\s)?(?:\s*-?\d*\.?\d+\w*\s*){2,4}/)[0];
+        // Цвет в любом формате
+        var color = shadow.replace(props, "");
+
+        this.data[SHADOW_COLOR] = normalizeHooks["color"](null, "color", color, false);
+
+        // Х, У, размытие и длина тени, разделённые пробелом
+        props = props.split(" ");
+
+        var settedData = 0;
+
+        for (var i = 0; i < props.length; i++) {
+            if (props[i] == "inset") {
+                this.inset = true;
+            } else if (cssNumericValueReg.test(props[i])) {
+                // TODO EM, % и другие Length в Shadow.
+                this.data[settedData++] = parseFloat(props[i]) * 10;
+            }
+        }
+
+    };
+
+    Shadow.prototype.toString = function () {
+        var shadow = "";
+        if (this.inset) {
+            shadow += "inset" + " ";
+        }
+        for (var i = 0; i < 4; i++) {
+            if (i > 1 || this.data[i] !== 0) {
+                shadow += (this.data[i] / 10) + "px" + " ";
+            }
+        }
+        shadow += normalizeHooks["color"](null, "color", this.data[SHADOW_COLOR], true);
+        return shadow;
+    };
+
+    toNumericValueHooks["text-shadow"] = toNumericValueHooks["box-shadow"] = function ( propertyValue) {
+        var shadow, shadowList;
+        shadowList = propertyValue.split(/,\s*(?![^\)]+\))/);
+        for (var i = 0; i < shadowList.length; i++) {
+            shadow = new Shadow();
+            shadow.parse(shadowList[i]);
+            shadowList[i] = shadow;
+        }
+        return shadowList;
+    };
+    blendHooks["text-shadow"] = blendHooks["box-shadow"] = function (from, to, easing, current, id) {
+        var changed = false;
+
+        var shadowList = id in current ? current[id] : ( current[id] = [] );
+
+        // Список теней в разный ключевых кадрах может быть
+        // разным, поэтому берём максимум из обоих
+        var m = from.length > to.length ? from.length : to.length;
+
+        var shadow, fromShadow, toShadow;
+
+        for (var k = 0; k < m; k++) {
+
+            if (k in from) {
+                fromShadow = from[k];
+            } else {
+                fromShadow = from[k] = new Shadow();
+                fromShadow.isNone = true;
+            }
+
+            if (k in to) {
+                toShadow = to[k];
+            } else {
+                toShadow = to[k] = new Shadow();
+                toShadow.isNone = true;
+            }
+
+            // по спецификации можно интерполировать значения только
+            // совпадающих по параметру inset теней
+            if ( fromShadow.inset  !== toShadow.inset && !fromShadow.isNone && !toShadow.isNone) {
+                continue;
+            }
+
+            if (k in shadowList) {
+                shadow = shadowList[k];
+            } else {
+                shadow = shadowList[k] = new Shadow();
+                shadow.inset = fromShadow.isNone ? toShadow.inset : toShadow.isNone ? fromShadow.inset : fromShadow.inset && toShadow.inset;
+                changed = true;
+            }
+
+            // Интерполяция всех параметров. кроме цвета
+            for (var i = 0; i < 4; i++) {
+                if (blend(fromShadow.data[i], toShadow.data[i], easing, shadow.data, '' + i) && changed === false) {
+                    changed = true;
+                }
+            }
+
+            // Интерполяция цвета
+            if (blendHooks["color"](fromShadow.data[SHADOW_COLOR], toShadow.data[SHADOW_COLOR], easing, shadow.data, '' + SHADOW_COLOR) && !changed) {
+                changed = true;
+            }
+
+        }
+
+        return changed;
+    };
+
+    /* ------------------   РАБОТА С OPACITY   --------------------- */
+    toNumericValueHooks["opacity"] = function (propertyValue) {
+        return parseFloat(propertyValue) * 100;
+    };
+    toStringValueHooks["opacity"] = function (propertyValue) {
+        return propertyValue / 100 + '';
+    }
+
+/*---------------------------------------*/
+
     /**
-     * Пропустит ключ через все фильтры и вернёт его
-     * численное представление в процентах или undefined.
-     * @param {(string|number)} key
+     * Ключ - CamelCased строка, значение - аргументы к CSS функции
+     * @enum {Array.<number>}
+     * */
+    var cssEasingAliases = {
+        "easeInCubic":[ 0.55, 0.055, 0.675, 0.19 ]
+    };
+
+    /**
+     * Ключ - CamelCased строка, значение - мат. приближение для кубической кривой
+     * @enum {function (number): number}
+     *  */
+    var cubicBezierApproximations = {
+        "easeInCubic": function (x) {
+            return x * x * x;
+        }
+    };
+
+    /** @enum {!Array.<number>} */
+    var colorsAliases = {
+        black: [0, 0, 0],
+        blue: [0, 0, 255],
+        white: [255, 255, 255],
+        yellow: [255,255 ,0],
+        orange: [255,165, 0],
+        gray: [128,128, 128],
+        green: [0, 128, 0],
+        red: [255, 0, 0],
+        transparent: [255, 255, 255]
+    }
+
+/*---------------------------------------*/
+
+    /**
+     * @const
+     * @type {number}
+     */
+    var DEFAULT_DURATION = 400;
+     /**
+     * @const
+     * @type {number}
+     */
+    var DEFAULT_DELAY = 0;
+    /**
+     * @const
+     * @type {number}
+     */
+    var DEFAULT_ITERATIONS = 1;
+    /**
+     * @const
+     * @type {number}
+     */
+    var DEFAULT_INTEGRAL_ITERATIONS = 1;
+    /**
+     * @const
+     * @type {boolean}
+     */
+    var DEFAULT_IS_ALTERNATED = false;
+    /**
+     * @const
+     * @type {boolean}
+     */
+    var DEFAULT_IS_REVERSED = false;
+    /**
+     * @const
+     * @type {boolean}
+     */
+    var DEFAULT_FILLS_FORWARDS = true;
+    /**
+     * @const
+     * @type {boolean}
+     */
+    var DEFAULT_FILLS_BACKWARDS = false;
+    /**
+     * @const
+     * @type {!Easing}
+     */
+    var DEFAULT_EASING = new Easing();
+
+/*---------------------------------------*/
+
+    /**
+     * @const
+     * @type {number}
+     */
+    var MINIMAL_PROGRESS = 0;
+    /**
+     * @const
+     * @type {number}
+     */
+    var MAXIMAL_PROGRESS = 1.0;
+    /**
+     * @const
+     * @type {number}
+     */
+    var DIRECTION_ALTERNATE = 2; // bin: 10
+    /**
+     * @const
+     * @type {number}
+     */
+    var DIRECTION_REVERSE = 1; // bin: 01
+    /**
+     * @const
+     * @type {number}
+     */
+    var FILLS_FORWARDS = 2; // bin: 10
+    /**
+     * @const
+     * @type {number}
+     */
+    var FILLS_BACKWARDS = 1; // bin: 01
+    /**
+     * @const
+     * @type {string}
+     */
+    var TIMING_FUNCTION = 'timing-function';
+
+
+    /**
+     * Низкоуровневый конструктор анимаций
+     * @constructor
+     * @export
+     */
+    function Animation () {
+        this.animId = generateId();
+        this.keyframes = [];
+    }
+
+    /** @type {string} */
+    Animation.prototype.animId = 'none';
+
+    /** @type {(Element|Object)} */
+    Animation.prototype.animationTarget = null;
+
+    /**
+     * @export
+     * @param {(Element|Object)} target
+     */
+    Animation.prototype.setTarget = function (target) {
+        this.animationTarget = target;
+    };
+
+    /**
+     * @export
+     * @return {(Element|Object)}
+     */
+    Animation.prototype.getTarget = function () {
+        return this.animationTarget;
+    };
+
+    /**
+     * @type {Array.<{
+         *   propName: string,
+         *   currentValue: !Array.<number>,
+         *   startingValue: string,
+         *   cachedIndex: number,
+         *   keyframes: !Array.<{
+         *       numericKey: number,
+         *       propVal: !Array.<number>,
+         *       isComputed: boolean
+         *       }>
+         *   }>}
+     */
+    Animation.prototype.keyframes = null;
+
+    /**
+     * @export
+     * @param {string} propertyName
+     * @param {!Array.<number>} propertyValue
+     * @param {number} progress
+     * @param {string=}
+     */
+    Animation.prototype.setPropAt = function (propertyName, propertyValue, progress, alternativeValue) {
+
+        var index;
+
+        index = linearSearch(/** @type {!Array} */(this.keyframes), function (propertyDescriptor, i, data) {
+            return propertyDescriptor.propName === propertyName;
+        });
+
+        var propertyKeyframes;
+
+        if (index === NOT_FOUND) {
+            propertyKeyframes = {
+                propName: propertyName,
+                vendorizedPropName: getVendorPropName(propertyName),
+                currentValue: [],
+                startingValue: '',
+                cachedIndex: 0,
+                keyframes: []
+            };
+            this.keyframes.push(propertyKeyframes);
+        } else {
+            propertyKeyframes = this.keyframes[index];
+        }
+
+        index = linearSearch(propertyKeyframes.keyframes, function (keyframe, i, keyframes) {
+            return keyframe.numericKey === progress;
+        });
+
+        var keyframe;
+
+        var isComputed = goog.isDef(alternativeValue);
+
+        if (index === NOT_FOUND) {
+            keyframe = {
+                numericKey: progress,
+                propVal: propertyValue,
+                isComputed: isComputed,
+                alternativeValue: alternativeValue
+            };
+            propertyKeyframes.keyframes.push(keyframe);
+            bubbleSort(propertyKeyframes.keyframes, function (first, second, index, keyframes) {
+                if (first.numericKey === second.numericKey) {
+                    return SORT_EQUALS;
+                }
+                if (first.numericKey < second.numericKey) {
+                    return SORT_BIGGER;
+                }
+                return SORT_SMALLER;
+            });
+        } else {
+            keyframe = propertyKeyframes.keyframes[index];
+            keyframe.propVal = propertyValue.slice(0);
+            keyframe.isComputed = isComputed;
+            keyframe.alternativeValue = alternativeValue;
+        }
+
+    };
+
+    /**
+     * @export
+     * @param {string} propertyName
+     * @param {number} progress
+     * @return {null|number|!Array.<number>}
+     */
+    Animation.prototype.getPropAt = function (propertyName, progress) {
+        var index;
+
+        index = linearSearch(/** @type {!Array} */(this.keyframes), function (propertyDescriptor, i, data) {
+            return propertyDescriptor.propName === propertyName;
+        });
+        if (index !== NOT_FOUND) {
+            var propertyDescriptor = this.keyframes[index];
+            index = linearSearch(propertyDescriptor.keyframes, function (keyframe, i, keyframes) {
+                return keyframe.numericKey === progress;
+            });
+            if (index !== NOT_FOUND) {
+                var keyframe = propertyDescriptor.keyframes[index];
+                return keyframe.propVal;
+            }
+        }
+
+        return null;
+    };
+
+    /**
+     * @param {string} propName
+     * @param {!Array.<number>|string|number} currentValue
+     * @param {string=} vendorizedPropName
+     */
+    Animation.prototype.render = function (propName, currentValue, vendorizedPropName) {
+        var stringValue = goog.isString(currentValue) ?  currentValue : toStringValue(this.animationTarget, propName, currentValue, vendorizedPropName);
+        setStyle(this.animationTarget, propName, stringValue, vendorizedPropName);
+    };
+
+    /**
+     * @param {function (string, !Array.<number>)} newRenderer
+     * @export
+     */
+    Animation.prototype.replaceRenderer = function (newRenderer) {
+        this.render = newRenderer;
+    };
+
+    /** @type {number} */
+    Animation.prototype.delayTime = DEFAULT_DELAY;
+
+    /***
+     * @export
+     * @param {number} delay
+     */
+    Animation.prototype.setDelay = function (delay) {
+        this.delayTime = delay;
+    };
+
+    /** @type {number} */
+    Animation.prototype.cycleDuration = DEFAULT_DURATION;
+
+    /**
+     * @param {number} duration
+     * @export
+     */
+    Animation.prototype.setDuration = function (duration) {
+        this.cycleDuration = duration;
+    };
+
+    /** @type {number} */
+    Animation.prototype.iterations = DEFAULT_ITERATIONS;
+
+    /** @type {number} */
+    Animation.prototype.integralIterations = DEFAULT_INTEGRAL_ITERATIONS;
+
+    /**
+     * @export
+     * @param {number} iterations
+     */
+    Animation.prototype.setIterations = function (iterations) {
+        if (iterations === Number.POSITIVE_INFINITY) {
+            this.iterations = this.integralIterations = Number.POSITIVE_INFINITY;
+        } else {
+            if (isFinite(iterations) && iterations >= 0) {
+                this.iterations = iterations;
+                this.integralIterations = Math.floor(iterations);
+            }
+        }
+    };
+
+    /** @type {boolean} */
+    Animation.prototype.isAlternated = DEFAULT_IS_ALTERNATED;
+
+    /** @type {boolean} */
+    Animation.prototype.isReversed = DEFAULT_IS_REVERSED;
+
+    /**
+     * @export
+     * @param {number} binaryDirection
+     */
+    Animation.prototype.setDirection = function (binaryDirection) {
+        this.isAlternated = (binaryDirection & DIRECTION_ALTERNATE) !== 0;
+        this.isReversed = (binaryDirection & DIRECTION_REVERSE) !== 0;
+    };
+
+    /**
+     * @export
      * @return {number}
      */
-    function normalizeKey(key) {
-        var numericKey;
-        if (typeOf.string(key)) {
-            numericKey = key in keyAliases ? keyAliases[key] : parseInt(key, 10);
+    Animation.prototype.getDirection = function () {
+        var binaryDirection = 0;
+        if (this.isAlternated) {
+            binaryDirection &= DIRECTION_ALTERNATE;
         }
-        return inRange(numericKey, 0, 100, true) ? numericKey : undefined;
-    }
-
-    /**
-     * Добавит правило с указанным селектором и указанным текстом правила.
-     * @param {string} selector
-     * @param {string=} cssText
-     * @return {CSSRule} Добавленное правило
-     */
-    function addRule(selector, cssText) {
-
-        /** @type {CSSRuleList} */
-        var rules = stylesheet.cssRules || stylesheet.rules;
-        var index = rules.length;
-
-        cssText = cssText || " ";
-
-        if (stylesheet.insertRule) {
-            stylesheet.insertRule(selector + " " + "{" + cssText + "}", index);
-        } else {
-            stylesheet.addRule(selector, cssText, rules.length);
+        if (this.isReversed) {
+            binaryDirection &= DIRECTION_REVERSE;
         }
-
-        return rules[index];
-    }
+        return binaryDirection;
+    };
 
     /**
-     * Удалит правило из таблицы стилей (если оно присутствует в ней)
-     * @param {CSSRule} rule
+     * @return {boolean}
      */
-    function removeRule (rule) {
-        var rules = stylesheet.cssRules || stylesheet.rules;
-        var ruleIndex = LinearSearch(rules, rule);
-        if (ENABLE_DEBUG) {
-            console.assert(ruleIndex !== -1, 'removeRule: internal usage but undefined rule;')
-        }
-        // аргументы одинаковые - нет смысла делать ветвление
-        var removeMethod = stylesheet.deleteRule || stylesheet.removeRule;
-        removeMethod.call(stylesheet, ruleIndex);
-    }
+    Animation.prototype.needsReverse = function () {
 
-    /**
-     * Добавит указанный класс элементу
-     * @param {HTMLElement} elem
-     * @param {string} value
-     */
-    function addClass(elem, value) {
+        // Оптимизация битовой логикой не сработала
+        // http://jsperf.com/bitwise-vs-boolean
 
-        if (surround.bySpaces(elem.className).indexOf(surround.bySpaces(value)) === -1) {
-            elem.className += " " + value;
-        }
-
-    }
-
-    /**
-     * Удалит указанный класс у элемента
-     * @param {HTMLElement} elem
-     * @param {string} value
-     */
-    function removeClass(elem, value) {
-        elem.className = trim(surround.bySpaces(elem.className).replace(surround.bySpaces(value), ""));
-    }
-
-    /**
-     * Установит значение стиля элементу, либо получит текущее
-     * значение свойства, при необходимости конвертируя вывод.
-     * @param {(HTMLElement|CSSStyleDeclaration)} element Элемент
-     * @param {string} propertyName Имя свойства
-     * @param {(Array|string|number)=} propertyValue Значение свойства.
-     *
-     * @return {string}
-     * */
-    function css(element, propertyName, propertyValue) {
-
-        var getting = typeOf.undefined(propertyValue);
-        var action = getting ? "get" : "set";
-        var hookVal, vendorizedPropertyName;
-        var stringValue;
-
-        if (element) {
-            vendorizedPropertyName = getVendorPropName(propertyName);
-
-            if (propertyName in cssHooks && action in cssHooks[propertyName]) {
-                hookVal = cssHooks[propertyName][action](element, vendorizedPropertyName, propertyValue);
+        if (this.isAlternated) {
+            if (this.isReversed) {
+                return (this.currentIteration % 2) === 0;
+            } else {
+                return (this.currentIteration % 2) === 1;
             }
+        } else if (this.isReversed) {
+            return true;
+        }
 
-            if (getting) {
+        return false;
+    };
 
-                if (typeOf.undefined(hookVal)) {
-                    if (typeOf.element(element)) {
-                        stringValue = getComputedStyle(/** @type {HTMLElement} */(element))[vendorizedPropertyName];
-                    } else {
-                        stringValue = /** @type {CSSStyleDeclaration} */ (element)[vendorizedPropertyName];
+
+    /** @type {boolean} */
+    Animation.prototype.fillsForwards = DEFAULT_FILLS_FORWARDS;
+
+    /** @type {boolean} */
+    Animation.prototype.fillsBackwards = DEFAULT_FILLS_BACKWARDS;
+
+    /**
+     * @export
+     * @param {number} binaryFillMode
+     */
+    Animation.prototype.setFillMode = function (binaryFillMode) {
+        this.fillsForwards = (binaryFillMode & FILLS_FORWARDS) !== 0;
+        this.fillsBackwards = (binaryFillMode & FILLS_BACKWARDS) !== 0;
+    };
+
+    /**
+     * @export
+     * @return {number}
+     */
+    Animation.prototype.getFillMode = function () {
+        var binFillMode = 0;
+        if (this.fillsForwards) {
+            binFillMode &= FILLS_FORWARDS;
+        }
+        if (this.fillsBackwards) {
+            binFillMode &= FILLS_BACKWARDS;
+        }
+        return binFillMode;
+    };
+
+    /** @type {number} */
+    Animation.prototype.elapsedTime = 0;
+
+    /** @type {!(Easing|CubicBezier|Steps)} */
+    Animation.prototype.smoothing = DEFAULT_EASING;
+
+    /**
+     * @param {!(Easing|CubicBezier|Steps)} easing
+     * @export
+     */
+    Animation.prototype.setEasing = function (easing) {
+        this.smoothing = easing;
+    };
+
+    /**
+     * @return {!(CubicBezier|Steps|Easing)}
+     * @export
+     */
+    Animation.prototype.getEasing = function () {
+        return this.smoothing;
+    };
+
+    /** @type {number} */
+    Animation.prototype.animationProgress = 0;
+
+    /** @type {boolean} */
+    Animation.prototype.isOnStartFired = false;
+
+    /** @type {number} */
+    Animation.prototype.fractionalTime = 0;
+
+    /** @type {number} */
+    Animation.prototype.previousIteration = 0;
+
+    /** @type {number} */
+    Animation.prototype.currentIteration = 0;
+
+    /**
+     * @export
+     * @return {number}
+     */
+    Animation.prototype.getFractionalTime = function () {
+        return this.fractionalTime;
+    };
+
+    /**
+     * @param {number} deltaTime
+     */
+    Animation.prototype.tick = function (deltaTime) {
+
+        var elapsedTime, currentIteration, iterationProgress;
+        this.elapsedTime += deltaTime;
+        elapsedTime = Math.max(this.elapsedTime - this.delayTime, MINIMAL_PROGRESS);
+        this.animationProgress = elapsedTime / this.cycleDuration;
+        currentIteration = Math.floor(this.animationProgress);
+
+        if (currentIteration > 0) {
+            this.previousIteration = this.currentIteration;
+            this.currentIteration = currentIteration > this.integralIterations ? this.integralIterations : currentIteration;
+            iterationProgress = this.animationProgress - currentIteration;
+        } else {
+            iterationProgress = this.animationProgress;
+        }
+
+        if (iterationProgress > MAXIMAL_PROGRESS) {
+            iterationProgress = MAXIMAL_PROGRESS;
+        }
+
+        if (this.needsReverse()) {
+            iterationProgress = MAXIMAL_PROGRESS - iterationProgress;
+        }
+
+        this.fractionalTime = iterationProgress;
+
+        if (this.animationProgress < this.iterations) {
+
+            this.update();
+
+            if (this.delayTime > 0 && elapsedTime <= deltaTime && this.elapsedTime >= this.delayTime) {
+                if (this.onstart !== goog.nullFunction) {
+                    this.onstart();
+                }
+            } else if (this.onstep !== goog.nullFunction && this.fractionalTime !== 0) {
+                this.onstep();
+            }
+        } else {
+            this.stop();
+            if (this.oncomplete !== goog.nullFunction) {
+                this.oncomplete();
+            }
+        }
+    };
+
+    Animation.prototype.update = function () {
+
+        var propertyKeyframes, propertyDescriptor;
+        var properties = this.keyframes;
+        var globalEasing = null;
+        var localEasing, relativeFractionalTime;
+        var leftKeyframe, rightKeyframe;
+
+        for (var i = 0; i < properties.length; i++) {
+            propertyDescriptor = properties[i];
+            propertyKeyframes = propertyDescriptor.keyframes;
+
+            leftKeyframe = propertyKeyframes[propertyDescriptor.cachedIndex];
+            rightKeyframe = propertyKeyframes[propertyDescriptor.cachedIndex + 1];
+
+            // Поиск двух ключевых кадров для текущего прогресса
+            if (leftKeyframe.numericKey > this.fractionalTime || this.fractionalTime >= rightKeyframe.numericKey) {
+                do {
+                    if (!rightKeyframe || leftKeyframe.numericKey > this.fractionalTime) {
+                        propertyDescriptor.cachedIndex--;
                     }
-                } else {
-                    stringValue = hookVal;
-                }
-
-            } else {
-
-                if (typeOf.string(propertyValue)) {
-                    stringValue = propertyValue;
-                } else {
-                    stringValue = normalize(/** @type {HTMLElement} */(element), propertyName, /** @type {(Array|number)} */(propertyValue), true);
-                }
-
-                if (typeOf.element(element)) {
-                    /** @type {HTMLElement} */(element).style[vendorizedPropertyName] = stringValue;
-                } else {
-                    /** @type {CSSStyleDeclaration} */(element)[vendorizedPropertyName] = stringValue;
-                }
-
+                    if (rightKeyframe.numericKey < this.fractionalTime) {
+                        propertyDescriptor.cachedIndex++;
+                    }
+                    leftKeyframe = propertyKeyframes[propertyDescriptor.cachedIndex];
+                    rightKeyframe = propertyKeyframes[propertyDescriptor.cachedIndex + 1];
+                } while (leftKeyframe.numericKey > this.fractionalTime || rightKeyframe.numericKey < this.fractionalTime);
             }
-        }
 
-        return stringValue;
-    }
-
-    /**
-     * Хуки для получения\установки значения свойства.
-     * @type {Object.<string, Object.<string, Function>>}
-     */
-    var cssHooks = {};
-
-    /**
-     * Преобразует строкое представление значения в численное или наоборот
-     * @param {HTMLElement} element элемент (для относительных значений)
-     * @param {string} propertyName имя свойства
-     * @param {(string|Array|number)} propertyValue значение свойства
-     * @param {boolean=} toString к строке (true) или к числовому значению (false)
-     * @return {Array|number|undefined}
-     */
-    function normalize(element, propertyName, propertyValue, toString) {
-        var normalized;
-        var unit;
-        var vendorizedPropertyName;
-
-        vendorizedPropertyName = getVendorPropName(propertyName);
-
-        if (propertyName in normalizeHooks) {
-            normalized = normalizeHooks[propertyName](element, vendorizedPropertyName, propertyValue, toString);
-        } else {
-            if (toString) {
-                if (typeOf.number(propertyValue) && !(propertyName in nopx)) {
-                    normalized = propertyValue + "px";
-                }
+            // Прогресс относительно двух ключевых кадров
+            if (leftKeyframe.numericKey === MINIMAL_PROGRESS && rightKeyframe.numericKey === MAXIMAL_PROGRESS) {
+                relativeFractionalTime = this.fractionalTime;
             } else {
-                unit = propertyValue.match(cssNumericValueReg)[2];
-                normalized = normalizeUnits[unit](element, vendorizedPropertyName, propertyValue);
+                relativeFractionalTime = (this.fractionalTime - leftKeyframe.numericKey) / (rightKeyframe.numericKey - leftKeyframe.numericKey);
             }
-        }
 
-        return normalized;
-    }
+            if (relativeFractionalTime === MINIMAL_PROGRESS || relativeFractionalTime === MAXIMAL_PROGRESS) {
+                // В начале и в конце (прогресс 0.0 и 1.0) значение смягчения всегда равно прогрессу
+                // Вычислять промежуточное значение не требуется.
+                //localEasing = relativeFractionalTime;
+                //leftKeyframe = rightKeyframe = relativeFractionalTime === MINIMAL_PROGRESS ? leftKeyframe : rightKeyframe;
+                var alternativeKeyframe = relativeFractionalTime === MINIMAL_PROGRESS ? leftKeyframe : rightKeyframe;
+                if (alternativeKeyframe.isComputed) {
+                    this.render(propertyDescriptor.propName, leftKeyframe.alternativeValue, propertyDescriptor.vendorizedPropName);
+                }
+            } else if (relativeFractionalTime === this.fractionalTime) {
+                if (goog.isNull(globalEasing)) {
+                    globalEasing = this.smoothing.compute(relativeFractionalTime)
+                }
+                localEasing = globalEasing;
+            } else {
+                localEasing = this.smoothing.compute(relativeFractionalTime);
+            }
 
-    /**
-     * Хуки для преобразования значения
-     * Первый аргумент - элемент
-     * Второй - имя свойства
-     * Третий - значение
-     * Червёртый - приводим к строке (true) или к числу (false)
-     * @type {Object.<string, Function>}
-     */
-    var normalizeHooks = {};
+            if ((!alternativeKeyframe || !alternativeKeyframe.isComputed) && blend(leftKeyframe.propVal, rightKeyframe.propVal, localEasing, propertyDescriptor.currentValue)) {
+                // Отрисовываем в том случае, если значение свойства изменено
+                this.render(propertyDescriptor.propName, propertyDescriptor.currentValue, propertyDescriptor.vendorizedPropName);
+            }
 
-    /**
-     * Хуки для преобразования из исходных единиц измерения к абсолютным
-     * @type {Object.<string, Function>}
-     */
-    var normalizeUnits = {
-        // это и есть абсолютное значение
-        "px":function (element, propName, propVal) {
-            // просто возвращаем число без "px"
-            return parseFloat(propVal);
         }
     };
 
-    /**
-     * Список свойств, к которым не надо добавлять "PX"
-     * при переводе из числа в строку.
-     * @enum {boolean}
-     */
-    var nopx = {
-        "fill-opacity":true,
-        "font-weight":true,
-        "line-height":true,
-        "opacity":true,
-        "orphans":true,
-        "widows":true,
-        "z-index":true,
-        "zoom":true
+    Animation.prototype.toString = function () {
+        return this.animId;
     };
 
-    /**
-     * Вычисление значения между двумя точками
-     * для анимируемого свойства
-     * @param {string} propertyName Имя свойства
-     * @param {(Array|number)} from Значение меньшей точки
-     * @param {(Array|number)} to Значение большей точки
-     * @param {number} digits точность значения в количестве знакв после запятой
-     * @param {number} timingFunctionValue Значение прогресса между ними
-     * @return {number|Array} Вычисленное значение
-     */
-    function blend(propertyName, from, to, timingFunctionValue, digits) {
+    /** @type {number} */
+    Animation.prototype.tickerId;
 
-        /** @type {(Array|number)} */
-        var value;
+    /** @export */
+    Animation.prototype.start = function () {
+        this.elapsedTime = 0;
 
-        if (propertyName in blend.hooks) {
-            value = blend.hooks[propertyName](from, to, timingFunctionValue, digits);
-        } else {
-            value = /** @type {number} */ ((to - from) * timingFunctionValue + from);
-            value = round(value, digits);
+        if (this.fillsBackwards) {
+            this.update();
         }
 
-        return value;
-    }
-
-    /**
-     * Для вычисления значения экзотических свойств
-     * transform или crop, к примеру
-     * @type {Object}
-     * @private
-     */
-    blend.hooks = {};
-
-    /**
-     * Исполнит функцию перед отрисовкой,
-     * передав её текущую отметку времени
-     * Оригинальная функция
-     * @type {Function}
-     */
-    var rAF = window[getVendorPropName("requestAnimationFrame", window)];
-
-    /**
-     * Исполнит функцию перед отрисовкой, передав ей отметку времени
-     * (обёртка)
-     * @type {Function}
-     */
-    var requestAnimationFrame = rAF ? rAF : rAF_imitation;
-
-    /**
-     * Отменит исполнение функции перед отрисовкой
-     * @type {Function}
-     */
-    var cancelRequestAnimationFrame = rAF ? window[getVendorPropName("cancelRequestAnimationFrame", window)] : rAF_imitation_dequeue;
-
-    if (ENABLE_DEBUG) {
-        if (rAF) {
-            console.log("detected native requestAnimationFrame support");
-        } else {
-            console.log("requestAnimationFrame is not found. Using imitation.");
+        if (this.delayTime <= 0) {
+            if (this.onstart !== goog.nullFunction) {
+                this.onstart();
+            }
         }
-    }
+
+        this.resume();
+    };
+
+    /** @export */
+    Animation.prototype.stop = function () {
+        if (this.fillsForwards) {
+            this.fractionalTime = 1;
+            this.update();
+        }
+        this.pause();
+    };
+
+    /** @export */
+    Animation.prototype.resume = function () {
+        var self = this;
+        this.tickerId = Ticker.on(function (delta) {
+            self.tick(delta);
+        });
+    };
+
+    /** @export */
+    Animation.prototype.pause = function () {
+        Ticker.off(this.tickerId);
+    };
+
+    /** @type {boolean} */
+    Animation.prototype.usesCSS3;
 
     /**
-     * Таймер для анимации
-     * @param {Function} callback
-     * @param {Object=} context контекст исполнения функции
+     * @param {boolean} value
+     * @export
+     */
+    Animation.prototype.setClassicMode = function (value) {
+        this.usesCSS3 = !value;
+    };
+
+    /** @type {!Function} */
+    Animation.prototype.oncomplete = goog.nullFunction;
+
+    /**
+     * @param {!Function} callback
+     * @export
+     */
+    Animation.prototype.onComplete = function (callback) {
+        this.oncomplete = callback;
+    };
+
+    /** @type {!Function} */
+    Animation.prototype.onstart = goog.nullFunction;
+
+    /**
+     * @param {!Function} callback
+     * @export
+     */
+    Animation.prototype.onStart = function (callback) {
+        this.onstart = callback;
+    };
+
+    /** @type {!Function} */
+    Animation.prototype.onstep = goog.nullFunction;
+
+    /**
+     * @param {!Function} callback
+     * @export
+     */
+    Animation.prototype.onStep = function (callback) {
+        this.onstep = callback;
+    };
+
+    /** @type {!Function} */
+    Animation.prototype.oniteration = goog.nullFunction;
+
+    /**
+     * @param {!Function} callback
+     * @export
+     */
+    Animation.prototype.onIteration = function (callback) {
+        this.oniteration = callback;
+    };
+
+
+/*---------------------------------------*/
+
+    /**
+     * Высокоуровневая обёртка над низкоуровневым классом
      * @constructor
-     * @class
+     * @extends {Animation}
      */
-    function ReflowLooper(callback, context) {
-
-        if (typeOf.func(callback)) {
-            this.callback = /** @type {Function} */(callback);
-        }
-
-        if (typeOf.object(context)) {
-            this.context = /** @type {Object} */(context);
-        }
-
-        this.looper = bind(this.looper, this);
+    function AnimationWrap () {
+        Animation.call(this);
     }
 
-    /**
-     * Функция будет исполняться циклически по таймеру
-     * @type {Function}
-     * @private
-     */
-    ReflowLooper.prototype.callback = null;
+    AnimationWrap.prototype = objectCreate(Animation.prototype);
 
     /**
-     * Контекст функции
-     * @type {Object}
-     * @private
+     * Установит или получит текущий элемент для анимирования
+     * @param {Object=} target
+     * @return {Object|!AnimationWrap}
+     * @export
      */
-    ReflowLooper.prototype.context = null;
-
-    /**
-     * ID таймаута
-     * @type {number}
-     * @private
-     */
-    ReflowLooper.prototype.timeoutID = -1;
-
-    /**
-     * Запуск таймера
-     */
-    ReflowLooper.prototype.start = function () {
-        this.timeoutID = requestAnimationFrame(this.looper);
-    };
-
-    /**
-     * Остановка таймера
-     */
-    ReflowLooper.prototype.stop = function () {
-        cancelRequestAnimationFrame(this.timeoutID);
-        delete this.timeoutID;
-    };
-
-    /**
-     * Враппер вызова функции с контекстом
-     * @private
-     */
-    ReflowLooper.prototype.looper = function (timeStamp) {
-        this.timeoutID = requestAnimationFrame(this.looper);
-        this.callback.call(this.context, timeStamp);
-    };
-
-/*---------------------------------------*/
-
-
-
-/*---------------------------------------*/
-
-    /****************************************************
-     *                  КОНСТАНТЫ
-     * Здесь собраны все константы, которые используются
-     * во всём скрипте
-     * ***************************************************/
-
-    /**
-     * Обычное направление анимации:
-     * каждую итерацию ключевые кадры проходятся начиная от первого и кончая последним
-     * @type {string}
-     * @const
-     */
-    var DIRECTION_NORMAL = "normal";
-
-    /**
-     * Обратное направление анимации:
-     * каждую итерацию ключевые кадры проходятся начиная от последнего и кончая первым
-     * @type {string}
-     * @const
-     */
-    var DIRECTION_REVERSE = "reverse";
-
-    /**
-     * Альтернативное направление анимации:
-     * при чётном номере текущей итерации ключевые кадра проходятся, как при обычном направлении,
-     * а при нечётной итерации - проходятся в обратном направлении
-     * @type {string}
-     * @const
-     */
-    var DIRECTION_ALTERNATE = "alternate";
-
-    /**
-     * Обратное альтернативное направление анимации:
-     * при чётном номере текущей итерации ключевые кадра проходятся, как при обратном направлении,
-     * а при нечётной итерации - проходятся в обычном направлении
-     * @type {string}
-     * @const
-     */
-    var DIRECTION_ALTERNATE_REVERSE = "alternate-reverse";
-
-    /**
-     * Перенос свойств:
-     * значения свойств не будут отрисовываться
-     * перед началом анимации (при отложенном запуске)
-     * и после анимации
-     * @type {string}
-     * @const
-     */
-    var FILLMODE_NONE = "none";
-
-    /**
-     * Перенос свойств:
-     * значения свойств не будут отрисовываться
-     * перед началом анимации (при отложенном запуске)
-     * , но после её окончания будут
-     * @type {string}
-     * @const
-     */
-    var FILLMODE_FORWARDS = "forwards";
-
-    /**
-     * Перенос свойств:
-     * значения свойств будут отрисовываться
-     * перед началом анимации (при отложенном запуске)
-     * , но после анимации не будут
-     * @type {string}
-     * @const
-     */
-    var FILLMODE_BACKWARDS = "backwards";
-
-    /**
-     * Перенос свойств:
-     * значения свойств будут отрисовываться
-     * перед началом анимации (при отложенном запуске)
-     * и после её окончания
-     * @type {string}
-     * @const
-     */
-    var FILLMODE_BOTH = "both";
-
-    /**
-     * Состояние анимации: работает, т.е. элемент(-ы) анимируются
-     * @type {string}
-     * @const
-     */
-    var PLAYSTATE_RUNNING = "running";
-
-    /**
-     * Состояние анимации: приостановлена
-     * @type {string}
-     * @const
-     */
-    var PLAYSTATE_PAUSED = "paused";
-
-    /**
-     * Специальное значение для количества итераций - "бесконечно"
-     * @type {string}
-     * @const
-     */
-    var ITERATIONCOUNT_INFINITE = "infinite";
-
-    /**
-     * Поддерживаются ли CSS3 анимации текущим браузером.
-     * @type {boolean}
-     * @const
-     */
-    var CSSANIMATIONS_SUPPORTED = !!getVendorPropName("animation");
-
-    if (ENABLE_DEBUG) {
-        console.log('Detected native CSS3 Animations support.');
-    }
-
-    if (ENABLE_DEBUG) {
-        if (getVendorPropName("animation") === "animation") {
-            console.log('UA supports CSS3 Animations without vendor prefix');
+    AnimationWrap.prototype.target = function (target) {
+        if (goog.isObject(target)) {
+            this.setTarget(target);
+            return this;
         } else {
-            console.log('UA supports CSS3 Animations width "' + prefix + '" DOM prefix ("' + lowPrefix + '" CSS prefix)');
+            return this.getTarget();
         }
-    }
+    };
 
     /**
-     * Идеальное количество кадров для анимации на JavaScript.
-     * Пол умолчанию 60, т.к. к этому стремится requestAnimationFrame.
-     * @type {number}
      * @const
-     */
-    var FRAMES_PER_SECOND = 60;
-
-    /**
-     * Число-предел, ограничивающее обычные отметки времени от Date.now и новые высокочувствительные таймеры
-     * @type {number}
-     * @const
-     */
-    var HIGHRESOLUTION_TIMER_BOUND = 1e12;
-
-    /**
-     * Количество знаков после запятой для значений
-     * @type {number}
-     * @const
-     */
-    var DEFAULT_DIGITS_ROUND = 5;
-
-    /**
-     * Имя атрибута для связывания элемента и
-     * данных, связанных с ним
      * @type {string}
-     * @const
      */
-    var DATA_ATTR_NAME = mel + "-data-id";
+    var PERCENT = '%';
 
     /**
-     * Специальное значение свойства, указывающее
-     * на то, что нужно брать запомненное исходное
-     * значение свойства для элемента
-     * @type {null}
-     * @const
-     */
-    var SPECIAL_VALUE = null;
-
-    /**
-     * Для перевода из проценты в доли
-     * @type {number}
-     * @const
-     */
-    var PERCENT_TO_FRACTION = 1 / 100;
-
-    /**
-     * Максимальный прогресс по проходу, в долях
-     * @const
-     * */
-    var MAXIMAL_PROGRESS = 1.0;
-
-    /**
-     * Использовать ли перехват (true) или всплытие (false) в обработчике событий конца CSS анимаций
-     * @type {boolean}
-     * @const
-     */
-    var ANIMATION_HANDLER_USES_CAPTURE = true;
-
-    /**
-     * Все известные имена событий конца анимаций
-     * @type {Array}
-     * @const
-     */
-    var ANIMATION_END_EVENTNAMES = ["animationend", "webkitAnimationEnd", "OAnimationEnd", "MSAnimationEnd"];
-
-    /**
-     * Специальное значение для идентификации события конца анимации
-     * Используется в обработчике, который ловит все поступающие события анимаций
-     * @type {string}
-     * @const
-     */
-    var ANIMATION_END_EVENTTYPE = "animationend";
-
-    /**
-     * Все известные имена событий конца итераций анимаций
-     * @type {Array}
-     * @const
-     */
-    var ANIMATION_ITERATION_EVENTNAMES = ["animationiteration", "webkitAnimationIteration", "OAnimationIteration", "MSAnimationIteration"];
-
-    /**
-     * Специальное значение для идентификации события конца прохода
-     * Используется в обработчике, который ловит все поступающие события анимаций
-     * @type {string}
-     * @const
-     */
-    var ANIMATION_ITERATION_EVENTTYPE = "animationiteration";
-
-    /**
-     * Все известные имена событий старта  анимаций
-     * @type {Array}
-     * @const
-     */
-    var ANIMATION_START_EVENTNAMES = ["animationiteration", "webkitAnimationStart", "OAnimationStart", "MSAnimationStart"];
-
-    /**
-     * Специальное значение для идентификации события старта анимации
-     * Используется в обработчике, который ловит все поступающие события анимаций
-     * @type {string}
-     * @const
-     */
-    var ANIMATION_START_EVENTTYPE = "animationstart";
-
-    /**
-     * по чему разделяются стили анимации
-     * (аргумент к String.split)
-     * @type {RegExp}
-     * @const
-     */
-    var ANIMATIONS_SEPARATOR = /,\s+(?=\w)/;
-
-    /**
-     * чем соединяются стили анимации
-     * (аргумент к Array.join)
-     * @type {string}
-     * @const
-     */
-    var ANIMATIONS_JOINER = ", ";
-
-    /**
-     * Имя CSS-свойства для назначения \ получения имени анимации.
-     * @type {string}
-     * @const
-     */
-    var ANIMATION_NAME = "animation-name";
-
-    /**
-     * Имя CSS-свойства для назначения \ получения статуса проигрывания анимации.
-     * @type {string}
-     * @const
-     */
-    var ANIMATION_PLAY_STATE = "animation-play-state";
-
-    /**
-     * Имя CSS-свойства для назначения \ получения продолжительности анимации.
-     * @type {string}
-     * @const
-     */
-    var ANIMATION_DURATION = "animation-duration";
-
-    /**
-     * Имя CSS-свойства для назначения \ получения временной функции смягчения анимации \ ключевого кадра.
-     * @type {string}
-     * @const
-     */
-    var ANIMATION_TIMING_FUNCTION = "animation-timing-function";
-
-    /**
-     * Имя CSS-свойства для назначения \ получения задержки старта анимации.
-     * @type {string}
-     * @const
-     */
-    var ANIMATION_DELAY = "animation-delay";
-
-    /**
-     * Имя CSS-свойства для назначения \ получения количества проходов анимации.
-     * @type {string}
-     * @const
-     */
-    var ANIMATION_ITERATION_COUNT = "animation-iteration-count";
-
-    /**
-     * Имя CSS-свойства для назначения \ получения направления прогрессирования анимации.
-     * @type {string}
-     * @const
-     */
-    var ANIMATION_DIRECTION = "animation-direction";
-
-    /**
-     * Имя CSS-свойства для назначения \ получения режима заполнения анимации.
-     * @type {string}
-     * @const
-     */
-    var ANIMATION_FILL_MODE = "animation-fill-mode";
-
-/*---------------------------------------*/
-
-    /**
-     * Объект, содержащий алиасы
-     * @enum {Object}
-     */
-    var aliases = {};
-
-    /**
-     * Алиасы для значений ключевых кадров
+     * Ключ - алиас к позиции, значение - прогресс в долях
      * @enum {number}
      */
     var keyAliases = {
-        "from": 0,
-        "to": 100
+        'from': 0,
+        'half': 0.5,
+        'to': 1
     };
 
     /**
-     * Алиасы для временных функций
-     * @enum {Object}
+     * Установка или получение значения свойства при переданном прогрессе
+     * @export
+     * @param {string} propName
+     * @param {(string|number|!Array.<number>)=} propValue Значение свойства. Для получения значения можно пропустить.
+     * @param {(string|number)=} position Прогресс в строке или числе процентов. По умолчанию равен 100 (или "100%").
+     * @return {null|number|!Array.<number>|!AnimationWrap}
      */
-    var easingAliases = {};
-
-    /**
-     * Временные функции для CSS3 анимаций
-     * @enum {Array}
-     */
-    var cubicBezierAliases = {
-
-        // встроенные
-        "linear": [0.0, 0.0, 1.0, 1.0],
-        "ease": [0.25, 0.1, 0.25, 1.0],
-        "easeIn": [0.42, 0, 1.0, 1.0],
-        "easeOut": [0, 0, 0.58, 1.0],
-        "easeInOut": [0.42, 0, 0.58, 1.0],
-        "stepStart": [1, true],
-        "stepEnd": [1, false],
-
-        // дополненные
-        "swing": [0.02, 0.01, 0.47, 1]//,
-
-        /*
-        // взято с
-        // github.com/matthewlein/Ceaser
-        "easeInCubic":[0.55, .055, .675, .19],
-        "easeOutCubic":[0.215, 0.61, 0.355, 1],
-        "easeInOutCubic":[0.645, 0.045, 0.355, 1],
-
-        "easeInCirc":[0.6, 0.04, 0.98, 0.335],
-        "easeOutCirc":[0.075, 0.82, 0.165, 1],
-        "easeInOutCirc":[0.785, 0.135, 0.15, 0.86],
-
-        "easeInExpo":[0.95, 0.05, 0.795, 0.035],
-        "easeOutExpo":[0.19, 1, 0.22, 1],
-        "easeInOutExpo":[1, 0, 0, 1],
-
-        "easeInQuad":[0.55, 0.085, 0.68, 0.53],
-        "easeOutQuad":[0.25, 0.46, 0.45, 0.94],
-        "easeInOutQuad":[0.455, 0.03, 0.515, 0.955],
-
-        "easeInQuart":[0.895, 0.03, 0.685, 0.22],
-        "easeOutQuart":[0.165, 0.84, 0.44, 1],
-        "easeInOutQuart":[0.77, 0, 0.175, 1],
-
-        "easeInQuint":[0.755, 0.05, 0.855, 0.06],
-        "easeOutQuint":[0.23, 1, 0.32, 1],
-        "easeInOutQuint":[0.86, 0, 0.07, 1],
-
-        "easeInSine":[0.47, 0, 0.745, 0.715],
-        "easeOutSine":[0.39, 0.575, 0.565, 1],
-        "easeInOutSine":[0.445, 0.05, 0.55, 0.95],
-
-        "easeInBack":[0.6, -0.28, 0.735, 0.045],
-        "easeOutBack":[0.175, 0.885, 0.32, 1.275],
-        "easeInOutBack":[0.68, -0.55, 0.265, 1.55],
-
-        // взято с
-        // timotheegroleau.com/Flash/experiments/easing_function_generator.htm
-        "easeInElastic": [0, -1, 3, -3],
-        "easeOutElastic": [4, -2, 2, 1]//,
-        // TODO
-        //"easeInOutElastic": [],
-
-        // TODO
-        //"easeInBounce": [],
-        //"easeOutBounce": [],
-        //"easeInOutBounce": []*/
-    };
-
-    /**
-     * Плиближения для кубических кривых
-     * @enum {Function}
-     */
-    var cubicBezierApproximations = {
-
-       "linear": function (x) { return x; },
-
-        // взято с jQuery
-        "swing": function (p) {
-            return 0.5 - Math.cos( p * Math.PI ) / 2;
-        }/*,
-
-        // взято с
-        // Query plugin from GSGD
-        /*
-        easeInCubic: function (x, t, b, c, d) {
-            return c*(t/=d)*t*t + b;
-        },
-        easeOutCubic: function (x, t, b, c, d) {
-            return c*((t=t/d-1)*t*t + 1) + b;
-        },
-        easeInOutCubic: function (x, t, b, c, d) {
-            if ((t/=d/2) < 1) return c/2*t*t*t + b;
-            return c/2*((t-=2)*t*t + 2) + b;
-        },
-
-        easeInCirc: function (x, t, b, c, d) {
-            return -c * (Math.sqrt(1 - (t/=d)*t) - 1) + b;
-        },
-        easeOutCirc: function (x, t, b, c, d) {
-            return c * Math.sqrt(1 - (t=t/d-1)*t) + b;
-        },
-        easeInOutCirc: function (x, t, b, c, d) {
-            if ((t/=d/2) < 1) return -c/2 * (Math.sqrt(1 - t*t) - 1) + b;
-            return c/2 * (Math.sqrt(1 - (t-=2)*t) + 1) + b;
-        },
-
-        easeInExpo: function (x, t, b, c, d) {
-            return (t==0) ? b : c * Math.pow(2, 10 * (t/d - 1)) + b;
-        },
-        easeOutExpo: function (x, t, b, c, d) {
-            return (t==d) ? b+c : c * (-Math.pow(2, -10 * t/d) + 1) + b;
-        },
-        easeInOutExpo: function (x, t, b, c, d) {
-            if (t==0) return b;
-            if (t==d) return b+c;
-            if ((t/=d/2) < 1) return c/2 * Math.pow(2, 10 * (t - 1)) + b;
-            return c/2 * (-Math.pow(2, -10 * --t) + 2) + b;
-        },
-
-        easeInQuad: function (x, t, b, c, d) {
-            return c*(t/=d)*t + b;
-        },
-        easeOutQuad: function (x, t, b, c, d) {
-            return -c *(t/=d)*(t-2) + b;
-        },
-        easeInOutQuad: function (x, t, b, c, d) {
-            if ((t/=d/2) < 1) return c/2*t*t + b;
-            return -c/2 * ((--t)*(t-2) - 1) + b;
-        },
-
-        easeInQuart: function (x, t, b, c, d) {
-            return c*(t/=d)*t*t*t + b;
-        },
-        easeOutQuart: function (x, t, b, c, d) {
-            return -c * ((t=t/d-1)*t*t*t - 1) + b;
-        },
-        easeInOutQuart: function (x, t, b, c, d) {
-            if ((t/=d/2) < 1) return c/2*t*t*t*t + b;
-            return -c/2 * ((t-=2)*t*t*t - 2) + b;
-        },
-
-        easeInQuint: function (x, t, b, c, d) {
-            return c*(t/=d)*t*t*t*t + b;
-        },
-        easeOutQuint: function (x, t, b, c, d) {
-            return c*((t=t/d-1)*t*t*t*t + 1) + b;
-        },
-        easeInOutQuint: function (x, t, b, c, d) {
-            if ((t/=d/2) < 1) return c/2*t*t*t*t*t + b;
-            return c/2*((t-=2)*t*t*t*t + 2) + b;
-        },
-
-        easeInSine: function (x, t, b, c, d) {
-            return -c * Math.cos(t/d * (Math.PI/2)) + c + b;
-        },
-        easeOutSine: function (x, t, b, c, d) {
-            return c * Math.sin(t/d * (Math.PI/2)) + b;
-        },
-        easeInOutSine: function (x, t, b, c, d) {
-            return -c/2 * (Math.cos(Math.PI*t/d) - 1) + b;
-        },
-
-        easeInBack: function (x, t, b, c, d, s) {
-            if (s == undefined) s = 1.70158;
-            return c*(t/=d)*t*((s+1)*t - s) + b;
-        },
-        easeOutBack: function (x, t, b, c, d, s) {
-            if (s == undefined) s = 1.70158;
-            return c*((t=t/d-1)*t*((s+1)*t + s) + 1) + b;
-        },
-        easeInOutBack: function (x, t, b, c, d, s) {
-            if (s == undefined) s = 1.70158;
-            if ((t/=d/2) < 1) return c/2*(t*t*(((s*=(1.525))+1)*t - s)) + b;
-            return c/2*((t-=2)*t*(((s*=(1.525))+1)*t + s) + 2) + b;
-        },
-
-        easeInElastic: function (x, t, b, c, d) {
-            var s=1.70158;var p=0;var a=c;
-            if (t==0) return b;  if ((t/=d)==1) return b+c;  if (!p) p=d*.3;
-            if (a < Math.abs(c)) { a=c; var s=p/4; }
-            else var s = p/(2*Math.PI) * Math.asin (c/a);
-            return -(a*Math.pow(2,10*(t-=1)) * Math.sin( (t*d-s)*(2*Math.PI)/p )) + b;
-        },
-        easeOutElastic: function (x, t, b, c, d) {
-            var s=1.70158;var p=0;var a=c;
-            if (t==0) return b;  if ((t/=d)==1) return b+c;  if (!p) p=d*.3;
-            if (a < Math.abs(c)) { a=c; var s=p/4; }
-            else var s = p/(2*Math.PI) * Math.asin (c/a);
-            return a*Math.pow(2,-10*t) * Math.sin( (t*d-s)*(2*Math.PI)/p ) + c + b;
-        },
-        easeInOutElastic: function (x, t, b, c, d) {
-            var s=1.70158;var p=0;var a=c;
-            if (t==0) return b;  if ((t/=d/2)==2) return b+c;  if (!p) p=d*(.3*1.5);
-            if (a < Math.abs(c)) { a=c; var s=p/4; }
-            else var s = p/(2*Math.PI) * Math.asin (c/a);
-            if (t < 1) return -.5*(a*Math.pow(2,10*(t-=1)) * Math.sin( (t*d-s)*(2*Math.PI)/p )) + b;
-            return a*Math.pow(2,-10*(t-=1)) * Math.sin( (t*d-s)*(2*Math.PI)/p )*.5 + c + b;
-        }
-
-        /*
-        easeInBounce: function (x, t, b, c, d) {
-            return c - jQuery.easing.easeOutBounce (x, d-t, 0, c, d) + b;
-        },
-        easeOutBounce: function (x, t, b, c, d) {
-            if ((t/=d) < (1/2.75)) {
-                return c*(7.5625*t*t) + b;
-            } else if (t < (2/2.75)) {
-                return c*(7.5625*(t-=(1.5/2.75))*t + .75) + b;
-            } else if (t < (2.5/2.75)) {
-                return c*(7.5625*(t-=(2.25/2.75))*t + .9375) + b;
-            } else {
-                return c*(7.5625*(t-=(2.625/2.75))*t + .984375) + b;
+    AnimationWrap.prototype.propAt = function (propName, propValue, position) {
+        var numericPosition = MAXIMAL_PROGRESS;
+        if (goog.isDef(position)) {
+            if (goog.isNumber(position)) {
+                numericPosition = position;
+            } else if (goog.isString(position)) {
+                if (position in keyAliases) {
+                    numericPosition = keyAliases[position];
+                } else {
+                    var matched = /** @type {string} */(position).match(cssNumericValueReg);
+                    if (goog.isArray(matched) && (!matched[VALREG_DIMENSION] || matched[VALREG_DIMENSION] === PERCENT)) {
+                        numericPosition = matched[VALREG_VALUE] * 1;
+                    }
+                }
             }
-        },
-        easeInOutBounce: function (x, t, b, c, d) {
-            if (t < d/2) return jQuery.easing.easeInBounce (x, t*2, 0, c, d) * .5 + b;
-            return jQuery.easing.easeOutBounce (x, t*2-d, 0, c, d) * .5 + c*.5 + b;
+            if (numericPosition > 1) {
+                numericPosition /= 100;
+            }
+            if (numericPosition < MINIMAL_PROGRESS || numericPosition > MAXIMAL_PROGRESS) {
+                numericPosition = MAXIMAL_PROGRESS;
+            }
         }
-        */
+        if (goog.isDef(propValue)) {
+            var numericValue = toNumericValue(this.animationTarget, propName, propValue, getVendorPropName(propName));
+            this.setPropAt(propName, numericValue, numericPosition, propValue);
+            return this;
+        } else {
+            return this.getPropAt(propName, numericPosition);
+        }
     };
 
+    /**
+     * Алиасы к времени продолжительности.
+     * Ключ - алиас, значение - время в миллисекундах
+     * @enum {number}
+     */
+    var durationAliases = {
+        'slow': 600,
+        'fast': 200
+    };
+
+    /**
+     * Установка или получение времени проигрывания анимации.
+     * Отрицательные значения игнорируются.
+     * Нулевое значение соответствует мгновенному проходу анимации, при этом
+     * все механизмы работают так же, как и при положительной продолжительности.
+     * @export
+     * @param {(string|number)=} duration Алиас, время в формате CSS или миллисекунды
+     * @return {number|!AnimationWrap} время в миллисекундах или текущий экземпляр
+     */
+    AnimationWrap.prototype.duration = function (duration) {
+        var numericDuration;
+        if (goog.isDef(duration)) {
+            if (goog.isString(duration)) {
+                if (duration in durationAliases) {
+                    numericDuration = durationAliases[duration];
+                } else {
+                    var matched = /** @type {string} */(duration).match(cssNumericValueReg);
+                    numericDuration = matched[VALREG_VALUE] * (matched[VALREG_DIMENSION] === 's' ? 1e3:1);
+                }
+                if (numericDuration >= 0) {
+                    this.setDuration(numericDuration);
+                }
+            }
+            return this;
+        } else {
+            return this.cycleDuration;
+        }
+    };
+
+    /**
+     * Установка задержки старта.
+     * Если значение положительное, старт анимации будет отложен на численное представление.
+     * Если отрицательное, то при старте будет считаться, что прошло уже указанное по модулю время со старта.
+     * @export
+     * @param {(number|string)=} delay Строка времени в формате CSS или число миллисекунд.
+     * @return {number|!AnimationWrap}
+     */
+    AnimationWrap.prototype.delay = function (delay) {
+        var numericDelay;
+        if (goog.isDef(delay)) {
+            if (goog.isNumber(delay)) {
+                numericDelay = delay | 0;
+            } else if (goog.isString(delay)) {
+                var matched = /** @type {string} */(delay).match(cssNumericValueReg);
+                numericDelay = matched[VALREG_VALUE] * (matched[VALREG_DIMENSION] === 's' ? 1e3:1);
+            }
+            if (isFinite(numericDelay)) {
+                this.setDelay(numericDelay);
+            }
+            return this;
+        } else {
+            return this.delayTime;
+        }
+    };
+
+    var ITERATIONCOUNT_INFINITE = 'infinite';
+
+    /**
+     * Установка числа проходов цикла анимации.
+     * Значение "infinite" соответствует бесконечному числу повторений анимации.
+     * Дробные значения соответствуют конечному значению прогресса по проходу.
+     * Отрицательные значения игнорируются.
+     * @export
+     * @param {(number|string)=} iterations
+     * @return {number|!AnimationWrap}
+     */
+    AnimationWrap.prototype.iterationCount = function (iterations) {
+
+        /** @type {number} */
+        var numericIterations;
+
+        if (goog.isDef(iterations)) {
+            if (iterations === ITERATIONCOUNT_INFINITE) {
+                numericIterations = Number.POSITIVE_INFINITY;
+            } else {
+                numericIterations = iterations * 1;
+            }
+            this.setIterations(numericIterations);
+            return this;
+        } else {
+            return this.iterations;
+        }
+    };
+
+    /** @enum {number} */
+    var directions = {
+        'normal': 0,
+        'reverse': DIRECTION_REVERSE,
+        'alternate':  DIRECTION_ALTERNATE,
+        'alternate-reverse':  DIRECTION_ALTERNATE & DIRECTION_REVERSE
+    };
+
+    /**
+     * Установка или получение направления проигрывания анимации.
+     * Значение "normal" соответствует возрастанию прогресса от 0 до 1 при каждом проходе. ( binary: 00 )
+     * Значение "reverse" соответствует убыванию прогресса от 1 до 0 при каждом проходе.( binary: 01 )
+     * Значение "alternate" соответствует направлению "normal" для нечётных проходов и "reverse" для чётных.( binary: 10 )
+     * Значение "alternate-reverse" соответствует направлению "reverse" для нечётных проходов и "normal" для чётных.( binary: 11 )
+     * Числовому значению соответствует побитовая маска.
+     * @export
+     * @param {(string|number)=} direction
+     * @return {number|!AnimationWrap}
+     */
+    AnimationWrap.prototype.direction = function (direction) {
+        var binaryDirection = NOT_FOUND;
+        if (goog.isDef(direction)) {
+            if (goog.isNumber(direction)) {
+                binaryDirection = direction;
+            } else if (direction in directions) {
+                binaryDirection = directions[direction];
+            }
+            if (binaryDirection !== NOT_FOUND) {
+                this.setDirection(binaryDirection);
+            }
+            return this;
+        } else {
+            return this.getDirection();
+        }
+    };
+
+    /** @enum {number} */
+    var fillModes = {
+        'none': 0,
+        'forwards': FILLS_FORWARDS,
+        'backwards':  FILLS_BACKWARDS,
+        'both':  FILLS_FORWARDS & FILLS_BACKWARDS
+    };
+
+    /**
+     * Установка или получение режима крайней отрисовки.
+     * Значение "backwards" соответствует отрисовке значений
+     * начального ключевого кадра сразу после старта (и перед самим анимированием). ( binary:  01 )
+     * Значение "forwards" соответствует отрисовке значений
+     * конечного ключевого кадра после окончания анимации. ( binary:  10 )
+     * Значение "none" не соответствует ни одному из значений; ( binary:  00 )
+     * Значение "both" соответствует и первому, и второму одновременно. ( binary:  11 )
+     * @export
+     * @param {(string|number)=} fillMode
+     * @return {number|!AnimationWrap}
+     */
+    AnimationWrap.prototype.fillMode = function (fillMode) {
+        var binFillMode = NOT_FOUND;
+        if (goog.isDef(fillMode)) {
+            if (goog.isNumber(fillMode)) {
+                binFillMode = fillMode;
+            } else if (fillMode in fillModes) {
+                binFillMode = fillModes[fillMode];
+            }
+            if (binFillMode !== NOT_FOUND) {
+                this.setFillMode(binFillMode);
+            }
+            return this;
+        } else {
+            return this.getFillMode();
+        }
+    };
+
+    /**
+     * Установка или получение смягчения анимации.
+     * (!) Абсциссы первой и второй точек для кубической кривой Безье должны принадлежать промежутку [0, 1].
+     * (!) Число ступеней в Steps всегда целочисленное.
+     * @export
+     * @param {(string|!Array.<number>|!Easing|!CubicBezier|!Steps)=} easing временная функция CSS, алиас смягчения или массив точек (2 - Steps, 4 - CubicBezier)
+     * @return {!(CubicBezier|Steps|Easing|AnimationWrap)}
+     */
+    AnimationWrap.prototype.easing = function (easing) {
+        var timingFunction;
+        if (goog.isDef(easing)) {
+            timingFunction = EasingRegistry.request(easing);
+            if (!goog.isNull(timingFunction)) {
+                this.setEasing(timingFunction);
+            }
+            return this;
+        } else {
+            return this.getEasing();
+        }
+    };
 
 /*---------------------------------------*/
-
-    /**
-     * Время анимации поумолчанию
-     * @type {string}
-     * @const
-     */
-    var DEFAULT_DURATION = "400ms";
-
-    /**
-     * Смягчение анимации по умолчанию
-     * @type {string}
-     * @const
-     */
-    var DEFAULT_EASING = "ease";
-
-    /**
-     * Режим заполнения свойств по умолчанию
-     * @type {string}
-     * @const
-     */
-    var DEFAULT_FILLMODE = "forwards";
-
-    /**
-     * Задежка перед началом после старта в мсек. по умолчанию
-     * @type {string}
-     * @const
-     */
-    var DEFAULT_DELAY = "0s";
-
-    /**
-     * "Направление" анимации по умолчанию
-     * @type {string}
-     * @const
-     */
-    var DEFAULT_DIRECTION = "normal";
-
-    /**
-     * Количество проходов анимации по умолчанию
-     * @type {string}
-     * @const
-     */
-    var DEFAULT_ITERATIONCOUNT = "1";
-
-    /**
-     * Состояние проигрывания анимации при  её создании через конструктор
-     * @type {string}
-     * @const
-     */
-    var DEFAULT_PLAYINGSTATE = "paused";
-
-    /*
-     * Конструктор анимаций.
-     * Формат передаци свойств:
-     * keyframes = {
-     *     %KEY% : {
-     *         %PROPERTY_NAME% : %PROPERTY_VALUE%
-     *     }
-     * }
-     *
-     * @param {(Element|Array.<Element>)} elements Элемент(ы) для анимирования.
-     * @param {object} keyframes Свойства для анимирования.
-     * @param {(string|Object)=} duration Длительность анимации или объект с продвинутыми настройками. По-умолчанию : "400ms".
-     * @param {(string|Array|Function)=} easing Как будут прогрессировать значения свойств. По-умолчанию : "ease".
-     * @param {function=} oncomplete Функция, которая исполнится после завершения анимации. По-умолчанию : "noop", т.е. пустая функция.
-     * @return {(ClassicAnimation|CSSAnimation  )}
-     */
-    function Animation (elements, keyframes, duration, easing, oncomplete) {
-
-        var
-            /**
-             * Используется ли классический режим (true), или режим css3 анимаций (false)
-             * @type {boolean}
-             */
-            classicMode,
-
-            /**
-             * Направление анимации
-             * @type {string}
-             */
-            direction,
-
-            /**
-             * Функция исполнится, когда анимация наснёт работать (после delay)
-             * @type {Function}
-             */
-            onstart,
-
-            /**
-             * Исполнится, когда завершится очередной проход анимации
-             * @type {Function}
-             */
-            oniteration,
-
-            /**
-             * Функция, котоаря будет исполняться на каждом шаге анимации
-             * @type {Function}
-             */
-            onstep,
-
-            /**
-             * Количество проходов (максимальный прогресс относительно первой итерации)
-             * @type {number}
-             */
-            iterationCount,
-
-            /**
-             * Время отложенного запуска
-             * @type {number}
-             */
-            delay,
-
-            /**
-             * Режим заполнения свойств
-             * @type {string}
-             */
-            fillMode,
-
-            /**
-             * Ссылка на конструктор классической или CSS анимации, в зависимости от флага classicMode
-             * @type {Function}
-             */
-            construct,
-
-            /**
-             * Созданный экземпляр анимации
-             * @type {(ClassicAnimation|CSSAnimation)}
-             */
-            self;
-
-        // если передан объект с расширенными опциями; разворачиваем его.
-        if (typeOf.object(duration) && arguments.length === 3) {
-
-            classicMode = duration["classicMode"];
-
-            onstart = duration["onstart"];
-            oniteration = duration["oniteration"];
-            oncomplete = duration["oncomplete"];
-            onstep = duration["onstep"];
-
-            easing = duration["easing"];
-
-            duration = duration["duration"];
-            direction = duration["direction"];
-            iterationCount = duration["iterationCount"];
-            delay = duration["delay"];
-            fillMode = duration["fillMode"];
-
-        }
-
-        classicMode = classicMode || typeOf.func(easing) || !CSSANIMATIONS_SUPPORTED;
-
-        if (ENABLE_DEBUG) {
-            console.log('Animation: created instance is "' + (classicMode ? "ClassicAnimation":"CSSAnimation") + '"');
-        }
-
-        construct = classicMode ? ClassicAnimation : CSSAnimation;
-
-        self = new construct();
-
-        typeOf.element(elements) ? self.addElement(elements) : each(elements, self.addElement, self);
-
-        each(keyframes, function (properties, key) {
-            each(properties, function (propertyName, propertyValue) {
-                self.propAt(propertyName, propertyValue, key);
-            });
-        });
-
-        self.onComplete(oncomplete);
-        self.onIteration(oniteration);
-        self.onStart(onstart);
-        self.onStep(onstep);
-
-        self.delay(delay);
-        self.duration(duration);
-        self.direction(direction);
-        self.easing(easing);
-        self.fillMode(fillMode);
-        self.iterationCount(iterationCount);
-
-        return self;
-    }
 
     /**
      * "Одноразовая" функция, позволяющая анимировать без муторного создания объектов в один вызов
      * Формат записи свойств и вообще аргументов - как в jQuery (для удобства)
-     * Отличается от конструктора тем, что автоматически запускает анимацию после создания экземпляра.
-     * @param {(Array.<HTMLElement>|NodeList|HTMLElement)} elements Элемент(ы) для анимирования
-     * @param {Object} properties Свойства для анимирования. Ключ имя свойства, значение - конечная величина свойства.
-     * @param {(number|string)} duration Продолжительность в МС или в формате CSS Timestring
-     * @param {(string|Function,Array)} easing Смягчение всей анимации (алиас, CSS Timefunction, аргументы к временной функции или сама функция)
-     * @param {Function} complete Обработчик события завершения анимации
-     * @return {(CSSAnimation|ClassicAnimation)}
+     * Типы свойств и параметров - как в AnimateWrap.
+     * @param {!Element} element Элемент для анимирования
+     * @param {!Object} properties Свойства для анимирования. Ключ - имя свойства, значение - конечная величина свойства.
+     * @param {(number|string)=} duration Продолжительность в миллисекундах (число) или в формате CSS Timestring (строка)
+     * @param {(string|!Array.<number>|!Easing|!CubicBezier|!Steps)=} easing Смягчение всей анимации (алиас, CSS Timefunction, аргументы к временной функции или сама функция)
+     * @param {(function (this: AnimationWrap))=} complete Обработчик события завершения анимации
+     * @return {!AnimationWrap}
      */
-    function animate (elements, properties, duration, easing, complete) {
-        var self = Animation(elements, {}, duration, easing, function () {
-            //TODO сделать то же, только без замыкания
-            typeOf.func(complete) && complete();
-            self.destruct();
-        });
-        each(properties, function (propertyValue, propertyName) {
-            self.propAt(propertyName, propertyValue);
-        });
-        self.fillMode(FILLMODE_FORWARDS);
+    function animate (element, properties, duration, easing, complete) {
+        var self = new AnimationWrap();
+
+        var progress;
+
+        if (arguments.length === 3) {
+            duration = properties['duration'];
+            easing = properties['easing'];
+            progress = properties['progress'];
+            complete = properties['complete'];
+            self.delay(properties['delay']);
+            self.fillMode(properties['fillMode']);
+            self.direction(properties['direction']);
+            self.iterationCount(properties['iterationCount']);
+        }
+
+        self.duration(duration);
+        self.easing(easing);
+        if (goog.isFunction(progress)) {
+            self.onStep(progress);
+        }
+        if (goog.isFunction(complete)) {
+            self.onComplete(complete);
+        }
+
+        for (var propName in properties) {
+            self.propAt(propName, properties[propName]);
+        }
+
         self.start();
-        return /** @type {(CSSAnimation|ClassicAnimation)} */ (self);
+
+        return self;
     }
 
 /*---------------------------------------*/
 
-    /**
-     * То, что идёт после собаки ("@") в CSS-правилах
-     * Как правило, в нему дописыватеся вендорный префикс, если у
-     * свойства анимации тоже есть префикс.
-     * @type {string}
-     * @const
-     */
-    var KEYFRAME_PREFIX = (getVendorPropName("animation") === "animation" ? "" : surround(lowPrefix, "-")) + "keyframes";
-
-    if (ENABLE_DEBUG) {
-        console.log('keyframe prefix is "' + KEYFRAME_PREFIX + '"');
-    }
-
-    if (CSSANIMATIONS_SUPPORTED) {
-        // навешиваем обработчики на все имена событий
-        // бывают курьёзы, вроде FireFox - когда свойство "animation" с префиксом ("-moz-animation")
-        // а имя события - без префикса, ещё и в нижнем регистре ("animationend")
-        each(ANIMATION_END_EVENTNAMES.concat(ANIMATION_ITERATION_EVENTNAMES).concat(ANIMATION_START_EVENTNAMES), function (eventName) {
-            // лучше и быстрее всего ловить их не на стадии всплытия
-            // а на стадии погружение. Для большей скорости возьмём корневой элемент
-            rootElement.addEventListener(eventName, exclusiveHandler, ANIMATION_HANDLER_USES_CAPTURE);
-        });
-    }
-
-    /**
-     * Первичная функция-обработчик событий
-     * т.к. обработчики установлены на все события, которые могут никогда и не исполниться
-     * (например, у webkit никогда не будет события с вендорным префиксом "ms")
-     * то лучше убрать остальные мусорные обработчики и оставить один.
-     * @param {(AnimationEvent|Event)} event
-     */
-    function exclusiveHandler (event) {
-        var eventName = event.type, lowerCased = toLowerCase(eventName);
-        var eventNames;
-
-        if (ENABLE_DEBUG) {
-            console.log('exclusiveHandler: eventName is "' + eventName + '"');
-        }
-
-        if (lowerCased.indexOf("start") !== -1) {
-            eventNames = ANIMATION_START_EVENTNAMES;
-            if (ENABLE_DEBUG) {
-                console.log('exclusiveHandler: eventName "' + eventName + '" belongs to animation start events');
-            }
-        } else if (lowerCased.indexOf("iteration") !== -1) {
-            eventNames = ANIMATION_ITERATION_EVENTNAMES;
-            if (ENABLE_DEBUG) {
-                console.log('exclusiveHandler: eventName "' + eventName + '" belongs to animation iteration end events');
-            }
-        } else if (lowerCased.indexOf("end") !== -1) {
-            eventNames = ANIMATION_END_EVENTNAMES;
-            if (ENABLE_DEBUG) {
-                console.log('exclusiveHandler: eventName "' + eventName + '" belongs to animation end events');
-            }
-        } else {
-            // по-идее, никогда не исполнится. unreachable code
-            if (ENABLE_DEBUG) {
-                console.log('exclusiveHandler: unknown animation event type "' + eventName + '"');
-            }
-            return;
-        }
-
-        // снимаем все навешанные обработчики событий
-        each(eventNames, function (eventName) {
-            rootElement.removeEventListener(eventName, exclusiveHandler, ANIMATION_HANDLER_USES_CAPTURE);
-        });
-
-        // вешаем обратно обычный обработчик на точно определённое имя события
-        rootElement.addEventListener(eventName, animationHandlerDelegator, ANIMATION_HANDLER_USES_CAPTURE);
-
-        // вызываем тут же оригинальный обработчик
-        animationHandlerDelegator(event);
-    }
-
-    /**
-     * Объект с функциями-обработчиками всех событий анимаций
-     * Ключ - имя события, значение - объект с именем анимации и функцей-обработчиком
-     * @type {Object.<string, Object.<string, Function>>}
-     */
-    var delegatorCallbacks = {};
-
-    /**
-     * Объект с обработчиками событий окончания анимаций
-     * @type {Object.<string, Function>}
-     */
-    delegatorCallbacks[ ANIMATION_END_EVENTTYPE ] = {};
-
-    /**
-     * Объект с обработчиками событий конца итераций анимаций
-     * @type {Object.<string, Function>}
-     */
-    delegatorCallbacks[ ANIMATION_ITERATION_EVENTTYPE ] = {};
-
-    /**
-     * Объект с обработчиками событий старта анимаций
-     * @type {Object.<string, Function>}
-     */
-    delegatorCallbacks[ ANIMATION_START_EVENTTYPE ] = {};
-
-    /**
-     * Функция будет ловить все поступающих события конца анимации
-     * @param {(AnimationEvent|Event)} event
-     */
-    var animationHandlerDelegator = function (event) {
-        // TODO пофиксить неподдерживаемый в android < 2.1 режим заполнения (fill-mode)
-        var animationName = event.animationName, callback, eventType, handlersList;
-        var eventName = event.type, lowerCased = toLowerCase(eventName);
-
-        if (lowerCased.indexOf("start") !== -1) {
-            eventType = ANIMATION_START_EVENTTYPE;
-        } else if (lowerCased.indexOf("iteration") !== -1) {
-            eventType = ANIMATION_ITERATION_EVENTTYPE
-        } else if (lowerCased.indexOf("end") !== -1) {
-            eventType = ANIMATION_END_EVENTTYPE;
-        } else {
-            // по-идее, никогда не исполнится. unreachable code
-            if (ENABLE_DEBUG) {
-                console.log('animationHandlerDelegator: unknown animation event type "' + eventName + '"');
-            }
-            return;
-        }
-
-        if (eventType in delegatorCallbacks) {
-            handlersList = delegatorCallbacks[eventType];
-            if (animationName in handlersList) {
-                callback = handlersList[animationName];
-                callback();
-            } // else {
-                // незарегистрированная анимация. ничего не можем сделать.
-            // }
-        }
-    };
-
-    /**
-     * Конструктор анимаций с использованием CSS-анимаций
-     * @constructor
-     * @class
-     */
-    function CSSAnimation () {
-
-        this.animationId = generateId();
-        this.elements = [];
-        this.keyframesRule = /** @type {CSSKeyframesRule} */ (addRule("@" + KEYFRAME_PREFIX + " " + this.animationId));
-
-        if (ENABLE_DEBUG) {
-            if (this.animationId !== this.keyframesRule.name) {
-                // имена должны совпадать
-                console.log('CSSAnimation constructor: anim name "' + this.animationId + '" and keyframes name "' + this.keyframesRule.name + '" are different');
-            }
-        }
-
-    }
-
-    /*
-     * Наследуемые свойства
-     */
-
-    /**
-     * Время отложенного запуска, временная строка CSS.
-     * Значение устанавливается методом
-     * @see CSSAnimation.delay
-     * @type {string}
-     * @private
-     */
-    CSSAnimation.prototype.delayTime = DEFAULT_DELAY;
-
-    /**
-     * Режим заливки свойств, устанавливается методом
-     * @see CSSAnimation.fillMode
-     * @type {string}
-     * @private
-     */
-    CSSAnimation.prototype.fillingMode = DEFAULT_FILLMODE;
-
-    /**
-     * Продолжительность одного прохода, временная строка CSS
-     * Значение устанавливается методом.
-     * @see CSSAnimation.duration
-     * @private
-     * @type {string}
-     */
-    CSSAnimation.prototype.animationTime = DEFAULT_DURATION;
-
-    /**
-     * Число проходов;
-     * Значение устанавливается методом iterationCount.
-     * @type {string}
-     * @private
-     */
-    CSSAnimation.prototype.iterations = DEFAULT_ITERATIONCOUNT;
-
-    /**
-     * Направление анимации.
-     * Значение устанавливается методом direction.
-     * @type {string}
-     * @private
-     */
-    CSSAnimation.prototype.animationDirection = DEFAULT_DIRECTION;
-
-    /**
-     * Смягчение всей анимации
-     * @type {string}
-     * @private
-     */
-    CSSAnimation.prototype.timingFunction = DEFAULT_EASING;
-
-    /**
-     * Обработчик завершения анимации
-     * @private
-     * @type {Function}
-     */
-    CSSAnimation.prototype.oncomplete = noop;
-
-    /**
-     * Обработчик завершения прохода
-     * @type {Function}
-     * @private
-     */
-    CSSAnimation.prototype.oniteration = noop;
-
-    /**
-     * Обработчик начала проигрывания анимации
-     * @type {Function}
-     * @private
-     */
-    CSSAnimation.prototype.onstart = noop;
-
-    /**
-     * Функция, которая будет исполняться на каждом шаге анимации
-     * @type {Function}
-     * @private
-     */
-    CSSAnimation.prototype.onstep = noop;
-
-    /*
-     * Индивидуальные свойства
-     */
-
-    /**
-     * Имя анимации; никогда не должно быть "none".
-     * @type {string}
-     */
-    CSSAnimation.prototype.animationId = "";
-
-    /**
-     * Коллекция анимируемых элементов
-     * @type {Array.<HTMLElement>}
-     */
-    CSSAnimation.prototype.elements = null;
-
-    /**
-     * CSS-правило для ключевых кадров
-     * @type {CSSKeyframesRule}
-     */
-    CSSAnimation.prototype.keyframesRule = null;
-
-    /*
-     * Приватные методы
-     */
-
-    /**
-     * Добавит ключевой кадр на указанном прогрессе по проходу в долях и вернёт его
-     * @param {number} position
-     * @return {CSSKeyframeRule}
-     * @private
-     */
-    CSSAnimation.prototype.addKeyframe = function (position) {
-        /**
-         * Добавленный ключевой кадр
-         * @type {CSSKeyframeRule}
-         */
-        var keyframe;
-        // добавляются с указанием процентов
-        var percents = position / PERCENT_TO_FRACTION + "%";
-        // стиль ключевого кадра пока пуст
-        var keyframeBody = "{" + "}";
-        var keyframes = this.keyframesRule;
-        // у Chrome или у FireFox какое-то время было неверное следование спецификации
-        // было неверное имя метода для добавления ключевых кадров
-        var add = keyframes.appendRule || keyframes.insertRule;
-        apply(add, [ percents + " " + keyframeBody  ], keyframes);
-        keyframe = keyframes.findRule(percents);
-        return keyframe;
-    };
-
-    /**
-     * Попытается найти в коллекции ключевой кадр
-     * с указанным прогрессом по проходу (в долях)
-     * @param {number} position
-     * @return {CSSKeyframeRule}
-     * @private
-     */
-    CSSAnimation.prototype.lookupKeyframe = function (position) {
-        // поиск проходит с указанием процентов
-        var percents = position / PERCENT_TO_FRACTION + "%";
-        return this.keyframesRule.findRule(percents);
-    };
-
-    /**
-     * Применит параметры анимации к стилю элемента без
-     * уничтожения текущих анимаций, соблюдая правила добавления.
-     * @param {HTMLElement} element
-     * @private
-     */
-    CSSAnimation.prototype.applyStyle = function (element) {
-
-        var names, playStates, durations, timingFunctions, delays, iterations, directions, fillModes;
-
-        // для начала проверим, применена ли уже анимация
-        names = css(element, ANIMATION_NAME);
-
-        if (names.indexOf(this.animationId) !== -1) {
-            // такое имя уже присутствует в списке применных
-            if (ENABLE_DEBUG) {
-                console.log('applyStyle: animation style for "' + this.animationId + '" already applied : "' + names + '"');
-            }
-            return;
-        }
-
-        // параметры уже применённых анимаций
-        names = names.split(ANIMATIONS_SEPARATOR);
-        playStates = css(element, ANIMATION_PLAY_STATE).split(ANIMATIONS_SEPARATOR);
-        durations = css(element, ANIMATION_DURATION).split(ANIMATIONS_SEPARATOR);
-        timingFunctions = css(element, ANIMATION_TIMING_FUNCTION).split(ANIMATIONS_SEPARATOR);
-        delays = css(element, ANIMATION_DELAY).split(ANIMATIONS_SEPARATOR);
-        iterations = css(element, ANIMATION_ITERATION_COUNT).split(ANIMATIONS_SEPARATOR);
-        directions = css(element, ANIMATION_DIRECTION).split(ANIMATIONS_SEPARATOR);
-        fillModes = css(element, ANIMATION_FILL_MODE).split(ANIMATIONS_SEPARATOR);
-
-        if (names.length === 0 || (names.length === 1 && (names[0] === "" || names[0] === "none"))) {
-            // нет применённых анимаций
-            if (ENABLE_DEBUG) {
-                console.log("applyStyle: element doesn't has any animations applied");
-            }
-            names = [ this.animationId ];
-            playStates = [ DEFAULT_PLAYINGSTATE ];
-            durations = [ this.animationTime ];
-            timingFunctions = [ this.timingFunction ];
-            delays = [ this.delayTime ];
-            iterations = [ this.iterations ];
-            directions = [ this.animationDirection ];
-            fillModes = [ this.fillingMode ];
-        } else {
-            if (ENABLE_DEBUG) {
-                console.log('applyStyle: element has "' + names.length + '" applied animations.');
-            }
-            names.push(this.animationId);
-            // применяем анимацию приостановленной
-            playStates.push(DEFAULT_PLAYINGSTATE);
-            durations.push(this.animationTime);
-            timingFunctions.push(this.timingFunction);
-            delays.push(this.delayTime);
-            iterations.push(this.iterations);
-            directions.push(this.animationDirection);
-            fillModes.push(this.fillingMode);
-        }
-
-        // применяем обновленные параметры анимаций
-        css(element, ANIMATION_NAME, names.join(ANIMATIONS_JOINER));
-        css(element, ANIMATION_PLAY_STATE, playStates.join(ANIMATIONS_JOINER));
-        css(element, ANIMATION_DURATION, durations.join(ANIMATIONS_JOINER));
-        css(element, ANIMATION_TIMING_FUNCTION, timingFunctions.join(ANIMATIONS_JOINER));
-        css(element, ANIMATION_DELAY, delays.join(ANIMATIONS_JOINER));
-        css(element, ANIMATION_ITERATION_COUNT, iterations.join(ANIMATIONS_JOINER));
-        css(element, ANIMATION_DIRECTION, directions.join(ANIMATIONS_JOINER));
-        css(element, ANIMATION_FILL_MODE, fillModes.join(ANIMATIONS_JOINER));
-    };
-
-    /**
-     * Уберёт параметры текущей анимации из стиля элемента с
-     * соблюдением правил добавления стилец анимации,
-     * при этом не затрагивая других анимаций.
-     * @param {HTMLElement} element
-     * @private
-     */
-    CSSAnimation.prototype.removeStyle = function (element) {
-        // параметры уже применённых анимаций
-        var names = css(element, "animation-name").split(ANIMATIONS_SEPARATOR);
-        var playStates = css(element, "animation-play-state").split(ANIMATIONS_SEPARATOR);
-        var durations = css(element, "animation-duration").split(ANIMATIONS_SEPARATOR);
-        var timingFunctions = css(element, "animation-timing-function").split(ANIMATIONS_SEPARATOR);
-        var delays = css(element, "animation-delay").split(ANIMATIONS_SEPARATOR);
-        var iterations = css(element, "animation-iteration-count").split(ANIMATIONS_SEPARATOR);
-        var directions = css(element, "animation-direction").split(ANIMATIONS_SEPARATOR);
-        var fillModes = css(element, "animation-fill-mode").split(ANIMATIONS_SEPARATOR);
-
-        // индекс этой (this) анимации в списке применённых к элементу
-        var index = LinearSearch(names, this.animationId);
-
-        // просто удаляем из списков параметры с индексом имени этой анимации
-        removeAtIndex(names, index);
-        removeAtIndex(playStates, index);
-        removeAtIndex(durations, index);
-        removeAtIndex(timingFunctions, index);
-        removeAtIndex(delays, index);
-        removeAtIndex(iterations, index);
-        removeAtIndex(directions, index);
-        removeAtIndex(fillModes, index);
-
-        // применяем анимации без этой (this)
-        css(element, "animation-name", names.join(ANIMATIONS_JOINER));
-        css(element, "animation-play-state", playStates.join(ANIMATIONS_JOINER));
-        css(element, "animation-duration", durations.join(ANIMATIONS_JOINER));
-        css(element, "animation-timing-function", timingFunctions.join(ANIMATIONS_JOINER));
-        css(element, "animation-delay", delays.join(ANIMATIONS_JOINER));
-        css(element, "animation-iteration-count", iterations.join(ANIMATIONS_JOINER));
-        css(element, "animation-direction", directions.join(ANIMATIONS_JOINER));
-        css(element, "animation-fill-mode", fillModes.join(ANIMATIONS_JOINER));
-    };
-
-    /**
-     * Установит параметру анимаци указанное значение для элемента.
-     * Такая аккуратность нужна, чтобы не затрагивать уже примененные
-     * к элементу анимации
-     * @param {HTMLElement} element элемент
-     * @param {string} parameterName имя параметра (напр, "animation-duration")
-     * @param {string} parameterValue значение параметра (напр. "5s")
-     * @param {number=} animationIndex индекс анимации в списке примененных (если не указывать, найдет сама для этой (this) анимации)
-     * @private
-     */
-    CSSAnimation.prototype.setParameter = function (element, parameterName, parameterValue, animationIndex) {
-        var paramsList = css(element, parameterName).split(ANIMATIONS_SEPARATOR);
-        var names;
-
-        if (!typeOf.number(animationIndex)) {
-            names = css(element, ANIMATION_NAME).split(ANIMATIONS_SEPARATOR);
-            animationIndex = LinearSearch(names, this.animationId);
-        }
-
-        if (animationIndex >= 0) {
-            paramsList[ animationIndex ] = parameterValue;
-            css(element, parameterName, paramsList.join(ANIMATIONS_JOINER));
-        } else if (ENABLE_DEBUG) {
-            console.log('setParameter: cannot set parameter value; invalid animationIndex "' + animationIndex + '"');
-        }
-    };
-
-    /**
-     * Установит параметру анимаци указанное значение для всех элементов.
-     * Такая аккуратность нужна, чтобы не затрагивать уже примененные
-     * к элементу анимации
-     * @param {string} parameterName имя параметра (напр, "animation-duration")
-     * @param {string} parameterValue значение параметра (напр. "5s")
-     * @private
-     */
-    CSSAnimation.prototype.rewriteParameter = function (parameterName, parameterValue) {
-        each(this.elements, function (element) {
-            this.setParameter(element, parameterName, parameterValue);
-        }, this);
-    };
-
-    /*
-     * Публичные методы
-     */
-
-    /**
-     * Добавит элемент для анимирования
-     * @param {HTMLElement} elem
-     */
-    CSSAnimation.prototype.addElement = function (elem) {
-        if (typeOf.element(elem)) {
-            // CSS анимация не может анимировать не-элементы
-            this.elements.push(elem);
-        } else if (ENABLE_DEBUG) {
-            console.log('addElement: passed variable is non-HTMLElement "' + elem + '"');
-        }
-    };
-
-    /**
-     * Установка задержки старта
-     * Если значение положительное, старт анимации будет отложен на численное представление.
-     * Если отрицательное, то при старте будет считаться, что прошло уже указанное по модулю время со старта.
-     * @param {(number|string)} delay
-     */
-    CSSAnimation.prototype.delay = function (delay) {
-        var numeric;
-        if (typeOf.number(delay)) {
-            // переданное число - миллисекунды
-            numeric = delay;
-            delay = delay + "ms";
-        } else {
-            numeric = parseTimeString(delay);
-        }
-        // численное значение должно быть небесконечным
-        if (isFinite(numeric)) {
-            this.delayTime = /** @type {string} */ (delay);
-        } else if (ENABLE_DEBUG) {
-            console.log('delay: passed value "' + delay + '" (numeric : "' + numeric + '") is non-finite');
-        }
-    };
-
-    /**
-     * Установка продолжительности прохода анимации.
-     * Отрицательные значения считаются за нулевые.
-     * Нулевое значение соответствует мгновенному проходу анимации, при этом
-     * все события (конца прохода и конца анимации) возникают так же, как и при положительной продолжительности прохода
-     * и режим заполнения (fillMode) работает так же, как и при положительной продолжительности прохода
-     * @param {(string|number)} duration
-     */
-    CSSAnimation.prototype.duration = function (duration) {
-        var numeric;
-        if (typeOf.number(duration)) {
-            // переданное число - миллисекунды
-            numeric = duration;
-            duration = duration + "ms";
-        } else {
-            numeric = parseTimeString(duration);
-        }
-
-        // по спецификации отрицательные значения считаются за нулевые
-        if (numeric < 0) {
-            if (ENABLE_DEBUG) {
-                console.log('duration: dur "' + duration + '" is negative (numeric val : "' + numeric + '") so setting it to "0"');
-            }
-            numeric = 0;
-            duration = "0s";
-        }
-
-        // численное значение должно быть небесконечным
-        if (isFinite(numeric)) {
-            this.animationTime = /** @type {string} */ (duration);
-        } else if (ENABLE_DEBUG) {
-            console.log('duration: non-integer value "' + duration + '" (numeric val: "' + numeric + '")');
-        }
-    };
-
-    /**
-     * Установка направления анимации
-     * Значение "normal" соответствует возрастанию прогресса от 0 до 1 при каждом проходе
-     * Значение "reverse" соответствует убыванию прогресса от 1 до 0 при каждом проходе
-     * Значение "alternate" соответствует направлению "normal" для нечётных проходов и "reverse" для чётных
-     * Значение "alternate-reverse" соответствует направлению "reverse" для нечётных проходов и "normal" для чётных
-     * @param {string} direction
-     */
-    CSSAnimation.prototype.direction = function (direction) {
-        if (direction === DIRECTION_NORMAL ||
-            direction === DIRECTION_REVERSE ||
-            direction === DIRECTION_ALTERNATE ||
-            direction === DIRECTION_ALTERNATE_REVERSE) {
-
-            this.animationDirection = direction;
-
-        } else if (ENABLE_DEBUG) {
-            console.log('direction: invalid value "' + direction + '"');
-        }
-    };
-
-    /**
-     * Установка смягчения анимации или ключевого кадра.
-     *
-     * Установленное смягчение ключевого кадра будет использовано,
-     * если прогресс по проходу будет соответствовать неравенству:
-     * ТЕКУЩИЙ_КЛЮЧЕВОЙ_КАДР <= ПРОГРЕСС_ПО_ПРОХОДУ < СЛЕДУЮЩИЙ_КЛЮЧЕВОЙ_КАДР
-     *
-     * (!) Абсциссы первой и второй точек для кубической кривой Безье должны принадлежать промежутку [0, 1].
-     *
-     * @param {(Array|string)} timingFunction временная функция CSS, алиас смягчения или массив точек (2 - Steps, 4 - CubicBezier)
-     * @param {(number|string)=} position прогресс по проходу в процентах (по умол. не зависит от прогресса)
-     *
-     * @see cubicBezierAliases
-     * @see cubicBezierApproximations
-     */
-    CSSAnimation.prototype.easing = function (timingFunction, position) {
-        var points, trimmed, camelCased;
-        var stepsAmount, countFromStart;
-        var CSSTimingFunction, key, keyframe;
-
-        CSSTimingFunction = '';
-
-        if (typeOf.array(timingFunction)) {
-            // переданы аргументы к временным функциям CSS
-            points = timingFunction;
-        } else if (typeOf.string(timingFunction)) {
-            // алиас или временная функция CSS
-            trimmed = trim(/** @type {string} */ (timingFunction));
-            camelCased = camelCase(trimmed);
-            if (camelCased in cubicBezierAliases) {
-                // алиас
-                points = cubicBezierAliases[camelCased];
-            } else {
-                // временная функция CSS
-                if (cubicBezierReg.test(trimmed)) {
-                    points = trimmed.match(cubicBezierReg)[1].split(",");
-                } else if (stepsReg.test(trimmed)) {
-                    points = trimmed.match(stepsReg)[1].split(",");
-                }
-            }
-        }
-
-        if (!typeOf.array(points)) {
-            if (ENABLE_DEBUG) {
-                console.log('easing: invalid argument "' + timingFunction + '"');
-            }
-            return;
-        }
-
-        if (points.length === 4) {
-            // кубическая кривая Безье
-            points = map(points, parseFloat);
-            if (inRange(points[0], 0, 1, true) && inRange(points[2], 0, 1, true)) {
-                CSSTimingFunction = "cubic-bezier" + "(" + points.join(", ") + ")";
-            } else if (ENABLE_DEBUG) {
-                console.log('easing: cubic bezier invalid absciss "' + points[0] + '" or "' + points[2] + '"');
-            }
-        } else if (points.length === 2) {
-            // лестничная функция
-            stepsAmount = parseInt(points[0], 10);
-            countFromStart = points[1] === "start";
-            if (typeOf.number(stepsAmount)) {
-                CSSTimingFunction = "steps" + "(" + stepsAmount.toString() + ", " + (countFromStart ? "start" : "end") + ")";
-            } else if (ENABLE_DEBUG) {
-                console.log('easing: invalid steps amount for staircase timing function "' + stepsAmount + '"')
-            }
-        }
-
-        if (typeOf.undefined(position)) {
-            this.timingFunction = CSSTimingFunction;
-        } else {
-            key = normalizeKey(/** @type {(number|string)} */(position));
-            if (typeOf.number(key)) {
-                // в долях
-                key = key * PERCENT_TO_FRACTION;
-                keyframe = this.lookupKeyframe(key) || this.addKeyframe(key);
-                css(keyframe.style, ANIMATION_TIMING_FUNCTION, CSSTimingFunction);
-            }
-        }
-    };
-
-    /**
-     * Установка режима заполнения
-     * Значение "backwards" соответствует отрисовке значений
-     * начального ключевого кадра сразу после старта (и перед самим анимированием)
-     * Значение "forwards" соответствует отрисовке значений
-     * конечного ключевого кадра после окончания анимации.
-     * Значение "none" не соответствует ни одному из значений;
-     * Значение "both" соответствует и первому, и второму одновременно.
-     * @param {string} fillMode
-     * @see DEFAULT_FILLMODE
-     */
-    CSSAnimation.prototype.fillMode = function (fillMode) {
-        if (fillMode === FILLMODE_FORWARDS ||
-            fillMode === FILLMODE_BACKWARDS ||
-            fillMode === FILLMODE_BOTH ||
-            fillMode === FILLMODE_NONE) {
-
-            this.fillingMode = fillMode;
-
-        } else if (ENABLE_DEBUG) {
-            console.log('fillMode: invalid value "' + fillMode + '"');
-        }
-    };
-
-    /**
-     * Установка количества проходов цикла анимации.
-     * Значение "infinite" соответствует бесконечному числу повторений анимации.
-     * Дробные значения соответствуют конечному значению прогресса по проходу.
-     * Отрицательные числовые значения игнорируются.
-     * @param {string} iterationCount
-     * @see DEFAULT_ITERATIONCOUNT
-     */
-    CSSAnimation.prototype.iterationCount = function (iterationCount) {
-
-        /**
-         * Числовое представление
-         * @type {number}
-         */
-        var numericIterations;
-
-        // исключение составляет специальное значение
-        if (iterationCount !== ITERATIONCOUNT_INFINITE) {
-            numericIterations = parseFloat(iterationCount);
-            if (!isFinite(numericIterations) || numericIterations < 0) {
-                if (ENABLE_DEBUG) {
-                    console.log('iterationCount: passed iterations is not a number or is negative "' + iterationCount + '"');
-                }
-                return;
-            }
-        }
-
-        this.iterations = iterationCount;
-    };
-
-    /**
-     * Установка функции, которая исполнится при завершении анимации
-     * @type {Function} callback
-     */
-    CSSAnimation.prototype.onComplete = function (callback) {
-        if (typeOf.func(callback)) {
-            delegatorCallbacks[ ANIMATION_END_EVENTTYPE ] [ this.animationId ] = bind(callback, this);
-            this.oncomplete = callback;
-        }
-    };
-
-    /**
-     * Установка функции, которая завершится при окончании прохода
-     * @param {Function} callback
-     */
-    CSSAnimation.prototype.onIteration = function (callback) {
-        if (typeOf.func(callback)) {
-            delegatorCallbacks[ ANIMATION_ITERATION_EVENTTYPE ] [ this.animationId ] = bind(callback, this);
-            this.oniteration = callback;
-        }
-    };
-
-    /**
-     * Установка функции, которая исполнится, когда анимация начнет проигрываться
-     * @param {Function} callback
-     */
-    CSSAnimation.prototype.onStart = function (callback) {
-        if (typeOf.func(callback)) {
-            delegatorCallbacks[ ANIMATION_START_EVENTTYPE ] [ this.animationId ] = bind(callback, this);
-            this.onstart = callback;
-        }
-    };
-
-     /**
-     * Установка значения свойства при указанном прогрессе
-     * Для установки смягчения используется метод CSSAnimation.easing
-     * @param {string} name имя свойства
-     * @param {string} value значение свойства
-     * @param {(number|string)=} position строка прогресса в процентах (по умол. 100%)
-     */
-     //TODO относительное изменение свойств
-    CSSAnimation.prototype.propAt = function (name, value, position) {
-        var keyframe;
-        var key = typeOf.undefined(position) ? keyAliases["to"] : normalizeKey(/** @type {(number|string)} */ (position));
-        if (typeOf.number(key)) {
-            // в долях
-            key = key * PERCENT_TO_FRACTION;
-            keyframe = this.lookupKeyframe(key) || this.addKeyframe(key);
-            css(keyframe.style, name, value);
-        } else if (ENABLE_DEBUG) {
-            console.log('propAt: passed key "' + position + '" (numeric val: "' + key + '") is invalid');
-        }
-    };
-
-    /**
-     * Старт анимации
-     */
-    CSSAnimation.prototype.start = function () {
-
-        // для того, чтобы не перезаписывались уже установленные анимации
-        // применяем анимацию к каждому элементу, соблюдая правила
-        each(this.elements, function (element) {
-            this.applyStyle(element);
-            // безопаснее запускать анимацию только после того, как она применена
-            var playStates = css(element, "animation-play-state").split(ANIMATIONS_SEPARATOR);
-            // текущая анимация должна быть последней
-            playStates[ playStates.length - 1 ] = PLAYSTATE_RUNNING;
-            css(element, "animation-play-state", playStates.join(ANIMATIONS_JOINER));
-        }, this);
-
-        if (ENABLE_DEBUG) {
-            console.log('start: animation "' + this.animationId + '" started');
-        }
-    };
-
-    /**
-     * Остановка анимации
-     */
-    CSSAnimation.prototype.stop = function () {};
-
-    /**
-     * Разрушение анимации
-     * удаление всех CSS-свойств, снятие применённых анимаций и т.д.
-     */
-    CSSAnimation.prototype.destruct = function () {
-        // удаляем применённые параметры анимации
-        each(this.elements, function (element) {
-            // безопаснее снимать анимацию тогда, когда она приостановлена,
-            // т.к. если снимать сразу, то FF и CH ведут себя по разному
-            var names = css(element, "animation-name").split(ANIMATIONS_SEPARATOR);
-            // индекс этой (this) анимации в списке применённых
-            var index = LinearSearch(names, this.animationId);
-            // приостанавливаем её
-            var playStates = css(element, "animation-play-state").split(ANIMATIONS_SEPARATOR);
-            playStates[ index ] = PLAYSTATE_PAUSED;
-            css(element, "animation-play-state", playStates.join(ANIMATIONS_JOINER));
-
-            // обрабатываем режим заполнения
-            //TODO дополнительная обработка текущей итерации в зависимости от параметра направления
-            var endingKey, endingKeyframe, endingStyle;
-            if (this.fillingMode !== FILLMODE_NONE) {
-                if (this.fillingMode === FILLMODE_FORWARDS || this.fillingMode === FILLMODE_BOTH) {
-                    // заполняется конечный ключевой кадр
-                    endingKey = 1.0;
-                } else if (this.fillingMode === FILLMODE_BACKWARDS || this.fillingMode === FILLMODE_BOTH) {
-                    // заполняется начальный ключевой кадр
-                    endingKey = 0.0;
-                }
-
-                endingKeyframe = this.lookupKeyframe(endingKey);
-
-                if (endingKeyframe) {
-                    var propertyName, propertyValue;
-                    endingStyle = endingKeyframe.style;
-                    for (var i = 0, m = endingStyle.length; i < m; i++) {
-                        propertyName = endingStyle[i];
-                        propertyValue = endingStyle[propertyName];
-                        if (propertyName !== ANIMATION_TIMING_FUNCTION) {
-                            css(element, propertyName, propertyValue);
-                        }
-                    }
-                } else if (ENABLE_DEBUG) {
-                    console.log("destruct: WTF?! beginning or ending keyframe does not exist");
-                }
-            }
-
-            // аккуратно удаляем примененные параметры анимаций
-            this.removeStyle(element);
-        }, this);
-
-        // удаляем CSS-правило с ключевыми кадрами из таблицы стилей
-        removeRule(this.keyframesRule);
-
-        if (ENABLE_DEBUG) {
-            console.log('destruct: animation "' + this.animationId + '" totally destructed');
-        }
-    };
-
-    /**
-     * Установка функции, которая будет выполняться на каждом шаге анимации
-     * @param {Function} callback
-     */
-    //TODO сделать onstep для CSS анимации
-    CSSAnimation.prototype.onStep = function (callback) {
-        if (typeOf.func(callback)) {
-            this.onstep = callback;
-        }
-    };
-
-
-    /* Экспорты */
-    CSSAnimation.prototype["addElement"] = CSSAnimation.prototype.addElement;
-    CSSAnimation.prototype["delay"] = CSSAnimation.prototype.delay;
-    CSSAnimation.prototype["duration"] = CSSAnimation.prototype.duration;
-    CSSAnimation.prototype["direction"] = CSSAnimation.prototype.direction;
-    CSSAnimation.prototype["easing"] = CSSAnimation.prototype.easing;
-    CSSAnimation.prototype["fillMode"] = CSSAnimation.prototype.fillMode;
-    CSSAnimation.prototype["iterationCount"] = CSSAnimation.prototype.iterationCount;
-    CSSAnimation.prototype["onComplete"] = CSSAnimation.prototype.onComplete;
-    CSSAnimation.prototype["onIteration"] = CSSAnimation.prototype.onIteration;
-    CSSAnimation.prototype["propAt"] = CSSAnimation.prototype.propAt;
-    CSSAnimation.prototype["start"] = CSSAnimation.prototype.start;
-    CSSAnimation.prototype["stop"] = CSSAnimation.prototype.stop;
-    CSSAnimation.prototype["destruct"] = CSSAnimation.prototype.destruct;
-    CSSAnimation.prototype["onStart"] = CSSAnimation.prototype.onStart;
-    CSSAnimation.prototype["onStep"] = CSSAnimation.prototype.onStep;
-
-
-/*---------------------------------------*/
-
-    function easingSearchCallback (fractionalTime, firstKeyframe, index, keyframes) {
-        var secondKeyframe = keyframes[ index + 1];
-        // для навигации в бинарном поиске
-        var MOVE_RIGHT = 1, MOVE_LEFT = -1, STOP = 0;
-
-        if (!secondKeyframe) return MOVE_LEFT;
-        if (firstKeyframe.key > fractionalTime) return MOVE_LEFT;
-        if (secondKeyframe.key <= fractionalTime) return MOVE_RIGHT;
-
-        return STOP;
-    }
-
-    /**
-     * Конструктор ключевых кадров.
-     * @constructor
-     * @class
-     * @param {number} key
-     * @param {Object=} properties
-     * @param {Function=} easing
-     */
-    function Keyframe (key, properties, easing) {
-        if (typeOf.number(key)) {
-            this.key = /** @type {number} */ (key);
-        }
-        if (typeOf.object(properties)) {
-            this.properties = /** @type {Object} */ (properties);
-        } else {
-            this.properties = {};
-        }
-        if (typeOf.func(easing)) {
-            this.easing = /** @type {Function} */(easing);
-        }
-    }
-
-    /**
-     * Прогресс, к которому относится ключевой кадр (в долях)
-     * @type {number}
-     */
-    Keyframe.prototype.key = 0.00;
-
-    /**
-     * Смягчение ключевого кадра
-     * @type {(Function|CubicBezier|Steps)}
-     */
-    Keyframe.prototype.easing = noop;
-
-    /**
-     * Значения свойств для этого ключевого кадра.
-     * @type {Object}
-     */
-    Keyframe.prototype.properties = {};
-
-    /**
-     * Конструктор анимаций с ключевыми кадрами на JavaScript.
-     * @constructor
-     * @class
-     */
-    //TODO перезапись анимаций (animation override)
-    //TODO слепки параметров анимации после старта - parametres snapshotting
-    //TODO типы свойств для интерполяции (вместо самих свойств)
-    //TODO провесить временную функцию на ключевом кадре - кажется, оно багнулось
-    //TODO относительное изменение свойств
-    function ClassicAnimation() {
-        this.targets = [];
-        this.startingValues = {};
-        this.currentValues = {};
-        this.cache = {};
-        this.animationId = generateId();
-        this.keyframes = [];
-        this.specialEasing = {};
-        this.iterations = 1;
-        this.animatedProperties = {};
-        // начальный и конечный ключевые кадры
-        // их свойства наследуют вычисленные
-        this.addKeyframe(0.0, createObject(this.animatedProperties));
-        this.addKeyframe(1.0, createObject(this.animatedProperties));
-        this.timer = new ReflowLooper(this.tick, this);
-        return this;
-    }
-
-    /*
-    *   Наследуемые свойства.
-    * */
-
-    /**
-     * Время отложенного запуска, в миллисекундах
-     * Значение устанавливается методом
-     * @see ClassicAnimation.delay
-     * @type {number}
-     * @private
-     */
-    ClassicAnimation.prototype.delayTime = /** @type {number} */ (parseTimeString(DEFAULT_DELAY));
-
-    /**
-     * Режим заливки свойств, устанавливается методом
-     * @see ClassicAnimation.fillMode
-     * @type {string}
-     * @private
-     */
-    ClassicAnimation.prototype.fillingMode = DEFAULT_FILLMODE;
-
-    /**
-     * Продолжительность одного прохода, в миллисекундах
-     * Значение устанавливается методом.
-     * @see ClassicAnimation.duration
-     * @private
-     * @type {number}
-     */
-    ClassicAnimation.prototype.animationTime = /** @type {number} */ (parseTimeString(DEFAULT_DURATION));
-
-    /**
-     * Число проходов;
-     * Значение устанавливается методом iterationCount.
-     * @type {number}
-     * @private
-     */
-    ClassicAnimation.prototype.iterations = parseInt(DEFAULT_ITERATIONCOUNT, 10);
-
-    /**
-     * Челосисленное число проходов;
-     * Значение устанавливается методом iterationCount.
-     * @type {number}
-     * @private
-     */
-    ClassicAnimation.prototype.integralIterations = floor(parseInt(DEFAULT_ITERATIONCOUNT, 10));
-
-    /**
-     * Направление анимации.
-     * Значение устанавливается методом direction.
-     * @type {string}
-     * @private
-     */
-    ClassicAnimation.prototype.animationDirection = DEFAULT_DIRECTION;
-
-    /**
-     * Смягчение всей анимации
-     * @type {(Function|CubicBezier|Steps)}
-     * @private
-     */
-    ClassicAnimation.prototype.smoothing = cubicBezierApproximations[ DEFAULT_EASING ];
-
-    /**
-     * Обработчик завершения анимации
-     * @private
-     * @type {Function}
-     */
-    ClassicAnimation.prototype.oncomplete = noop;
-
-    /**
-     * Обработчик завершения прохода
-     * @type {Function}
-     * @private
-     */
-    ClassicAnimation.prototype.oniteration = noop;
-
-    /**
-     * Обработчик начала проигрывания анимации
-     * @type {Function}
-     * @private
-     */
-    ClassicAnimation.prototype.onstart = noop;
-
-     /**
-     * Функция будет выполняться на каждом тике (tick) анимации
-     * @private
-     * @type {Function}
-     */
-    ClassicAnimation.prototype.onstep = noop;
-
-    /**
-     * Количество знаков после запятой для прогресса и свойств.
-     * @type {number}
-     * @private
-     */
-    ClassicAnimation.prototype.digits = DEFAULT_DIGITS_ROUND;
-
-    /*
-    *   Индивидуальные свойства
-    * */
-
-    /**
-     * Объект с временными данными.
-     * @type {Object}
-     * @private
-     */
-    ClassicAnimation.prototype.cache = null;
-
-    /**
-     * Объект с текущими значениями свойств
-     * @type {Object.<string, Object.<string, (number|Array)>>}
-     * @private
-     */
-    ClassicAnimation.prototype.currentValues = null;
-
-    /**
-     * Объект со стартовыми значениями свойств
-     * @type {Object.<string, Object.<string, (number|Array)>>}
-     * @private
-     */
-    ClassicAnimation.prototype.startingValues = null;
-
-    /**
-     * Уникальная строка - имя анимации.
-     * Создаётся автоматически.
-     * @type {string}
-     * @private
-     */
-    ClassicAnimation.prototype.animationId = "";
-
-    /**
-     * Коллекция элементов, учавствующих в анимации.
-     * Заполняется сеттером "element"
-     * @private
-     * @type {Array.<Element>}
-     */
-    ClassicAnimation.prototype.targets = null;
-
-    /**
-     * Отсортированный по возрастанию свойства "key" массив ключевых кадров.
-     * @private
-     * @typedef Array.{{key: number, properties: Object.<string, number>, easing: Function}}
-     */
-    ClassicAnimation.prototype.keyframes = null;
-
-    /**
-     * Словарь, содержащий все анимируемые свойства.
-     * Заполняется из метода установки значений свойств по прогрессу (propAt)
-     * Нужен для первого (0%) и последнего (100%) ключевых кадров.
-     * @type {Object}
-     * @private
-     */
-    ClassicAnimation.prototype.animatedProperties = null;
-
-    /**
-     * Объект с особыми смягчениями для свойств
-     * Ключ - имя свойства, Значение - функция смягчения
-     * Значения устанавливаются методом easing
-     * @type {Object.<string, (Function|CubicBezier|Steps)>}
-     * @private
-     */
-    ClassicAnimation.prototype.specialEasing = null;
-
-    /**
-     * Временная метка старта
-     * @type {number}
-     * @private
-     */
-    ClassicAnimation.prototype.started = 0;
-
-    /**
-     * Номер текущей итерации
-     * @type {number}
-     * @private
-     * */
-    ClassicAnimation.prototype.currentIteration = 0;
-
-    /**
-     * Прошедшее со старта время
-     * @type {number}
-     * @private
-     */
-    ClassicAnimation.prototype.elapsedTime = 0;
-
-    /**
-     * Текущий прогресс по проходу
-     * @type {number}
-     * @private
-     */
-    ClassicAnimation.prototype.fractionalTime = 0.0;
-
-    /**
-     * Прогресс относительно первой итерации
-     * @type {number}
-     * @private
-     */
-    ClassicAnimation.prototype.animationProgress = 0.0;
-
-    /**
-     * Таймер отрисовки
-     * @type {ReflowLooper}
-     * @private
-     */
-    ClassicAnimation.prototype.timer = null;
-
-    /*
-    * Публичные методы
-    * */
-
-    /**
-     * Добавит элемент(-ы) в коллекцию анимируемых.
-     * @param {HTMLElement} elem Элемент
-     */
-    ClassicAnimation.prototype.addElement = function (elem) {
-        var id;
-        if (typeOf.element(elem)) {
-            id = generateId();
-            elem.setAttribute(DATA_ATTR_NAME, id);
-            this.cache[id] = {};
-            this.startingValues[id] = {};
-            this.currentValues[id] = {};
-            this.targets.push(elem);
-        } else if (ENABLE_DEBUG) {
-            console.log('addElement: passed variable is non-HTMLElement "' + elem + '"');
-        }
-    };
-
-    /**
-     * Установка продолжительности прохода анимации.
-     * Отрицательные значения считаются за нулевые.
-     * Нулевое значение соответствует мгновенному проходу анимации, при этом
-     * все события (конца прохода и конца анимации) возникают так же, как и при положительной продолжительности прохода
-     * и режим заполнения (fillMode) работает так же, как и при положительной продолжительности прохода
-     * @param {(string|number)} duration
-     */
-    ClassicAnimation.prototype.duration = function (duration) {
-        var numericDuration = typeOf.number(duration) ? duration : parseTimeString(duration);
-        if (typeOf.number(numericDuration)) {
-            if (numericDuration < 0) {
-                if (ENABLE_DEBUG) {
-                    console.log('duration: argument has a negative value "' + numericDuration + '" so setting it to "0"');
-                }
-                numericDuration = 0;
-            }
-            this.animationTime = /** @type {number} */ (numericDuration);
-            this.digits = floor(lg(this.animationTime * FRAMES_PER_SECOND)) - 2.0;
-            if (ENABLE_DEBUG) {
-                console.log('duration: computed epsilon is "' + this.digits + '" digits');
-            }
-        } else if (ENABLE_DEBUG) {
-            console.warn('duration: bad value "'+ duration +'"');
-        }
-    };
-
-    /**
-     * Установка обработчика завершения анимации
-     * @param {Function} callback
-     */
-    ClassicAnimation.prototype.onComplete = function (callback) {
-        if (typeOf.func(callback)) {
-            this.oncomplete = callback;
-        } else if (ENABLE_DEBUG) {
-            console.warn("onComplete: callback is not a function : %o", callback);
-        }
-    };
-
-    /**
-     * Установка функции, которая исполнится, когда анимация начнет проигрываться
-     * @param {Function} callback
-     */
-    ClassicAnimation.prototype.onStart = function (callback) {
-        if (typeOf.func(callback)) {
-            this.onstart = callback;
-        }
-    };
-
-    /**
-     * Установка смягчения анимации при прогрессе.
-     * Возможно установить особое смягчение для свойства (на протяжении всей анимации).
-     *
-     * Установленное смягчение будет использовано,
-     * если прогресс по проходу будет соответствовать неравенству:
-     * ТЕКУЩИЙ_КЛЮЧЕВОЙ_КАДР <= ПРОГРЕСС_ПО_ПРОХОДУ < СЛЕДУЮЩИЙ_КЛЮЧЕВОЙ_КАДР
-     * Метод устанавливает смягчение для "текущего" (см. неравенство) ключевого кадра.
-     *
-     * При установке смягчения для свойства параметр прогресса игнорируется.
-     * (!) Абсциссы первой и второй точек для кубической кривой должны принадлежать промежутку [0, 1].
-     *     *
-     * @param {(Function|Array|string)} timingFunction временная функция CSS, JS функция или алиас смягчения
-     * @param {(number|string)=} position прогресс по проходу в процентах (по умол. не зваисит от прогресса)
-     * @param {string=} property для какого свойства устанавливается (по умол. для всех)
-     *
-     * @see cubicBezierAliases
-     * @see cubicBezierApproximations
-     */
-    ClassicAnimation.prototype.easing = function (timingFunction, position, property) {
-
-        /**
-         * Временной кадр, если указываем смягчение для него
-         * @type {{key: number, properties: Object, easing: Function}}
-         * */
-        var keyframe;
-        /**
-         * Функция смягчения
-         * @type {(Function|CubicBezier|Steps)}
-         */
-        var easing;
-        /**
-         * Аргументы к временной функции
-         * @type {Array}
-         */
-        var points;
-        /**
-         * для выделения алиасов
-         * ease-in -> easeIn
-         * @type {string}
-         */
-        var camelCased;
-        /**
-         * строка временной функции css без пробелов
-         * @type {string}
-         */
-        var trimmed;
-        /**
-         * Количество ступеней лестничной функции
-         * @type {number}
-         */
-        var stepsAmount;
-        /**
-         * Отсчитывать ли ступени лестничной функции от старта (или с конца)
-         * @type {boolean}
-         */
-        var countFromStart;
-        /**
-         * Числовое представление прогресса
-         * @type {number}
-         */
-        var key;
-
-        if (typeOf.func(timingFunction)) {
-            easing = /** @type {Function} */ (timingFunction);
-        } else if (typeOf.string(timingFunction)) {
-            // alias или CSS timing-function
-
-            trimmed = trim(/** @type {string} */ (timingFunction) );
-            camelCased = camelCase(trimmed);
-
-            if (camelCased in cubicBezierApproximations) {
-                // алиас функции приближения
-                easing = cubicBezierApproximations[camelCased];
-            } else if (camelCased in cubicBezierAliases) {
-                // алиас к точкам
-                points = cubicBezierAliases[camelCased];
-            } else {
-                // строка временной функции css
-                if (cubicBezierReg.test(trimmed)) {
-                    points = trimmed.match(cubicBezierReg)[1].split(",");
-                } else if (stepsReg.test(trimmed)) {
-                    points = trimmed.match(stepsReg)[1].split(",");
-                }
-            }
-
-            if (points) {
-                // переданы аргументы к временным функциям.
-                if (points.length === 4) {
-                    // 4 аргумента - это кубическая кривая Безье
-                    points = map(points, parseFloat);
-                    // абсциссы точек должны лежать в [0, 1]
-                    if (inRange(points[0], 0, 1, true) && inRange(points[2], 0, 1, true)) {
-                        easing = new CubicBezier(points[0], points[1], points[2], points[3]);
-                    }
-                } else if (points.length === 2) {
-                    // 2 аргумента - лестничная функция
-                    stepsAmount = parseInt(points[0], 10);
-                    countFromStart = points[1] === "start";
-                    if (typeOf.number(stepsAmount)) {
-                        easing = new Steps(stepsAmount, countFromStart);
-                    }
-                }
-            }
-
-        }
-
-        if (typeOf.func(easing) || instanceOf(easing, CubicBezier) || instanceOf(easing, Steps)) {
-            if (typeOf.string(property)) {
-                this.specialEasing[/** @type {string} */(property)] = easing;
-            } else {
-                if (typeOf.undefined(position)) {
-                    this.smoothing = easing;
-                } else {
-                    key = normalizeKey(/** @type {(number|string)} */(position));
-                    if (typeOf.number(key)) {
-                        // указываем в процентах, используем в долях.
-                        key *= PERCENT_TO_FRACTION;
-                        keyframe = this.lookupKeyframe(key) || this.addKeyframe(key);
-                        keyframe.easing = easing;
-                    }
-                }
-            }
-        } else if (ENABLE_DEBUG) {
-            console.warn('easing: cannot form a function from arguments %o', timingFunction);
-        }
-    };
-
-    /**
-     * Установка направления анимации
-     * Значение "normal" соответствует возрастанию прогресса от 0 до 1 при каждом проходе
-     * Значение "reverse" соответствует убыванию прогресса от 1 до 0 при каждом проходе
-     * Значение "alternate" соответствует направлению "normal" для нечётных проходов и "reverse" для чётных
-     * Значение "alternate-reverse" соответствует направлению "reverse" для нечётных проходов и "normal" для чётных
-     * @see DEFAULT_DIRECTION
-     * @param {string} animationDirection
-     */
-    ClassicAnimation.prototype.direction = function (animationDirection) {
-
-        if (animationDirection === DIRECTION_NORMAL ||
-            animationDirection === DIRECTION_REVERSE ||
-            animationDirection === DIRECTION_ALTERNATE ||
-            animationDirection === DIRECTION_ALTERNATE_REVERSE) {
-
-            this.animationDirection = animationDirection;
-
-        } else if (ENABLE_DEBUG) {
-            console.log('direction: invalid value "' + animationDirection + '"');
-        }
-    };
-
-    /**
-     * Установка задержки старта
-     * Если значение положительное, старт анимации будет отложен на численное представление.
-     * Если отрицательное, то будет считаться, что прошло уже столько времени со старта.
-     * @param {(number|string)} delay
-     */
-    ClassicAnimation.prototype.delay = function (delay) {
-        var numericDelay = parseTimeString(delay);
-        if (typeOf.number(numericDelay)) {
-            this.delayTime =/** @type {number} */ (numericDelay);
-        } else if (ENABLE_DEBUG) {
-            console.warn('delay: cannot parse value "%s"', delay);
-        }
-    };
-
-    /**
-     * Установка режима заполнения
-     * Значение "backwards" соответствует отрисовке значений
-     * начального ключевого кадра сразу после старта (и перед самим анимированием)
-     * Значение "forwards" соответствует отрисовке значений
-     * конечного ключевого кадра после окончания анимации.
-     * Значение "none" не соответствует ни одному из значений;
-     * Значение "both" соответствует и первому, и второму одновременно.
-     * @param {string} fillMode
-     * @see DEFAULT_FILLMODE
-     */
-    ClassicAnimation.prototype.fillMode = function (fillMode) {
-
-        if (fillMode === FILLMODE_FORWARDS ||
-            fillMode === FILLMODE_BACKWARDS ||
-            fillMode === FILLMODE_BOTH ||
-            fillMode === FILLMODE_NONE) {
-
-            this.fillingMode = fillMode;
-
-        } else if (ENABLE_DEBUG) {
-            console.log('fillMode: invalid value "' + fillMode + '"');
-        }
-    };
-
-    /**
-     * Установка количества проходов цикла анимации.
-     * Значение "infinite" соответствует бесконечному числу повторений анимации.
-     * Дробные значения соответствуют конечному значению прогресса по проходу.
-     * Отрицательные числовые значения игнорируются.
-     * @param {string} iterations
-     * @see DEFAULT_ITERATIONCOUNT
-     */
-    ClassicAnimation.prototype.iterationCount = function (iterations) {
-
-        /**
-         * Числовое представление
-         * @type {number}
-         */
-        var numericIterations;
-
-        // исключение составляет специальное значение
-        if (iterations === ITERATIONCOUNT_INFINITE) {
-            numericIterations = Number.POSITIVE_INFINITY;
-        } else {
-            numericIterations = parseFloat(iterations);
-            if (!isFinite(numericIterations) || numericIterations < 0) {
-                if (ENABLE_DEBUG) {
-                    console.log('iterationCount: passed iterations is not a number or is negative "' + iterations + '"');
-                }
-                return;
-            }
-        }
-
-        this.iterations = numericIterations;
-        this.integralIterations = floor(numericIterations);
-    };
-
-    /**
-     * Старт анимации
-     */
-    ClassicAnimation.prototype.start = function () {
-
-        if (this.delayTime > 0) {
-            if (ENABLE_DEBUG) {
-                console.log('start: ' + this.animationId + ' has positite delay "' + this.delayTime + '" ms');
-            }
-            setTimeout(bind(function () {
-                var self = /** @type {ClassicAnimation} */(this);
-                self.timer.start();
-                self.onstart();
-            }, this.timer), this.delayTime);
-        } else {
-            if (ENABLE_DEBUG) {
-                console.log('start: ' + this.animationId + ' has non-positite delay "' + this.delayTime + '" so starting right now.');
-            }
-            this.timer.start();
-        }
-
-        // запоминаем текущие значения анимируемых свойств для каждого элемента
-        each(this.targets, function (element) {
-
-            var id = element.getAttribute(DATA_ATTR_NAME);
-            var startingValues = this.startingValues[id];
-
-            each(this.animatedProperties, function (special_value, propertyName) {
-                var currentPropertyValue = css(element, propertyName);
-                startingValues[propertyName] = normalize(element, propertyName, currentPropertyValue, false);
-            }, this);
-
-        }, this);
-
-        this.started = now();
-        this.tick(this.started);
-
-        if (ENABLE_DEBUG) {
-            console.log('start: animation "' + this.animationId + '" started');
-        }
-    };
-
-    /**
-     * Остановка анимации
-     */
-    ClassicAnimation.prototype.stop = function () {
-
-        var fillsForwards, endFractionalTime;
-
-        this.timer.stop();
-
-        fillsForwards = this.fillingMode === FILLMODE_FORWARDS ||this.fillingMode === FILLMODE_BOTH;
-
-        if (fillsForwards) {
-            endFractionalTime = this.needsReverse(this.iterations) ? 1.0 : 0.0;
-            if (ENABLE_DEBUG) {
-                console.log('stop: animation fills forwards and has direction "' + this.animationDirection + '" and iteration count "' + this.iterations + '" so fetching with keyframe "' + endFractionalTime + '"');
-            }
-            this.fetch(endFractionalTime);
-            this.render();
-        }
-        //TODO fillMode: none
-
-        if (ENABLE_DEBUG) {
-            console.log('stop: animation "' + this.animationId + '" stopped');
-        }
-
-    };
-
-     /**
-     * Установка функции, которая будет выполняться на каждом шаге анимации
-     * @param {Function} callback
-     */
-    ClassicAnimation.prototype.onStep = function (callback) {
-       if (typeOf.func(callback)) {
-           this.onstep = callback;
-       }
-    };
-
-    /**
-     * Установка значения свойства при указанном прогрессе
-     * Для установки смягчения используется метод easing
-     * @param {string} name имя свойства
-     * @param {string} value значение свойства
-     * @param {(number|string)=} position строка прогресса в процентах (по умол. 100%)
-     * @see ClassicAnimation.easing
-     */
-    ClassicAnimation.prototype.propAt = function (name, value, position) {
-
-        var keyframe;
-        /** @type {(number|string)} */
-        var key;
-
-        key = typeOf.undefined(position) ? keyAliases["to"] : normalizeKey(/** @type {(number|string)} */(position));
-        // в долях
-        key *= PERCENT_TO_FRACTION;
-
-        if (!typeOf.number(key)) {
-            if (ENABLE_DEBUG) {
-                console.warn('propAt: passed keyframe key is invalid "%s"', position);
-            }
-            return;
-        }
-
-        keyframe = this.lookupKeyframe(key) || this.addKeyframe(key);
-        this.animatedProperties[name] = SPECIAL_VALUE;
-        keyframe.properties[name] = value;
-    };
-
-    /*
-    *   Приватные методы.
-    * */
-
-    /**
-     * Добавит ключевой кадр на указанном прогрессе по проходу в долях и вернёт его
-     * @param {number} position
-     * @param {Object=} properties
-     * @param {Function=} easing
-     * @private
-     */
-    ClassicAnimation.prototype.addKeyframe = function (position, properties, easing) {
-
-        var keyframe;
-        var keyframes;
-
-        if (typeOf.number(position)) {
-            keyframe = new Keyframe(position, properties, easing);
-            keyframes = this.keyframes;
-            keyframes.push(keyframe);
-            bubbleSort(/** @type {Array} */(keyframes), compareKeyframes);
-        }
-
-        return keyframe;
-    };
-
-    /**
-     * Попытается найти в коллекции ключевой кадр
-     * с указанным прогрессом по проходу (в долях)
-     * @param {number} position
-     * @return {Object}
-     * @private
-     */
-    ClassicAnimation.prototype.lookupKeyframe = function (position) {
-        var keyframe, index;
-        index = binarySearch(/** @type {Array} */(this.keyframes), position, function (key, keyframe) {
-            return key - keyframe.key;
-        });
-        keyframe = this.keyframes[index];
-        return keyframe;
-    };
-
-    /**
-     * Высчитает значения свойств при указанном прогрессе про проходу
-     * @param {number} fractionalTime прогресс по проходу ( [0, 1] )
-     * @return {undefined}
-     * @private
-     */
-    ClassicAnimation.prototype.fetch = function (fractionalTime) {
-
-        var keyframes, firstKeyframe, secondKeyframe, from, to;
-        var offset, scale;
-        var timingFunction, index, easing;
-        keyframes = this.keyframes;
-
-        /*
-         * Поиск функции смягчения для текущего ключевого кадра
-         */
-        timingFunction = this.smoothing;
-
-        index = binarySearch(/**@type {Array}*/(keyframes), fractionalTime, easingSearchCallback);
-
-        if (index !== -1 && keyframes[index].easing !== noop) {
-            timingFunction = keyframes[index].easing;
-        }
-
-        /**
-         *  информация о вычисленных значениях
-         *  для каждого элемента
-         *  */
-        each(this.targets, function (element) {
-
-            var id, startingValues, currentValues;
-
-            id = element.getAttribute(DATA_ATTR_NAME);
-            startingValues = this.startingValues[id];
-            currentValues = this.currentValues[id];
-
-            each(this.animatedProperties, function (_, propertyName) {
-
-                var value, individualFractionalTime;
-
-                /*
-                 * Поиск двух ближайших ключевых кадров
-                 * для которых задано значение свойства
-                 */
-                firstKeyframe = keyframes[0];
-                secondKeyframe = keyframes[keyframes.length - 1];
-
-                //TODO было бы неплохо заменить линейный поиск на бинарный
-                each(keyframes, function (keyframe) {
-                    // специальное значение для прекращения обхода
-                    var STOP_ITERATION = false;
-
-                    var key = /** @type {number} */ (keyframe.key);
-                    if (propertyName in keyframe.properties) {
-                        if (fractionalTime < key || (fractionalTime === 1.0 && key === 1.0)) {
-                            secondKeyframe = keyframe;
-                            return STOP_ITERATION;
-                        }
-                        firstKeyframe = keyframe;
-                    }
-                    return !STOP_ITERATION;
-                });
-
-                offset = firstKeyframe.key;
-                scale = 1.0 / (secondKeyframe.key - firstKeyframe.key);
-                individualFractionalTime = (fractionalTime - offset) * scale;
-
-                if (instanceOf(timingFunction, CubicBezier)) {
-                    easing = /** @type {CubicBezier} */(timingFunction).calc(individualFractionalTime);
-                } else if (instanceOf(timingFunction, Steps)) {
-                    easing = /** @type {Steps} */(timingFunction).calc(individualFractionalTime);
-                } else {
-                    easing = timingFunction(individualFractionalTime);
-                }
-                easing = round(easing, this.digits);
-
-                if (firstKeyframe.properties[propertyName] === SPECIAL_VALUE) {
-                    from = startingValues[propertyName];
-                } else {
-                    from = firstKeyframe.properties[propertyName];
-                    from = normalize(element, propertyName, from, false);
-                }
-
-                if (secondKeyframe.properties[propertyName] === SPECIAL_VALUE) {
-                    to = startingValues[propertyName];
-                } else {
-                    to = secondKeyframe.properties[propertyName];
-                    to = normalize(element, propertyName, to, false);
-                }
-
-                value = blend(propertyName, /** @type {(Array|number)} */ (from), /** @type {(Array|number)} */(to), easing, this.digits);
-
-                currentValues[propertyName] = value;
-
-            }, this); // end properties loop
-
-        }, this); // end targets loop
-    };
-
-    /**
-     * Отрисует высчитанные значения свойств
-     * @see ClassicAnimation.fetch
-     * @private
-     */
-    ClassicAnimation.prototype.render = function () {
-        each(this.targets, function (element) {
-
-            var id, currentValues;
-            var elementStyle = element.style;
-
-            id = element.getAttribute(DATA_ATTR_NAME);
-            currentValues = this.currentValues[id];
-
-            each(currentValues, function (propertyValue, propertyName) {
-                css(elementStyle, propertyName, propertyValue);
-            }, this);
-
-        }, this);
-    };
-
-    /**
-     * Тик анимации
-     * просчитывание и отрисовка (fetch & render)
-     * @param {number} timeStamp временная метка
-     * @private
-     */
-    ClassicAnimation.prototype.tick = function (timeStamp) {
-
-        var iterationCount, animationProgress;
-        var previousIteration, currentIteration;
-
-        iterationCount = this.iterations;
-        previousIteration = this.currentIteration;
-
-        animationProgress = this.animationProgress = this.computeProgress(timeStamp);
-        currentIteration = this.currentIteration = this.computeIteration(this.animationProgress);
-        this.fractionalTime = this.computeFractionalTime(this.animationProgress, this.currentIteration);
-
-        if (currentIteration !== previousIteration) {
-            // Условие завершения итерации
-            if (ENABLE_DEBUG) {
-                console.log('tick: "' + this.animationId + '" - iteration "' + currentIteration + '" of total "' + iterationCount + '"');
-            }
-            this.oniteration();
-        } else if (animationProgress >= iterationCount) {
-            // Условие завершения анимации
-            this.stop();
-            this.oncomplete();
-            // метод stop сам отрисует конечный кадр, т.к. он зависит от параметра fill-mode
-            return;
-        } else {
-            this.onstep();
-        }
-
-        this.fetch(this.fractionalTime);
-        this.render();
-    };
-
-    /***
-     * Вычислит и вернёт прогресс анимации относительно первой итерации
-     * @param {number} timeStamp временная метка
-     * @return {number} прогресс анимации относительно первой итерации
-     * @private
-     */
-    ClassicAnimation.prototype.computeProgress = function (timeStamp) {
-
-        var animationProgress;
-
-        animationProgress = this.computeElapsedTime(timeStamp) / this.animationTime;
-        animationProgress = round(animationProgress, this.digits);
-
-        return animationProgress;
-    };
-
-    /**
-     * Вычислит номер текущей итерации из прогресса.
-     * @param {number} animationProgress прогресс относительно первого прохода
-     * @return {number}
-     * @private
-     */
-    ClassicAnimation.prototype.computeIteration = function (animationProgress) {
-        var currentIteration;
-        currentIteration = floor(animationProgress);
-        return min(currentIteration, this.integralIterations);
-    };
-
-    /***
-     * Вычислит и вернёт прогресс анимации относительно текущей итерации
-     * @param {number} animationProgress прогресс относительно первой итерации
-     * @param {number} currentIteration номер итерации из прогресса
-     * @return {number} прогресс анимации относительно текущей итерации
-     * @private
-     */
-    ClassicAnimation.prototype.computeFractionalTime = function (animationProgress, currentIteration) {
-
-        var iterationProgress;
-
-        iterationProgress = animationProgress - currentIteration;
-        iterationProgress = min(iterationProgress, MAXIMAL_PROGRESS);
-
-        if (this.needsReverse(currentIteration)) {
-            iterationProgress = MAXIMAL_PROGRESS - iterationProgress;
-        }
-
-        return iterationProgress;
-    };
-
-    /**
-     * Вычислит прошедшее со старта время до временной метки
-     * @param {number} timeStamp временная метка
-     * @return {number}
-     * @private
-     */
-    ClassicAnimation.prototype.computeElapsedTime = function (timeStamp) {
-        var elapsedTime;
-
-        if (timeStamp < HIGHRESOLUTION_TIMER_BOUND) {
-            // высокоточный таймер
-            timeStamp += navigStart;
-        }
-
-        elapsedTime = timeStamp - this.started;
-        elapsedTime += -1 * this.delayTime;
-        elapsedTime = max(elapsedTime, 0);
-        return elapsedTime;
-    };
-
-    /**
-     * Нужно ли обратить прогресс анимации, в зависимости от направления и номера текущей итерации
-     * @param {number} iterationNumber
-     * @return {boolean}
-     * @private
-     */
-    ClassicAnimation.prototype.needsReverse = function (iterationNumber) {
-
-        var needsReverse, iterationIsOdd, direction;
-
-        direction = this.animationDirection;
-        iterationIsOdd = isOdd(iterationNumber);
-
-        needsReverse = direction === DIRECTION_REVERSE;
-        needsReverse = needsReverse || direction === DIRECTION_ALTERNATE && iterationIsOdd;
-        needsReverse = needsReverse || direction === DIRECTION_ALTERNATE_REVERSE && !iterationIsOdd;
-
-        return needsReverse;
-    };
-
-    /* Экспорты */
-    ClassicAnimation.prototype["addElement"] = ClassicAnimation.prototype.addElement;
-    ClassicAnimation.prototype["delay"] = ClassicAnimation.prototype.delay;
-    ClassicAnimation.prototype["duration"] = ClassicAnimation.prototype.duration;
-    ClassicAnimation.prototype["direction"] = ClassicAnimation.prototype.direction;
-    ClassicAnimation.prototype["easing"] = ClassicAnimation.prototype.easing;
-    ClassicAnimation.prototype["fillMode"] = ClassicAnimation.prototype.fillMode;
-    ClassicAnimation.prototype["iterationCount"] = ClassicAnimation.prototype.iterationCount;
-    ClassicAnimation.prototype["onComplete"] = ClassicAnimation.prototype.onComplete;
-    ClassicAnimation.prototype["propAt"] = ClassicAnimation.prototype.propAt;
-    ClassicAnimation.prototype["start"] = ClassicAnimation.prototype.start;
-    ClassicAnimation.prototype["stop"] = ClassicAnimation.prototype.stop;
-    ClassicAnimation.prototype["onStep"] = ClassicAnimation.prototype.onStep;
-    ClassicAnimation.prototype["onStart"] = ClassicAnimation.prototype.onStart;
-
-/*---------------------------------------*/
-
-
-    // Глобальные экспорты
-    var melAnim = window["melAnim"] = animate;
-    melAnim["Animation"] = Animation;
-    melAnim["CSSAnimation"] = CSSAnimation;
-    melAnim["ClassicAnimation"] = ClassicAnimation;
-
-})(window);
+    var melAnim = animate;
+    goog.global['melAnim'] = melAnim;
+    melAnim['Animation'] = AnimationWrap;
+    melAnim['Ticker'] = Ticker;

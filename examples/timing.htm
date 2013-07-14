@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8"/>
+    <title> melAnim.js test </title>
+    <style>
+        article, aside, figure, footer, header, hgroup, menu, nav, section {
+            display: block;
+        }
+
+        .css {
+        }
+
+        .anim {
+            border: 1px black solid;
+            position: absolute;
+            width: 10px;
+        }
+
+        body {
+            background-color: gray;
+            padding: 0px;
+            position: relative;
+            height: 450px;
+            border: 1px #ff0000 dashed;
+            margin-top: 50px;
+        }
+    </style>
+    <script type="text/javascript" src="../dist/mel-anim.compiled.js"></script>
+</head>
+<body>
+
+<div style="top: 10px; border-width: 1px; width: 200px" class="anim css" id="css">Anim me ONE!</div>
+
+
+<script type="text/javascript">
+
+    // предполагаемое время анимации
+    var animationTime = 3 * 1e3;
+
+    var forceClassic = true;
+    var maxFPS = false;
+
+    melAnim.Ticker.ignoreReflow(!maxFPS);
+    maxFPS && melAnim.Ticker.fps(100);
+
+    var element = document.getElementById("css");
+
+    var anim = new melAnim.Animation(element);
+
+    anim.setClassicMode(forceClassic);
+
+    anim.propAt("opacity", "0");
+    anim.easing("ease-in-out");
+
+    anim.duration(animationTime + "ms");
+
+    anim.onComplete(function () {
+        var ended = melAnim.now();
+        var delta = Math.floor(ended - started);
+        var epsilon = 1e2;
+        var coef = (Math.floor((delta / animationTime) * epsilon) / epsilon);
+        document.body.style.backgroundColor = coef === 1 ? 'green' : 'red';
+        document.body.innerHTML = delta + ' / ' + animationTime + ' = ' + coef;
+    });
+
+    var started = melAnim.now();
+
+    anim.start();
+
+</script>
+</body>
+</html>

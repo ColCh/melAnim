@@ -1,102 +1,90 @@
-    var
+    /**********************************
+     *      ОБЩИЕ ВВОДНЫЕ ПЕРЕМЕННЫЕ
+     * ********************************/
 
-        /**
-         * Префикс к разным строкам, которые не могут начинаться с числа
-         * @type {string}
-         * @const
-         * */
-        mel = "melAnimation",
+    /** @const */
+    var mel = "melAnimation";
 
-        /**
-         * Шорткат для document
-         * @type {Document}
-         * @const
-         * */
-        doc = window.document,
+    /** @type {number} */
+    var counter = 0;
 
-        /**
-         * Правильная undefined.
-         * @type {undefined}
-         * @const
-         */
-        undefined,
+    /** @const */
+    var rootElement = 'document' in goog.global ? document.documentElement:null;
 
-        /**
-         * Шорткат для объекта отладочного вывода
-         * @inheritDoc
-         */
-        console = window.console,
 
-        /**
-         * Шорткат для корневого элемента html
-         * для делегирования событий анимации.
-         * @const
-         */
-        rootElement = doc.documentElement,
+    /**
+     * Абстрактная рега для парсинга CSS функций (в том числе transform-функций)
+     * @type {RegExp}
+     * @const
+     * @example
+     *  skewX(3deg, 5deg) ---> [ "skewX(3deg, 5deg)", "skewX", "3deg, 5deg" ]
+     *  steps(4, start) ---> [ "steps(4, start)", "steps", "3, start" ]
+     *  rgb(1, 2, 3) ---> [ "rgb(1, 2, 3)", "rgb", "1, 2, 3" ]
+     */
+    var cssFunctionReg = new RegExp([
+        "([\\w-]+?)",  // Сама функция
+        "\\(",
+            "([^)]*?)", // Аргументы к функции
+        "\\)"
+    ].join(""));
 
-        /**
-         * Стиль, где можно смотреть CSS-свойства
-         * @type {CSSStyleDeclaration}
-         * @const
-         */
-        dummy = rootElement.style,
+    /**
+     * @const
+     * @type {number}
+     */
+    var FUNCREG_SOURCE = 0;
+    /**
+     * @const
+     * @type {number}
+     */
+    var FUNCREG_FUNC = 1;
+    /**
+     * @const
+     * @type {number}
+     */
+    var FUNCREG_ARGS = 2;
 
-        /**
-         * Вендорный префикс к текущему браузеру
-         * @type {string}
-         */
-        prefix,
+    /**
+     * Разделитель аргументов в функциях CSS
+     * ( аргумент в String.split )
+     * @const
+     * @type {string}
+     */
+    var cssFuncArgsSeparator = ",";
 
-        /**
-         * Вендорный префикс к текущему браузеру в нижнем регистре
-         * @type {string}
-         */
-        lowPrefix,
+    /**
+     * Регвыр для выделения численного значения и размерности у значений CSS свойств
+     * Вывод:
+     *      [  0: SOURCE, 1: NUMERIC_VALUE, 2: PROPERTY_DIMENSION  ]
+     * @type {RegExp}
+     * @const
+     * @example
+     *      "2" ---> ["2", "2", ""]
+     *      "2px" ---> ["2px", "2", "px"]
+     */
+    var cssNumericValueReg = new RegExp([
+        "^",
+            "(",
+                "-?\\d*\\.?\\d+",   // Численное значение как пригодный аргумент в parseFloat
+            ")",
+            "(",
+                ".*",               // Размерность свойства
+            ")",
+        "$"
+    ].join(""));;
 
-        /**
-         * Регвыр для выделения численного значения и размерности у значений CSS свойств
-         * @type {RegExp}
-         * @const
-         */
-        cssNumericValueReg = /(-?\d*\.?\d+)(.*)/,
-
-        /**
-         * Инкремент для генерации уникальной строки
-         * @type {number}
-         */
-        animCount = 0,
-
-        /**
-         * Пустая функция
-         * @const
-         */
-        noop = function () {},
-
-        /**
-         * Регвыр для временной функции CSS кубической кривой Безье
-         * @type {RegExp}
-         * @const
-         */
-        cubicBezierReg = /^cubic-bezier\(((?:\s*\d*\.?\d+\s*,\s*){3}\d*\.?\d+\s*)\)$/i,
-
-        /**
-         * Регвыр для временной функции CSS лестничной функции
-         * @type {RegExp}
-         * @const
-         */
-        stepsReg = /^steps\((\d+(?:,\s*(?:start|end))?)\)$/i,
-
-        /**
-         * Свой тег <style> для возможности CSS3 анимаций
-         * Используется так же в анимации на JavaScript для ускорения.
-         * @type {HTMLStyleElement}
-         * @const
-         */
-        style = doc.getElementsByTagName("head")[0].parentNode.appendChild(doc.createElement("style")),
-
-        /**
-         * Каскадная таблица из тега <style>
-         * @type {CSSStyleSheet}
-         * @const
-         */
-        stylesheet = style.sheet || style.styleSheet;
+    /**
+     * @const
+     * @type {number}
+     */
+    var VALREG_SOURCE = 0;
+    /**
+     * @const
+     * @type {number}
+     */
+    var VALREG_VALUE = 1;
+    /**
+     * @const
+     * @type {number}
+     */
+    var VALREG_DIMENSION = 2;

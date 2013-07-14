@@ -1,0 +1,2 @@
+#!/bin/sh
+dot -Tpng $0 -o $0.png

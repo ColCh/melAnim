@@ -1,0 +1,457 @@
+    /* ------------------   РАБОТА С ЦВЕТАМИ   --------------------- */
+    toNumericValueHooks["color"] = function (elem, propertyName,  propertyValue, vendorizedPropName) {
+        var red, green, blue;
+
+        if (propertyValue in colorsAliases) {
+            // Алиас
+            return colorsAliases[ propertyValue ];
+        } else if (propertyValue.indexOf("#") !== -1) {
+            // HEX
+            var hex = parseInt(propertyValue, 16);
+            red = hex >> 16 & 0xFF;
+            green = hex >> 8 & 0xFF;
+            blue = hex & 0xFF;
+            return [ red, green, blue ];
+        } else {
+            // Цветовая CSS-функция
+            // RGB, RGBa, HSL, HSLa ...
+            var matched = propertyValue.match(cssFunctionReg);
+            var func = matched[1];
+            var args = removeSpaces(matched[2]).split(cssFuncArgsSeparator);
+
+            for (var i = 0; i < args.length; i++) {
+                matched = args[i].match(cssNumericValueReg);
+                args[i] = [ parseInt(matched[1]), matched[2] ];
+            }
+
+            if (func in colorFunctions) {
+                return colorFunctions[func](args);
+            }
+
+            return [ 0, 0, 0 ];
+
+        }
+    };
+
+
+    /** @type {function(number, number, number): number} */
+    function hueToRGB (m1, m2, hue) {
+        if (hue < 0) {
+            hue = hue + 1;
+        }
+        if (hue > 1) {
+            hue = hue - 1;
+        }
+        if (hue * 6 < 1) {
+            return m1 + (m2 - m1) * hue * 6;
+        }
+        if (hue * 2 < 1) {
+            return m2;
+        }
+        if (hue * 3 < 2) {
+            return m1 + (m2 - m1) * (2/3 - hue) * 6;
+        }
+        return m1;
+    }
+
+    /** @enum {function (!Array.<number>): !Array.<number>} */
+    var colorFunctions = {
+
+        // http://www.w3.org/TR/2011/REC-css3-color-20110607/#hsl-color
+        "hsl": function (args) {
+            var hue = args[0][0];
+            var saturation = args[1][0] / 100;
+            var lightness = args[2][0] / 100;
+            var m2 = (lightness <= 0.5) ? lightness * (saturation + 1) : (lightness + saturation - lightness * saturation);
+            var m1 = lightness * 2 - m2;
+            var red = hueToRGB(m1, m2, hue + 1/3) * 255;
+            var green = hueToRGB(m1, m2, hue) * 255;
+            var blue = hueToRGB(m1, m2, hue - 1/3) * 255;
+            return [ red, green, blue ];
+        },
+
+        "rgb": function (args) {
+
+            var red, green, blue;
+
+            for (var i = 0; i < args.length; i++) {
+                // Цветовой канал передан в процентах
+                if (args[i][1] === "%") {
+                    //  переводим из проценты в доли
+                    args[i][0] /= 100;
+                    // умножаем на максимум
+                    args[i][0] *= 255;
+                }
+                // проверяем интервал
+                if (args[i][0] < 0) {
+                    args[i][0] = 0;
+                } else if (args[i][0] > 255) {
+                    args[i][0] = 255;
+                }
+            }
+
+            red = args[0][0];
+            green = args[1][0];
+            blue = args[2][0];
+
+            return [ red, green, blue ];
+        }
+
+    };
+
+
+    toStringValueHooks["color"] = function (elem, propertyName, numericValue, vendorizedPropName) {
+        return "rgb" + "(" + numericValue + ")";
+    };
+
+    blendHooks["color"] = function (from, to, easing, current, id) {
+        var changed = false;
+
+        current[id] = id in current ? current[id] : ( current[id] = [ 0, 0, 0 ] );
+
+        // Цветовой канал лежит в интервале [ 0, 255 ]
+        if (easing < MINIMAL_PROGRESS) {
+            easing = MINIMAL_PROGRESS;
+        } else if (easing > MAXIMAL_PROGRESS) {
+            easing = MAXIMAL_PROGRESS;
+        }
+
+
+        for (var i = 0; i < 3; i++) {
+            changed = blend(from[i], to[i], easing, current[id], '' + i) || changed;
+        }
+
+        return changed;
+    };
+
+
+    /* ------------------   РАБОТА С TRANSFORM   --------------------- */
+
+    var TRANSFORMDATA_ROTATE = 0;
+
+    var TRANSFORMDATA_SCALE_X = 1;
+    var TRANSFORMDATA_SCALE_Y = 2;
+
+    var TRANSFORMDATA_SKEW_X = 3;
+    var TRANSFORMDATA_SKEW_Y = 4;
+
+    var TRANSFORMDATA_TRANSLATE_X = 5;
+    var TRANSFORMDATA_TRANSLATE_Y = 6;
+
+    function TransformData () {
+        // Матрица преобразований
+        this.matrix = [ 0, 0, 0, 0, 0, 0 ];
+        // Декомпозированные из матрицы данные
+        this.data = [ 0, 100, 100, 0, 0, 0, 0 ];
+    }
+
+    TransformData.prototype.setData = function (value) {
+
+        if (value === "none" || value === "") {
+            return;
+        }
+
+        var matched;
+
+        var transforms = value.split(cssTransformFuncReg);
+
+        for (var i = 0; i < transforms.length; i++) {
+
+            matched = transforms[i].match(cssFunctionReg);
+
+            var func = matched[1]+"";
+            var args = removeSpaces(matched[2]+"").split(cssFuncArgsSeparator);
+
+            this.setters[func](args, this.data);
+        }
+
+    };
+
+    /**
+     * @enum {function (!Array, !Array.<Array>)}
+     */
+    TransformData.prototype.setters = {
+
+        "scaleX": function (args, data) {
+            data[TRANSFORMDATA_SCALE_X] = parseFloat(args[0]) * 100;
+        },
+        "scaleY": function (args, data) {
+            data[TRANSFORMDATA_SCALE_Y] = parseFloat(args[0]) * 100;
+        },
+        "scale": function (args, data) {
+            data[TRANSFORMDATA_SCALE_X] = parseFloat(args[0]) * 100;
+            data[TRANSFORMDATA_SCALE_Y] = parseFloat(args[1]) * 100;
+        },
+
+        "rotate": function (args, data) {
+            data[TRANSFORMDATA_ROTATE] = toDeg(args[0]);
+        },
+
+        "skewX": function (args, data) {
+            data[TRANSFORMDATA_SKEW_X] = parseInt(args[0]);
+        },
+        "skewY": function (args, data) {
+            data[TRANSFORMDATA_SKEW_Y] = parseInt(args[0]);
+        },
+        "skew": function (args, data) {
+            data[TRANSFORMDATA_SKEW_X] = parseInt(args[0]);
+            data[TRANSFORMDATA_SKEW_Y] = parseInt(args[1]);
+        },
+
+        "translateX": function (args, data) {
+            data[TRANSFORMDATA_TRANSLATE_X] = parseFloat(args[0]);
+        },
+        "translateY": function (args, data) {
+            data[TRANSFORMDATA_TRANSLATE_Y] = parseFloat(args[0]);
+        },
+        "translate": function (args, data) {
+            data[TRANSFORMDATA_TRANSLATE_Y] = parseFloat(args[0]);
+            data[TRANSFORMDATA_TRANSLATE_X] = parseFloat(args[1]);
+        },
+
+
+        "matrix": function (args, data) {
+
+            //       0  1  2  3  4  5
+            //matrix(a, b, c, d, e, f)   <--- 2D
+
+            for (var i = 0; i < args.length; i++) {
+                args[i] = parseFloat(args[i]);
+            }
+
+            // Проводим декомпозицию матрицы
+
+            data[ TRANSFORMDATA_TRANSLATE_X ] = args[4];
+            data[ TRANSFORMDATA_TRANSLATE_Y ] = args[5];
+
+            var row_1_length = Math.sqrt(args[0] * args[0] + args[1] * args[1]);
+
+            data[ TRANSFORMDATA_SCALE_X ] = row_1_length * 100;
+
+            // Нормализируем первый столбец
+            args[0] /= row_1_length;
+            args[1] /= row_1_length;
+
+            var dot_product_1 = args[0] * args[2] + args[1] * args[3];
+
+            data[ TRANSFORMDATA_SKEW_X ] = toDegModificators["rad"]( dot_product_1 );
+
+            // Combine
+            args[2] -= dot_product_1 * args[0];
+            args[3] -= dot_product_1 * args[1];
+
+            var row_2_length = Math.sqrt(args[2] * args[2] + args[3] * args[3]);
+
+            data[ TRANSFORMDATA_SCALE_Y ] = row_2_length * 100;
+
+            // Нормализируем второй столбец
+            args[2] /= row_2_length;
+            args[3] /= row_2_length;
+
+
+            var dot_product_2 = args[0] * args[4] + args[1] * args[5];
+
+            data[ TRANSFORMDATA_SKEW_Y ] = toDegModificators["rad"]( dot_product_2 );
+
+            // Combine
+            args[4] -= dot_product_2 * args[0];
+            args[5] -= dot_product_2 * args[1];
+
+            var row_3_length = Math.sqrt(args[4] * args[4] + args[5] * args[5]);
+
+            // Нормализируем третий столбец
+            args[4] /= row_3_length;
+            args[5] /= row_3_length;
+
+            data[ TRANSFORMDATA_ROTATE ] = toDegModificators["rad"]( Math.atan2(args[1], args[0]) );
+
+         }
+
+    };
+
+    TransformData.toArray = function () {
+        //TODO экспорт TransformData как матрицу
+        return this.matrix;
+    };
+
+    TransformData.prototype.toString = function () {
+        var data = this.data;
+
+        var currentTransforms = "";
+
+        if (data[TRANSFORMDATA_SCALE_X] !== 100 || data[TRANSFORMDATA_SCALE_Y] !== 100) {
+            currentTransforms += " " +  "scale(" + data[TRANSFORMDATA_SCALE_X] / 100 + "," + data[TRANSFORMDATA_SCALE_Y] / 100 + ")";
+        }
+
+        if ( data[TRANSFORMDATA_ROTATE] % 360 !== 0 ) {
+            currentTransforms += " " + "rotate(" + data[TRANSFORMDATA_ROTATE] + "deg" + ")";
+        }
+
+        if (data[TRANSFORMDATA_SKEW_X] !== 0 || data[TRANSFORMDATA_SKEW_Y] !== 0 ) {
+            currentTransforms += " " + "skew(" + data[TRANSFORMDATA_SKEW_X] + "deg" + "," + data[TRANSFORMDATA_SKEW_Y] + "deg" + ")";
+        }
+
+        if (data[TRANSFORMDATA_TRANSLATE_X] !== 0 || data[TRANSFORMDATA_TRANSLATE_Y] !== 0) {
+            currentTransforms += " " + "translate(" + data[TRANSFORMDATA_TRANSLATE_X] + "px" + "," + data[TRANSFORMDATA_TRANSLATE_Y] + "px" + ")";
+            console.log("translate(" + data[TRANSFORMDATA_TRANSLATE_X] + "px" + "," + data[TRANSFORMDATA_TRANSLATE_Y] + "px" + ")");
+        }
+
+        return currentTransforms;
+    };
+
+    toNumericValueHooks["transform"] = function (propertyValue) {
+        var transformData = new TransformData();
+        transformData.setData(propertyValue);
+        return transformData;
+    };
+    blendHooks["transform"] = function (from, to, easing, current, id) {
+
+        var changed = false;
+
+        current[id] = id in current ? current[id] : ( current[id] = new TransformData() );
+
+        var data = current[id].data;
+
+        for (var i = 0, m = data.length; i < m; i++) {
+            if (blend(from.data[i], to.data[i], easing, data, '' + i) && !changed) {
+                changed = true;
+            }
+        }
+
+        return changed;
+    };
+
+    /* ------------------   РАБОТА С SHADOW   --------------------- */
+    var SHADOW_X = 0;
+    var SHADOW_Y = 1;
+    var SHADOW_BLUR = 2;
+    var SHADOW_SPREAD = 3;
+    var SHADOW_COLOR = 4;
+
+    function Shadow () {
+        // Initial данные тени - нет смещений, размытия, длины и чёрный цвет
+        this.data = [ 0, 0, 0, 0, [0, 0, 0]];
+    }
+
+    Shadow.prototype.inset = false;
+    Shadow.prototype.isNone = false;
+
+    Shadow.prototype.parse = function (shadow) {
+
+        if (shadow === "none") {
+            this.isNone = true;
+            return;
+        }
+
+        // все параметры тени, кроме цвета
+        var props = shadow.match(/(?:inset\s)?(?:\s*-?\d*\.?\d+\w*\s*){2,4}/)[0];
+        // Цвет в любом формате
+        var color = shadow.replace(props, "");
+
+        this.data[SHADOW_COLOR] = normalizeHooks["color"](null, "color", color, false);
+
+        // Х, У, размытие и длина тени, разделённые пробелом
+        props = props.split(" ");
+
+        var settedData = 0;
+
+        for (var i = 0; i < props.length; i++) {
+            if (props[i] == "inset") {
+                this.inset = true;
+            } else if (cssNumericValueReg.test(props[i])) {
+                // TODO EM, % и другие Length в Shadow.
+                this.data[settedData++] = parseFloat(props[i]) * 10;
+            }
+        }
+
+    };
+
+    Shadow.prototype.toString = function () {
+        var shadow = "";
+        if (this.inset) {
+            shadow += "inset" + " ";
+        }
+        for (var i = 0; i < 4; i++) {
+            if (i > 1 || this.data[i] !== 0) {
+                shadow += (this.data[i] / 10) + "px" + " ";
+            }
+        }
+        shadow += normalizeHooks["color"](null, "color", this.data[SHADOW_COLOR], true);
+        return shadow;
+    };
+
+    toNumericValueHooks["text-shadow"] = toNumericValueHooks["box-shadow"] = function ( propertyValue) {
+        var shadow, shadowList;
+        shadowList = propertyValue.split(/,\s*(?![^\)]+\))/);
+        for (var i = 0; i < shadowList.length; i++) {
+            shadow = new Shadow();
+            shadow.parse(shadowList[i]);
+            shadowList[i] = shadow;
+        }
+        return shadowList;
+    };
+    blendHooks["text-shadow"] = blendHooks["box-shadow"] = function (from, to, easing, current, id) {
+        var changed = false;
+
+        var shadowList = id in current ? current[id] : ( current[id] = [] );
+
+        // Список теней в разный ключевых кадрах может быть
+        // разным, поэтому берём максимум из обоих
+        var m = from.length > to.length ? from.length : to.length;
+
+        var shadow, fromShadow, toShadow;
+
+        for (var k = 0; k < m; k++) {
+
+            if (k in from) {
+                fromShadow = from[k];
+            } else {
+                fromShadow = from[k] = new Shadow();
+                fromShadow.isNone = true;
+            }
+
+            if (k in to) {
+                toShadow = to[k];
+            } else {
+                toShadow = to[k] = new Shadow();
+                toShadow.isNone = true;
+            }
+
+            // по спецификации можно интерполировать значения только
+            // совпадающих по параметру inset теней
+            if ( fromShadow.inset  !== toShadow.inset && !fromShadow.isNone && !toShadow.isNone) {
+                continue;
+            }
+
+            if (k in shadowList) {
+                shadow = shadowList[k];
+            } else {
+                shadow = shadowList[k] = new Shadow();
+                shadow.inset = fromShadow.isNone ? toShadow.inset : toShadow.isNone ? fromShadow.inset : fromShadow.inset && toShadow.inset;
+                changed = true;
+            }
+
+            // Интерполяция всех параметров. кроме цвета
+            for (var i = 0; i < 4; i++) {
+                if (blend(fromShadow.data[i], toShadow.data[i], easing, shadow.data, '' + i) && changed === false) {
+                    changed = true;
+                }
+            }
+
+            // Интерполяция цвета
+            if (blendHooks["color"](fromShadow.data[SHADOW_COLOR], toShadow.data[SHADOW_COLOR], easing, shadow.data, '' + SHADOW_COLOR) && !changed) {
+                changed = true;
+            }
+
+        }
+
+        return changed;
+    };
+
+    /* ------------------   РАБОТА С OPACITY   --------------------- */
+    toNumericValueHooks["opacity"] = function (propertyValue) {
+        return parseFloat(propertyValue) * 100;
+    };
+    toStringValueHooks["opacity"] = function (propertyValue) {
+        return propertyValue / 100 + '';
+    }

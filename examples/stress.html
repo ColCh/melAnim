@@ -1,0 +1,543 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Animation Speed Test</title>
+<style type="text/css">
+
+html, body {
+	overflow:hidden;
+}
+body {
+	background-color:#000000;
+	margin:0px;
+	padding:0px;
+	color:#CCCCCC;
+	font-family:Verdana, Geneva, sans-serif;
+}
+a, a:hover, a:visited {
+	color:#71B200;
+}
+#footer {
+	position:fixed;
+	bottom:0px;
+	background-color:#555;
+	left:0px;
+	width:100%;
+	padding:10px 10px 10px 5px;
+	z-index:1000;
+}
+#fps {
+	float:right;
+	background-color:#CCC;
+	padding:6px;
+	margin-right:14px;
+	color:#CC0000;
+	border-radius: 5px;
+	border-color:#000000;
+	border-style:solid;
+	border-width:1px;
+	font-size:24px;
+}
+#start {
+	width:100px;
+}
+#footer form li {
+	display:block;
+	float:left;
+	margin:10px 5px 5px 5px;
+}
+#instructions {
+	width:70%;
+	margin-left:15%;
+	padding-top:50px;
+	opacity:0;
+}
+#container {
+	position:absolute;
+	top:0;
+	left:0;
+	width:100%;
+	height:100%;
+	overflow:hidden;
+	z-index:-100;
+}
+</style>
+</head>
+
+<body>
+<div id="footer">
+    <div id="fps">0 fps</div>
+	<form id="form">
+    	<li>
+            Dots:
+            <select id="dotQuantity" size="1">
+                <option value="1">1</option>
+                <option value="25">25</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+                <option value="200">200</option>
+                <option value="300">300</option>
+                <option value="400">400</option>
+                <option value="500">500</option>
+                <option value="750">750</option>
+                <option value="1000" selected="selected">1000</option>
+                <option value="1250">1250</option>
+                <option value="1500">1500</option>
+                <option value="2000">2000</option>
+                <option value="2500">2500</option>
+                <option value="3000">3000</option>
+            </select>
+        </li>
+        <li style="display:none">
+            Duration:
+            <select id="duration" size="1">
+                <option value="0.5">0.5 seconds</option>
+                <option value="0.75" selected="selected">0.75 seconds</option>
+                <option value="1">1 second</option>
+                <option value="5">5 seconds</option>
+            </select>
+        </li>
+        <li>
+            Engine:
+            <select id="engine" size="1">
+                <option value="jquery">jQuery</option>
+                <option value="gsap">GSAP (top/left/width/height)</option>
+                <option value="gsaptransform">GSAP (translate/scale)</option>
+	            <option value="melanim1">melAnim JS (translate/scale)</option>
+                <option value="melanim2" selected>melAnim JS (top/left/width/height)</option>
+                <option value="jsmorph">jsMorph (top/left/width/height)</option>
+            </select>
+        </li>
+        <li>
+            <button id="start" type="button" value="test"> START </button>
+        </li>
+    </form>
+</div>
+
+<div id="instructions" style="display: none">
+	<p>Stress test the animation performance of various common JavaScript tools and
+    compare them with GSAP (<a href="http://www.greensock.com/gsap-js/">GreenSock Animation Platform</a>). This test does <strong>not</strong> use a canvas element 
+    (although it certainly could) - it simply animates the left, top, 
+    width, and height css properties of standard image elements because those are supported in virtually all browsers. There is also a version of the GSAP and Zepto tests that use transforms ("translate/scale") instead so that you can compare performance.
+    The goal was to be extremely fair and use the same code for everything except the actual animation. No tricks. 
+    Look at the source for yourself or run your own tests to confirm.</p>
+    <p>Choose the number of dots you'd like to animate and then choose the 
+    engine and click the "START" button below. Watch the <strong>fps</strong> in the lower right 
+    (you want that number high - it is the total average frames per second rendered). 
+    As more dots are animated, you'll see the performance gap widen. Try to push things until the fps drops below 30fps. When the 
+    CPU isn't breaking a sweat, fps should hover around 100fps in most modern browsers.</p>
+    <p>Note: Zepto uses CSS3 transitions which won't work in some browsers (like IE). Also beware that some browsers incorrectly fire requestAnimationFrame events even when the browser clearly isn't updating the screen and/or they handle JS in a different thread, thus 10fps transitions may inaccurately report in JS as running at 50fps. So when you're watching Zepto animate, don't pay much attention to the fps counter because it may be artificially high. Instead, watch the actual animation of the starfield and how smooth it is (or not). </p>
+</div>
+
+<div id="container"></div>
+
+
+<script type="text/javascript" src="./jsMorph-0.5.0.min.js"></script>
+<script type="text/javascript" src="../../GreenSock-JS/src/uncompressed/TweenMax.js"></script>
+<!--
+<script type="text/javascript" src="../../JQCSS/tests/jquery.js"></script>
+-->
+
+<script type="text/javascript" src="../dist/mel-anim.compiled.js"></script>
+<script language="JavaScript" type="text/javascript">
+
+// To make the benchmark results predictable, we replace Math.random
+// with a 100% deterministic alternative.
+Math.random = (function() {
+    var seed = (1e8 * +new Date) | 0;
+    return function() {
+        // Robert Jenkins' 32 bit integer hash function.
+        seed = ((seed + 0x7ed55d16) + (seed << 12))  & 0xffffffff;
+        seed = ((seed ^ 0xc761c23c) ^ (seed >>> 19)) & 0xffffffff;
+        seed = ((seed + 0x165667b1) + (seed << 5))   & 0xffffffff;
+        seed = ((seed + 0xd3a2646c) ^ (seed << 9))   & 0xffffffff;
+        seed = ((seed + 0xfd7046c5) + (seed << 3))   & 0xffffffff;
+        seed = ((seed ^ 0xb55a4f09) ^ (seed >>> 16)) & 0xffffffff;
+        return (seed & 0xfffffff) / 0x10000000;
+    };
+})();
+
+(function() {
+
+	var fps = document.getElementById("fps"),
+		button = document.getElementById("start"),
+		dotQtyInput = document.getElementById("dotQuantity"),
+		durInput = document.getElementById("duration"),
+		engineInput = document.getElementById("engine"),
+		instructions = document.getElementById("instructions"),
+		container = document.getElementById("container"),
+		ticker = (window.TweenLite||{}).ticker,
+		inProgress = false,
+		tests = {},
+		centerX, centerY, dots, rawDots, currentTest, startTime, startFrame, prevUpdate, duration, startingCSS;
+	
+/**
+ * The goal of this test is to compare how various animation engines perform under pressure, taking relatively common
+ * animation tasks and running a lot of them at once to see raw performance. The goal is NOT to figure out the most 
+ * efficient way to move dots in a starfield pattern. 
+ * 
+ * The same code runs everything except the actual tweens themselves. Every test in the "test" 
+ * object has 4 properties:
+ * 
+ * 		- milliseconds [boolean] - true if the duration should be defined in milliseconds
+ * 
+ * 		- wrapDot [function] - when each dot <img> is created, it is passed to the wrapDot() method
+ * 							   and whatever is returned gets stored in the array of dots to tween. This 
+ * 							   is useful to improve performance of things like jQuery because 
+ * 							   instead of passing the dom element to the tween() method (which would require
+ * 							   jQuery to then query the dom and wrap the element in an engine-specific object
+ * 							   before calling animate() on it), a native object can be used. Basically it lets you
+ * 							   cache the dot's wrapper for better performance.
+ * 
+ * 		- tween [function] - This is the core of the whole test. tween() is called for each dot, and the dot is
+ * 							 passed as a parameter. The tween() function should set the dot's cssText to the
+ * 							 startingCSS value (which just places the dot in the middle of the screen and sets its
+ * 							 width/height to 1px) and then after a random delay between 0 and the duration of the tween, 
+ * 							 it should tween the dot at a random angle, altering the left/top values accordingly as
+ * 							 well as the width/height to 32px. Then, after the tween is done, it should call the tween() 
+ * 							 method again for that dot. So the same dot will just continuously tween outward from the 
+ * 							 center at random angles and at random delay values.
+ * 
+ * 		- stop [function] - This function is called when the user stops the test. The dot is passed as a parameter.
+ * 							The function should immediately stop/kill the tween(s) of that dot (or all dots - that's fine too). 
+ * 
+ * I don't claim to be an expert at the various other tweening engines out there, so if there are optimizations
+ * that could be made to make them run better, please let me know. I tried to keep things as fair as possible.
+ * 
+ * Also, if anyone knows how to make a more accurate fps counter that works well with transitions, let me know - currently
+ * several browsers incorrectly dispatch requestAnimationFrame events even when the screen isn't being refreshed, giving 
+ * an artificially high frame rate readout. And some browers don't repaint the screen each time all the elements' styles 
+ * are updated, thus motion can appear a bit jerky even when the fps counter says you're getting a good frame rate. 
+**/
+	
+	
+	// melAnim
+    //window.ENABLE_DEBUG = false;
+    //melAnim.Ticker.ignoreReflow(true);
+    melAnim.Ticker.setFPS(100);
+
+    window.TweenLite && TweenLite.ticker.fps(100);
+    window.TweenLite && TweenLite.ticker.useRAF(false); //I noticed that requestAnimationFrame didn't provide as much accuracy in terms of counting true frame renders, particularly in Chrome. For example, set it to true and then choose a VERY high number of dots for an engine like jQuery and even though it is so bogged down that it doesn't even get to render a single dot mid-point in its tween, the FPS reports as around 10-16fps in Chrome. Apparently the browser is calling the requestAnimationFrame without even rendering the screen! Maybe there's a minimum threshold. In any case, switching requestAnimationFrame off appears to give the most accurate results. However, the default timing mode in TweenLite does use requestAnimationFrame because it has many other benefits, like throttling down when the browser tab is switched.
+
+    // melAnim JS
+
+    var melAnimEasing = "ease-in-cubic";//"ease-in";// "easeInOut";
+
+    // melAnim JS Translate\Scale
+    tests.melanim1 = {
+        milliseconds:true,
+        wrapDot:function(dot) {
+            var anim = new melAnim.Animation();
+            anim.setTarget(dot);
+            anim.setFillMode(0);
+            return anim;
+        },
+        tween:function(dot) {
+
+            var angle = Math.random() * Math.PI * 2;
+
+            var anim = dot;
+
+//            anim.propAt("transform", "scale(1, 1) translate(0px, 0px)", "from");
+            anim.propAt("transform", "translate(0px, 0px)", "from");
+//            anim.propAt("transform", "scale(32, 32) translate(" + (Math.cos(angle) * radius) + "px" + ", " + (Math.sin(angle) * radius) + "px" + ")", "to");
+            anim.propAt("transform", "translate(" + (Math.cos(angle) * radius) + "px" + ", " + (Math.sin(angle) * radius) + "px" + ")", "to");
+
+            anim.delay(Math.random() * duration);
+
+            anim.duration(duration);
+
+            anim.easing(melAnimEasing);
+
+            anim.onComplete(function() {
+                tests.melanim1.tween(dot);
+            });
+
+            anim.start();
+
+        },
+        stop:function(dot) {
+            dot.stop();
+        }
+    };
+
+    // melAnim top/left width/height
+    tests.melanim2 = {
+        milliseconds:true,
+        wrapDot:function(dot) {
+            dot.style.cssText = startingCSS;
+            var anim = new melAnim.Animation();
+            anim.setTarget(dot);
+            anim.setFillMode(0);
+            anim.easing(melAnimEasing);
+            anim.propAt("left", centerX, 0);
+            anim.propAt("top", centerY, 0);
+            anim.setDuration(duration);
+            anim.propAt("width", 1, 0);
+            anim.propAt("width", 32);
+            anim.propAt("height", 1, 0);
+            anim.propAt("height", 32);
+            return anim;
+        },
+        tween:function(dot) {
+
+            var angle = Math.random() * Math.PI * 2;
+
+            var anim = dot;
+
+            anim.delay(Math.random() * duration);
+            anim.propAt("left", Math.cos(angle) * radius + centerX);
+            anim.propAt("top", Math.sin(angle) * radius + centerY);
+
+            anim.onComplete(function() {
+                tests.melanim2.tween(dot);
+            });
+
+            anim.start();
+
+        },
+        stop:function(dot) {
+            dot.stop();
+        }
+    };
+
+    // JWEE top/left width/height
+    tests.jsmorph = {
+        milliseconds:true,
+        wrapDot:function(dot) {
+            var myMorph = new jsMorph(dot, {});
+            return [ dot, myMorph ];
+        },
+        tween:function(info) {
+
+            var angle = Math.random() * Math.PI * 2;
+
+            var dot = info[ 1 ];
+            var elem = info[0];
+
+            dot.concat( elem, {
+                "left": Math.cos(angle) * radius + centerX + 'px',
+                "top": Math.sin(angle) * radius + centerY + 'px',
+                "width": '32px',
+                "height": '32px'
+            }, {
+                duration: duration,
+                delay: Math.random() * duration
+            }, function (x) { return x * x * x }, undefined, undefined, function (elem) {
+                elem.style.cssText = startingCSS;
+                tests.jsmorph.tween(info);
+            });
+
+            dot.start();
+
+        },
+        stop:function(dot) {
+            dot[1].stop();
+        }
+    };
+
+	//jQuery
+
+	tests.jquery = {
+		milliseconds:true,
+		wrapDot:function(dot) {
+			return jQuery(dot); //wrap the dot in a jQuery object in order to perform better (that way, we don't need to query the dom each time we tween - we can just call animate() directly on the jQuery object)
+		},
+		tween:function(dot) {
+			dot[0].style.cssText = startingCSS;
+			var angle = Math.random() * Math.PI * 2;
+			dot.delay(Math.random() * duration).animate({left:Math.cos(angle) * radius + centerX, 
+						 top:Math.sin(angle) * radius + centerY, 
+						 width:32, 
+						 height:32}, duration, "cubicIn", function() { tests.jquery.tween(dot) });
+		},
+		stop:function(dot) {
+			dot.stop(true);
+		}
+	};
+
+	//GSAP (TweenLite) top/left/width/height
+	tests.gsap = {
+		milliseconds:false,
+		wrapDot:function(dot) {
+			return dot; //no wrapping necessary
+		},
+		tween:function(dot) {
+			var angle = Math.random() * Math.PI * 2;
+			dot.style.cssText = startingCSS;
+			TweenLite.to(dot, duration, {css:{left:Math.cos(angle) * radius + centerX, 
+											  top:Math.sin(angle) * radius + centerY,
+											  width:32, 
+											  height:32},
+										 delay:Math.random() * duration,
+										 ease:Cubic.easeIn,
+										 overwrite:"none",
+										 onComplete:tests.gsap.tween,
+										 onCompleteParams:[dot]});
+		},
+		stop:function(dot) {
+			TweenLite.killTweensOf(dot);
+		}
+	};
+	
+	//GSAP (TweenLite) translateX/translateY/scale
+
+	tests.gsaptransform = {
+		milliseconds:false,
+		wrapDot:function(dot) {
+			return dot; //no wrapping necessary
+		},
+		tween:function(dot) {
+			dot.style.cssText = startingCSS;
+			var angle = Math.random() * Math.PI * 2;
+			TweenLite.to(dot, duration, {css:{x:(Math.cos(angle) * radius),
+											  y:(Math.sin(angle) * radius),
+											  scale:32},
+										delay:Math.random() * duration,
+										ease:Cubic.easeIn,
+										overwrite:"none",
+										onComplete:tests.gsaptransform.tween,
+										onCompleteParams:[dot]});
+		},
+		stop:function(dot) {
+			TweenLite.killTweensOf(dot);
+		}
+	};
+
+    /*
+    melAnim.Ticker.attach(updateFPS);
+
+    var prevUpdate, frames;
+
+    function updateFPS() {
+        var now = +new Date;
+        if (!prevUpdate) {
+            prevUpdate = now;
+        } else if (now - prevUpdate > 1000) {
+            prevUpdate = now;
+            fps.innerHTML = frames + " fps";
+            frames = 0;
+        } else {
+            frames = frames || 0;
+            frames++;
+        }
+    }
+    */
+
+
+	
+	function toggleTest() {
+		inProgress = !inProgress;
+		var i;
+		if (inProgress) {
+			
+			currentTest = tests[engineInput.value];
+			centerX =  document.getElementById("container").offsetWidth / 2; //jQuery(window).width() / 2;
+			centerY =  document.getElementById("container").offsetHeight / 2 - 30; //(jQuery(window).height() / 2) - 30;
+			startingCSS = "position:absolute; left:" + centerX + "px; top:" + centerY + "px; width:1px; height:1px;"; 
+			radius = Math.sqrt(centerX * centerX + centerY * centerY);
+			duration = Number(durInput.value);
+			if (currentTest.milliseconds) {
+				duration *= 1000;
+			}
+			
+			/*
+			if (jQuery.gsap) {
+				jQuery.gsap.enabled((engineInput.value === "jqueryGSAP"));
+			}
+			*/
+			
+			createDots();
+			i = dots.length;
+			while (--i > -1) {
+				currentTest.tween(dots[i]);
+			}
+			
+			///startTime = prevUpdate = ticker.time;
+			//startFrame = ticker.frame;
+			//ticker.addEventListener("tick", updateFPS, this);
+			
+			dotQtyInput.disabled = engineInput.disabled = true;
+			
+			//adjust the fps style and fade out the instructions
+			button.innerHTML = " STOP ";
+
+//			fps.innerHTML = "0 fps";
+//			fps.style.backgroundColor = "#FFFFFF";
+//			fps.style.borderColor = fps.style.color = "#FF0000";
+//			fps.style.borderWidth = "3px";
+//			fps.style.paddingTop = fps.style.paddingBottom = "4px";
+			//TweenLite.to(instructions, 0.7, {css:{autoAlpha:0}, overwrite:"all"});
+
+			
+		} else {
+			//ticker.removeEventListener("tick", updateFPS);
+//			fps.style.backgroundColor = "#CCCCCC";
+//			fps.style.color = "#CC0000";
+//			fps.style.borderColor = "#000000";
+//			fps.style.borderWidth = "1px";
+//			fps.style.paddingTop = fps.style.paddingBottom = "6px";
+			//TweenLite.to(instructions, 0.7, {css:{autoAlpha:1}, delay:0.2});
+            button.innerHTML = " START ";
+			
+			dotQtyInput.disabled = engineInput.disabled = false;
+			
+			//stop the tweens and remove the dots.
+			i = dots.length;
+			while (--i > -1) {
+				currentTest.stop(dots[i]);
+				container.removeChild(rawDots[i]); //removes dot(s)
+			}
+			dots = null;
+			rawDots = null;
+			
+		}
+	}
+	
+	function createDots() {
+		var i = Number(dotQtyInput.value), dot;
+		dots = [];
+		rawDots = [];
+
+        var protoDot = document.createElement("img");
+        protoDot.src = "./dot.png";
+        protoDot.width = 1;
+        protoDot.height = 1;
+
+		while (--i > -1) {
+			dot = protoDot.cloneNode(false);
+			dot.id = "dot" + i;
+			container.appendChild(dot);
+			rawDots.push(dot);
+			dots.push(currentTest.wrapDot(dot));
+		}
+
+        protoDot = null;
+	}
+
+    button.onclick = toggleTest;
+    dotQtyInput.onchange = durInput.onchange = engineInput.onchange = function(e) {
+        if (inProgress) {
+			toggleTest();
+			toggleTest();
+		}
+    };
+
+    if (window.jQuery) {
+        jQuery.easing.cubicIn = function( p, n, firstNum, diff ) { //we need to add the standard CubicIn ease to jQuery
+            return firstNum + p * p * p * diff;
+        }
+        jQuery.fx.frequency = 10; //ensures that jQuery refreshes at roughly 100fps like GSAP, TweenJS, and most of the others to be more even/fair.
+    }
+	//TweenLite.to(instructions, 0, {css:{opacity:0}, immediateRender:true});
+	//TweenLite.to(instructions, 0.7, {css:{opacity:1}, delay:0.25});
+	
+	//ticker.fps(100);
+	//ticker.useRAF(false); //I noticed that requestAnimationFrame didn't provide as much accuracy in terms of counting true frame renders, particularly in Chrome. For example, set it to true and then choose a VERY high number of dots for an engine like jQuery and even though it is so bogged down that it doesn't even get to render a single dot mid-point in its tween, the FPS reports as around 10-16fps in Chrome. Apparently the browser is calling the requestAnimationFrame without even rendering the screen! Maybe there's a minimum threshold. In any case, switching requestAnimationFrame off appears to give the most accurate results. However, the default timing mode in TweenLite does use requestAnimationFrame because it has many other benefits, like throttling down when the browser tab is switched.
+	
+})();
+
+</script>
+</body>
+</html>
