@@ -1,3 +1,247 @@
+    /**
+     * Конструктор ключевого кадра
+     * @param {number} progress
+     * @constructor
+     */
+    function Keyframe (progress) {
+        this.numericKey = progress;
+        this.propVal = [];
+    }
+
+    /**
+     * @type {number}
+     */
+    Keyframe.prototype.numericKey = MAXIMAL_PROGRESS;
+
+    /**
+     * Численное значение свойства. Всегда абсолютно.
+     * @type {Array.<number>}
+     */
+    Keyframe.prototype.propVal;
+
+    /**
+     * Строковое и вычисленное значение.
+     * Тут может быть "50%" или "3em".
+     * Будет ускорена отрисовка благодаря пропуску высчета
+     * промежуточного значения
+     * и перевода типа значения в строковый,
+     * ЕСЛИ
+     *     у ключевого кадра прогресс равен локальному (между двумя найденными).
+     * ЛОКАЛЬНЫЙ прогресс высчитывается так:
+     *     ( ПРОГРЕСС_АНИМАЦИИ - ПРОГРЕСС_ЛЕВОГО ) / ( ПРОГРЕСС_ПРАВОГО - ПРОГРЕСС_ЛЕВОГО ).
+     * ЛЕВЫЙ и ПРАВЫЙ ключевые кадры - те, для которых выполняется следующее :
+     *      ПРОГРЕСС_ЛЕВОГО < ПРОГРЕСС_АНИМАЦИИ <= ПРОГРЕСС_ПРАВОГО.
+     *
+     * @type {string}
+     */
+    Keyframe.prototype.alternativeValue = '';
+
+    /**
+     * Изменение значения ключевого кадра путём копирования.
+     * @param {!Array.<number>} newValue
+     */
+    Keyframe.prototype.setValue = function (newValue) {
+        this.propVal.length = 0;
+        this.propVal.push.apply(this.propVal, newValue);
+    };
+
+    /**
+     * Вернёт текущее значение
+     * @return {null|Array.<number>}
+     */
+    Keyframe.prototype.getValue = function () {
+        return this.propVal.length ? this.propVal.concat() : null;
+    };
+
+    /**
+     *  Класс коллекции ключевых кадров
+     *  @constructor
+     *  @extends {Array}
+     */
+    function KeyframesCollection () {
+    }
+
+    goog.inherits(KeyframesCollection, Array);
+
+    /**
+     * @param {number} progress
+     * @returns {Keyframe?}
+     * @override
+     */
+    KeyframesCollection.prototype.indexOf = function (progress) {
+        return linearSearch(this, function (keyframe, i, keyframes) {
+            return keyframe.numericKey === progress;
+        });
+    };
+
+    /**
+     * @const
+     * @param {!Keyframe} first
+     * @param {!Keyframe} second
+     * @param {number} index
+     * @param {!KeyframesCollection} keyframes
+     * @returns {*}
+     */
+    var compare_keyframes = function (first, second, index, keyframes) {
+        if (first.numericKey === second.numericKey) {
+            return SORT_EQUALS;
+        }
+        if (first.numericKey < second.numericKey) {
+            return SORT_BIGGER;
+        }
+        return SORT_SMALLER;
+    };
+
+    /**
+     * @param {number} progress
+     * @return {!Keyframe}
+     */
+    KeyframesCollection.prototype.add = function (progress) {
+        var keyframe = new Keyframe(progress);
+        this.push(keyframe);
+        sortArray(this, compare_keyframes);
+        return keyframe;
+    };
+
+    /**
+     * Кэшированный индекс найденного ЛЕВОГО ключевого кадра.
+     * @type {number}
+     */
+    KeyframesCollection.prototype.cachedIndex = MINIMAL_PROGRESS;
+
+    /**
+     * Поиск индекса ЛЕВОГО ключевого кадра для определённого прогресса.
+     * @param {number} progress
+     */
+    KeyframesCollection.prototype.indexOfLeft = function (progress) {
+        var leftKeyframe, rightKeyframe;
+
+        if (this.length < 2) {
+            return NOT_FOUND;
+        }
+
+        leftKeyframe = this[ this.cachedIndex ];
+        rightKeyframe = this[ this.cachedIndex + 1 ];
+
+        if (leftKeyframe.numericKey > progress || progress >= rightKeyframe.numericKey) {
+            do {
+
+                if (!rightKeyframe || leftKeyframe.numericKey > progress) {
+                    this.cachedIndex--;
+                }
+                if (rightKeyframe.numericKey < progress) {
+                    this.cachedIndex++;
+                }
+                leftKeyframe = this[ this.cachedIndex ];
+                rightKeyframe = this[ this.cachedIndex + 1 ];
+            } while (leftKeyframe.numericKey > progress || rightKeyframe.numericKey < progress);
+        }
+
+        return this.cachedIndex;
+    };
+
+    /**
+     * Вернёт ключевой кадр по индексу
+     * @param {number} index
+     */
+    KeyframesCollection.prototype.item = function (index) {
+        return this[index];
+    };
+
+    /**
+     * Объект с описанием анимируемого свойства
+     * @param {string} propertyName
+     * @constructor
+     */
+    function PropertyDescriptor (propertyName) {
+        this.propName = propertyName;
+        this.vendorizedPropName = getVendorPropName(propertyName);
+        this.currentValue = [];
+        this.keyframes = new KeyframesCollection();
+        this.startingValue = new Keyframe(null);
+    }
+
+    /**
+     * Идентификатор свойства.
+     * ("top", "transform")
+     * @type {string}
+     */
+    PropertyDescriptor.prototype.propName = '';
+
+    /**
+     * Имя свойства для стиля
+     * ("top", "webkitTransform")
+     * @type {string}
+     */
+    PropertyDescriptor.prototype.vendorizedPropName = '';
+
+    /**
+     * Текущее значение свойства на моменте анимации.
+     * @type {Array.<number>}
+     */
+    PropertyDescriptor.prototype.currentValue;
+
+    /**
+     * Значение свойства на момент старта анимации.
+     * @type {!Keyframe}
+     */
+    PropertyDescriptor.prototype.startingValue;
+
+    /**
+     * Коллекция значений ключевых кадров для свойства
+     * @type {!KeyframesCollection}
+     */
+    PropertyDescriptor.prototype.keyframes;
+
+    /**
+     * @return {!KeyframesCollection}
+     */
+    PropertyDescriptor.prototype.getKeyframes = function () {
+        return this.keyframes;
+    };
+
+    /**
+     * Коллекция анимируемых свойств
+     * @constructor
+     * @extends {Array}
+     */
+    function PropertyDescriptorCollection () {
+    }
+
+    goog.inherits(PropertyDescriptorCollection, Array);
+
+    /**
+     * Поиск дескриптора для опредлённого свойства
+     * @param {string} propertyName
+     * @return {number}
+     * @override
+     */
+    PropertyDescriptorCollection.prototype.indexOf = function (propertyName) {
+        return linearSearch(this, function (propertyDescriptor, i, data) {
+            return propertyDescriptor.propName === propertyName;
+        });
+    };
+
+    /**
+     * Добавление нового свойства в коллекцию
+     * @param {string} propertyName
+     * @return {!PropertyDescriptor}
+     */
+    PropertyDescriptorCollection.prototype.add = function (propertyName) {
+        var propertyDescriptor = new PropertyDescriptor(propertyName);
+        this.push(propertyDescriptor);
+        return propertyDescriptor;
+    };
+
+    /**
+     * Вернёт дескриптор свойства по определённому индексу
+     * @param {number} index
+     * @return {!PropertyDescriptor}
+     */
+    PropertyDescriptorCollection.prototype.item = function (index) {
+        return this[ index ];
+    };
+
     /** @const */
     var EasingRegistry = {
         /**
