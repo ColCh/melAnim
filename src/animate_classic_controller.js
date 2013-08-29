@@ -635,7 +635,7 @@
 
             easing = timingFunction.compute(individualFractionalTime);
 
-            value = blend(propertyName, /** @type {(Array|number)} */ (firstKeyframe.value), /** @type {(Array|number)} */(secondKeyframe.value), easing);
+            value = blend(propertyName, /** @type {(Array|number)} */ (firstKeyframe.value), /** @type {(Array|number)} */(secondKeyframe.value), easing, 0);
 
             this.render(propertyName, value, direct);
 

@@ -526,7 +526,6 @@
      * @override
      */
     Steps.prototype.equals = function (easing) {
-        /** @type {!Steps} */(easing);
         var isAmountEquals = this.stepsAmount === easing.stepsAmount;
         var isCountSourceEquals = this.countFromStart === easing.countFromStart;
         return isAmountEquals && isCountSourceEquals;

@@ -101,13 +101,10 @@
 
 
     toStringValueHooks["color"] = function (elem, propertyName, numericValue, vendorizedPropName) {
-        return "rgb" + "(" + numericValue + ")";
+        return "rgb" + "(" + numericValue.toString() + ")";
     };
 
-    blendHooks["color"] = function (from, to, easing, current, id) {
-        var changed = false;
-
-        current[id] = id in current ? current[id] : ( current[id] = [ 0, 0, 0 ] );
+    blendHooks["color"] = function (from, to, easing, current, round) {
 
         // Цветовой канал лежит в интервале [ 0, 255 ]
         if (easing < MINIMAL_PROGRESS) {
@@ -116,61 +113,39 @@
             easing = MAXIMAL_PROGRESS;
         }
 
+        return blend(from, to, easing, current, 1);
 
-        for (var i = 0; i < 3; i++) {
-            changed = blend(from[i], to[i], easing, current[id], '' + i) || changed;
-        }
-
-        return changed;
     };
 
 
     /* ------------------   РАБОТА С TRANSFORM   --------------------- */
 
+    var cssTransformFuncReg = new RegExp([
+        "\\s",    // пробел
+        "(?!",   // за которым нет
+            "[-\\.\\d]",  // CSS-значения
+        ")"
+    ].join(""));
+
+    /** @const */
     var TRANSFORMDATA_ROTATE = 0;
-
+    /** @const */
     var TRANSFORMDATA_SCALE_X = 1;
+    /** @const */
     var TRANSFORMDATA_SCALE_Y = 2;
-
+    /** @const */
     var TRANSFORMDATA_SKEW_X = 3;
+    /** @const */
     var TRANSFORMDATA_SKEW_Y = 4;
-
+    /** @const */
     var TRANSFORMDATA_TRANSLATE_X = 5;
+    /** @const */
     var TRANSFORMDATA_TRANSLATE_Y = 6;
-
-    function TransformData () {
-        // Матрица преобразований
-        this.matrix = [ 0, 0, 0, 0, 0, 0 ];
-        // Декомпозированные из матрицы данные
-        this.data = [ 0, 100, 100, 0, 0, 0, 0 ];
-    }
-
-    TransformData.prototype.setData = function (value) {
-
-        if (value === "none" || value === "") {
-            return;
-        }
-
-        var matched;
-
-        var transforms = value.split(cssTransformFuncReg);
-
-        for (var i = 0; i < transforms.length; i++) {
-
-            matched = transforms[i].match(cssFunctionReg);
-
-            var func = matched[1]+"";
-            var args = removeSpaces(matched[2]+"").split(cssFuncArgsSeparator);
-
-            this.setters[func](args, this.data);
-        }
-
-    };
 
     /**
      * @enum {function (!Array, !Array.<Array>)}
      */
-    TransformData.prototype.setters = {
+    var TransformSetters = {
 
         "scaleX": function (args, data) {
             data[TRANSFORMDATA_SCALE_X] = parseFloat(args[0]) * 100;
@@ -205,8 +180,8 @@
             data[TRANSFORMDATA_TRANSLATE_Y] = parseFloat(args[0]);
         },
         "translate": function (args, data) {
-            data[TRANSFORMDATA_TRANSLATE_Y] = parseFloat(args[0]);
-            data[TRANSFORMDATA_TRANSLATE_X] = parseFloat(args[1]);
+            data[TRANSFORMDATA_TRANSLATE_X] = parseFloat(args[0]);
+            data[TRANSFORMDATA_TRANSLATE_Y] = parseFloat(args[1]);
         },
 
 
@@ -269,57 +244,55 @@
 
     };
 
-    TransformData.toArray = function () {
-        //TODO экспорт TransformData как матрицу
-        return this.matrix;
+    toNumericValueHooks["transform"] = function (elem, propertyName,  propertyValue, vendorizedPropName) {
+
+        // Декомпозированные данные трансформации
+        var transformData = [ 0, 100, 100, 0, 0, 0, 0 ];
+
+        if (propertyValue === "none" || propertyValue === "") {
+            return;
+        }
+
+        var matched;
+
+        var transforms = propertyValue.split(cssTransformFuncReg);
+
+        for (var i = 0; i < transforms.length; i++) {
+
+            matched = transforms[i].match(cssFunctionReg);
+
+            var func = matched[FUNCREG_FUNC];
+            var args = removeSpaces(matched[FUNCREG_ARGS]).split(cssFuncArgsSeparator);
+
+            TransformSetters[func](args, transformData);
+        }
+
+        return transformData;
     };
 
-    TransformData.prototype.toString = function () {
-        var data = this.data;
-
+    toStringValueHooks["transform"] = function (elem, propertyName, numericValue, vendorizedPropName) {
         var currentTransforms = "";
 
-        if (data[TRANSFORMDATA_SCALE_X] !== 100 || data[TRANSFORMDATA_SCALE_Y] !== 100) {
-            currentTransforms += " " +  "scale(" + data[TRANSFORMDATA_SCALE_X] / 100 + "," + data[TRANSFORMDATA_SCALE_Y] / 100 + ")";
+        if ( numericValue[TRANSFORMDATA_ROTATE] % 360 !== 0 ) {
+            currentTransforms += " " + "rotate(" + numericValue[TRANSFORMDATA_ROTATE] + "deg" + ")";
         }
 
-        if ( data[TRANSFORMDATA_ROTATE] % 360 !== 0 ) {
-            currentTransforms += " " + "rotate(" + data[TRANSFORMDATA_ROTATE] + "deg" + ")";
+        if (numericValue[TRANSFORMDATA_SKEW_X] !== 0 || numericValue[TRANSFORMDATA_SKEW_Y] !== 0 ) {
+            currentTransforms += " " + "skew(" + numericValue[TRANSFORMDATA_SKEW_X] + "deg" + "," + numericValue[TRANSFORMDATA_SKEW_Y] + "deg" + ")";
         }
 
-        if (data[TRANSFORMDATA_SKEW_X] !== 0 || data[TRANSFORMDATA_SKEW_Y] !== 0 ) {
-            currentTransforms += " " + "skew(" + data[TRANSFORMDATA_SKEW_X] + "deg" + "," + data[TRANSFORMDATA_SKEW_Y] + "deg" + ")";
+        if (numericValue[TRANSFORMDATA_TRANSLATE_X] !== 0 || numericValue[TRANSFORMDATA_TRANSLATE_Y] !== 0) {
+            currentTransforms += " " + "translate(" + numericValue[TRANSFORMDATA_TRANSLATE_X] + "px" + "," + numericValue[TRANSFORMDATA_TRANSLATE_Y] + "px" + ")";
         }
 
-        if (data[TRANSFORMDATA_TRANSLATE_X] !== 0 || data[TRANSFORMDATA_TRANSLATE_Y] !== 0) {
-            currentTransforms += " " + "translate(" + data[TRANSFORMDATA_TRANSLATE_X] + "px" + "," + data[TRANSFORMDATA_TRANSLATE_Y] + "px" + ")";
-            console.log("translate(" + data[TRANSFORMDATA_TRANSLATE_X] + "px" + "," + data[TRANSFORMDATA_TRANSLATE_Y] + "px" + ")");
+        // Scale должна идти в конце трансформаций, иначе будет влиять на них. "scaleX(32) translateX(1px)" даст смещение в "32px"
+        if (numericValue[TRANSFORMDATA_SCALE_X] !== 100 || numericValue[TRANSFORMDATA_SCALE_Y] !== 100) {
+            currentTransforms += " " +  "scale(" + numericValue[TRANSFORMDATA_SCALE_X] / 100 + "," + numericValue[TRANSFORMDATA_SCALE_Y] / 100 + ")";
         }
 
         return currentTransforms;
     };
 
-    toNumericValueHooks["transform"] = function (propertyValue) {
-        var transformData = new TransformData();
-        transformData.setData(propertyValue);
-        return transformData;
-    };
-    blendHooks["transform"] = function (from, to, easing, current, id) {
-
-        var changed = false;
-
-        current[id] = id in current ? current[id] : ( current[id] = new TransformData() );
-
-        var data = current[id].data;
-
-        for (var i = 0, m = data.length; i < m; i++) {
-            if (blend(from.data[i], to.data[i], easing, data, '' + i) && !changed) {
-                changed = true;
-            }
-        }
-
-        return changed;
-    };
 
     /* ------------------   РАБОТА С SHADOW   --------------------- */
     var SHADOW_X = 0;
@@ -348,7 +321,7 @@
         // Цвет в любом формате
         var color = shadow.replace(props, "");
 
-        this.data[SHADOW_COLOR] = normalizeHooks["color"](null, "color", color, false);
+        this.data[SHADOW_COLOR] = toNumericValueHooks["color"](null, "color", color, false);
 
         // Х, У, размытие и длина тени, разделённые пробелом
         props = props.split(" ");
@@ -376,7 +349,7 @@
                 shadow += (this.data[i] / 10) + "px" + " ";
             }
         }
-        shadow += normalizeHooks["color"](null, "color", this.data[SHADOW_COLOR], true);
+        shadow += toNumericValueHooks["color"](null, "color", this.data[SHADOW_COLOR], true);
         return shadow;
     };
 
@@ -449,9 +422,7 @@
     };
 
     /* ------------------   РАБОТА С OPACITY   --------------------- */
-    toNumericValueHooks["opacity"] = function (propertyValue) {
-        return parseFloat(propertyValue) * 100;
+    var BLEND_OPACITY_ROUND = 2;
+    blendHooks["opacity"] = function (from, to, easing, current, round) {
+        return blend(from, to, easing, current, BLEND_OPACITY_ROUND);
     };
-    toStringValueHooks["opacity"] = function (propertyValue) {
-        return propertyValue / 100 + '';
-    }

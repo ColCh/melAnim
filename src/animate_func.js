@@ -14,22 +14,29 @@
 
         var progress;
 
-        if (arguments.length === 3) {
-            duration = properties['duration'];
-            easing = properties['easing'];
-            progress = properties['progress'];
-            complete = properties['complete'];
-            self.delay(properties['delay']);
-            self.fillMode(properties['fillMode']);
-            self.direction(properties['direction']);
-            self.iterationCount(properties['iterationCount']);
+        self.target(element);
+
+        var options;
+
+        if ( arguments.length === 3 && goog.isObject(duration) ) {
+            options = duration;
+            duration = options['duration'];
+            easing = options['easing'];
+            progress = options['progress'];
+            complete = options['complete'];
+            self.delay(options['delay']);
+            self.fillMode(options['fillMode']);
+            self.direction(options['direction']);
+            self.iterationCount(options['iterationCount']);
         }
 
         self.duration(duration);
         self.easing(easing);
+
         if (goog.isFunction(progress)) {
             self.onStep(progress);
         }
+
         if (goog.isFunction(complete)) {
             self.onComplete(complete);
         }

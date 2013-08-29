@@ -12,11 +12,6 @@
         return /** @type {string} */ (mel + uuid());
     }
 
-    /**
-     * @const
-     * @type {number}
-     */
-    var NOT_FOUND = -1;
 
     /**
      * Линейный поиск по массиву с функцией обратного вызова
@@ -33,199 +28,10 @@
     }
 
     /**
-     * @type {function (): number}
-     * @const
-     *  */
-    var now = 'performance' in goog.global && 'now' in goog.global.performance ? function () { return goog.global.performance.timing.navigationStart + goog.global.performance.now(); } : 'now' in Date ? Date.now : function () { return +new Date(); };
-
-    /** @const */
-    var Ticker = {
-        /** @type {Array.<{
-        *   clb: !Function,
-        *   timeoutId: number
-        * }>}
-         */
-        listeners: [],
-        /**
-         * @param {!Function} callback
-         * @return {number}
-         * */
-        on: function (callback) {
-            var id = uuid();
-            var descriptor = {
-                clb: callback,
-                timeoutId: id
-            };
-            this.listeners.push(descriptor);
-            if (!this.isAwaken) {
-                this.awake();
-            }
-            return id;
-        },
-        /**
-         * @param {number} id
-         */
-        off: function (id) {
-            var index = linearSearch(this.listeners, function (descriptor, i, listeners) {
-                return descriptor.timeoutId === id;
-            });
-            this.listeners.splice(index, 1);
-            if (this.listeners.length === 0 && this.isAwaken) {
-                this.sleep();
-            }
-        },
-
-        useRAF: false,
-        isAwaken: false,
-        frequency: 1e3 / 60,
-
-        awake: function () {
-            if (!this.isAwaken) {
-                this.lastReflow = this.currentTimeStamp = now();
-                this.isAwaken = true;
-            }
-            this.intervalId = this.useRAF ? requestAnimationFrame(this.tick, rootElement) : setTimeout(this.tick, this.frequency);
-        },
-        sleep: function () {
-            if (this.isAwaken) {
-                this.isAwaken = false;
-                this.lastReflow = this.currentTimeStamp = this.delta = 0;
-            }
-            (this.useRAF ? cancelRequestAnimationFrame : clearTimeout)(this.intervalId);
-        },
-
-        /** @type {number} */
-        currentTimeStamp: 0,
-        /** @type {number} */
-        lastReflow: 0,
-        /** @type {number} */
-        delta: 0,
-
-        /** @this {Window} */
-        tick: function () {
-
-            Ticker.currentTimeStamp = now();
-
-            Ticker.delta = Ticker.currentTimeStamp - Ticker.lastReflow;
-
-            for (var i = 0, m = Ticker.listeners.length; i < m; i++) {
-                Ticker.listeners[i].clb(Ticker.delta);
-            }
-
-            Ticker.lastReflow = Ticker.currentTimeStamp;
-
-            if (Ticker.listeners.length) {
-                Ticker.awake();
-            }
-        },
-
-        /** @type {number} */
-        fps: 60,
-
-        /**
-         * @param {number} fps
-         */
-        setFPS: function (fps) {
-            this.frequency = 1e3 / fps;
-        }
-    };
-
-    goog.exportProperty(Ticker, "attach", Ticker.on);
-    goog.exportProperty(Ticker, "detach", Ticker.off);
-    goog.exportProperty(Ticker, "setFPS", Ticker.setFPS);
-
-    /** @const */
-    var SORT_BIGGER = -1;
-    /** @const */
-    var SORT_EQUALS = 0;
-    /** @const */
-    var SORT_SMALLER = 1;
-
-    /**
-     * @param {!Array} array
-     * @param {!function (*, *, number, Array): number} compare
-     */
-    function bubbleSort(array, compare) {
-
-        var cache;
-
-        for (var j = 0; j < array.length - 1; j += 1) {
-            for (var i = 0; i < array.length - 1 - j; i += 1) {
-                if (compare(array[i], array[i + 1], i, array) === SORT_SMALLER) {
-                    cache = array[i];
-                    array[i] = array[i + 1];
-                    array[i + 1] = cache;
-                }
-            }
-        }
-    }
-
-    /**
-     * @param {!Array.<number>} from
-     * @param {!Array.<number>} to
-     * @param {number} progress
-     * @param {!Array.<number>} currentValue
-     * @return {boolean}
-     */
-    function blend (from, to, progress, currentValue) {
-
-        var valueIsChanged = false;
-        for (var i = 0, m = from.length; i < m; i++) {
-            valueIsChanged = (currentValue[i] !== (currentValue[i] = ( (to[i] - from[i]) * progress + from[i] ) | 0 )) || valueIsChanged;
-        }
-        return valueIsChanged;
-    }
-
-
-    /**
-     * @param {string} string
-     * @return {string}
-     */
-    function trim (string) {
-        return string.replace(/^\s+|\s+$/g, "");
-    }
-
-    /**
-     * @type {RegExp}
-     * @const
-     */
-    var camelCaseReg = new RegExp([
-        "-",
-        "[",
-            "a-z",  // строчные латинские буквы, следующие за знаком минуса
-        "]"
-    ].join(""), "g");
-
-    /**
-     * @param {string} string
-     * @return {string}
-     */
-    function camelCase (string) {
-        return string.replace(camelCaseReg, function (match) {
-            return match.charAt(1).toUpperCase();
-        });
-    }
-
-    /**
-     * @param {string} string
-     * @return {string}
-     */
-    function removeSpaces (string) {
-        return string.replace(/\s+/g, "");
-    }
-
-    /** @constructor */
-    var F = Function();
-
-    /** @type {function (!Object): !Object} */
-    var objectCreate = 'create' in Object ? Object.create : function (proto) { F.prototype = proto; return new F; };
-
-    /**
      * @const
      * @type {!CSSStyleDeclaration}
      */
     var dummy = rootElement.style;
-
 
     /**
      * @type {Array.<string>}
@@ -278,6 +84,236 @@
     }
 
     /**
+     * @type {function (): number}
+     * @const
+     *  */
+    var now = 'performance' in goog.global && 'now' in goog.global.performance ? function () { return goog.global.performance.timing.navigationStart + goog.global.performance.now(); } : 'now' in Date ? Date.now : function () { return +new Date(); };
+
+    var isRAFSupported = getVendorPropName('requestAnimationFrame', true) !== "";
+
+    var rAF;
+    var cancelRAF;
+
+    if (isRAFSupported) {
+        rAF = goog.global[ getVendorPropName('requestAnimationFrame', true) ];
+        cancelRAF = goog.global[ getVendorPropName('cancelRequestAnimationFrame', true) ];
+    }
+
+    /** @const */
+    var Ticker = {
+        /**
+         * @type {Object.<string, !Function>}
+         */
+        listeners: {},
+        /**
+         * @type {number}
+         */
+        listenersLength: 0,
+        /**
+         * @param {!Function} callback
+         * @return {number}
+         * */
+        on: function (callback) {
+            var id = uuid();
+
+            this.listeners[id] = callback;
+            this.listenersLength++;
+
+            if (!this.isAwaken) {
+                this.awake();
+            }
+
+            return id;
+        },
+        /**
+         * @param {number} id
+         */
+        off: function (id) {
+            if (id in this.listeners) {
+                delete this.listeners[id];
+                this.listenersLength--;
+                if (this.listenersLength === 0 && this.isAwaken) {
+                    this.sleep();
+                }
+            }
+        },
+
+        useRAF: isRAFSupported,
+        isAwaken: false,
+        frequency: TICKER_BASE_INTERVAL,
+
+        awake: function () {
+            if (!this.isAwaken) {
+                this.lastReflow = this.currentTimeStamp = now();
+                this.isAwaken = true;
+                this.intervalId = this.useRAF ? rAF(this.tick, rootElement) : setTimeout(this.tick, this.frequency);
+            }
+        },
+        sleep: function () {
+            if (this.isAwaken) {
+                this.isAwaken = false;
+                this.lastReflow = this.currentTimeStamp = this.delta = 0;
+                (this.useRAF ? cancelRAF : clearTimeout)(this.intervalId);
+            }
+        },
+
+        /** @type {number} */
+        currentTimeStamp: 0,
+        /** @type {number} */
+        lastReflow: 0,
+        /** @type {number} */
+        delta: 0,
+
+        /** @this {Window} */
+        tick: function () {
+
+            Ticker.currentTimeStamp = now();
+
+            Ticker.delta = Ticker.currentTimeStamp - Ticker.lastReflow;
+
+            if (Ticker.delta) {
+                var id;
+
+                for (id in Ticker.listeners) {
+                    Ticker.listeners[id](Ticker.delta);
+                }
+
+                Ticker.lastReflow = Ticker.currentTimeStamp;
+            }
+
+            if (Ticker.listenersLength) {
+                Ticker.isAwaken = false;
+                Ticker.awake();
+            } else {
+                Ticker.sleep();
+            }
+        },
+
+        /** @type {number} */
+        fps: TICKER_BASE_FPS,
+
+        /**
+         * @param {number} fps
+         */
+        setFPS: function (fps) {
+            this.frequency = 1e3 / fps;
+        },
+
+        /**
+         * @param {boolean} ignoreRAF
+         */
+        ignoreReflow: function (ignoreRAF) {
+            this.sleep();
+            this.useRAF = isRAFSupported && !Boolean(ignoreRAF);
+            this.awake();
+        }
+    };
+
+    /**
+     * @param {!Array} array
+     * @param {!function (*, *, number, !Array): number} compare
+     */
+    function bubbleSort(array, compare) {
+
+        var cache;
+
+        for (var j = 0; j < array.length - 1; j += 1) {
+            for (var i = 0; i < array.length - 1 - j; i += 1) {
+                if (compare(array[i], array[i + 1], i, array) === SORT_SMALLER) {
+                    cache = array[i];
+                    array[i] = array[i + 1];
+                    array[i + 1] = cache;
+                }
+            }
+        }
+    }
+
+    /**
+     * @param {!Array} array
+     * @param {!function (*, *, number, !Array): number} compare_callback
+     */
+    function sortArray (array, compare_callback) {
+        return bubbleSort(array, compare_callback);
+    }
+
+    /**
+     * @param {number} number
+     * @param {number} digits
+     */
+    function round (number, digits) {
+        return parseFloat( number.toFixed(digits) );
+    }
+
+    /**
+     * @param {!Array.<number>} from
+     * @param {!Array.<number>} to
+     * @param {number} progress
+     * @param {!Array.<number>} currentValue
+     * @param {number} roundDigits
+     * @return {boolean}
+     */
+    function blend (from, to, progress, currentValue, roundDigits) {
+
+        var valueIsChanged = false;
+        var previousValue, newValue;
+        var delta;
+        for (var i = 0, m = from.length; i < m; i++) {
+            previousValue = currentValue[i];
+            delta = to[i] - from[i];
+            newValue = round( delta * progress + from[i] , roundDigits);
+            if (previousValue !== newValue) {
+                currentValue[i] = newValue;
+                valueIsChanged = true;
+            }
+        }
+        return valueIsChanged;
+    }
+
+
+    /**
+     * @param {string} string
+     * @return {string}
+     */
+    function trim (string) {
+        return string.replace(/^\s+|\s+$/g, "");
+    }
+
+    /**
+     * @type {RegExp}
+     * @const
+     */
+    var camelCaseReg = new RegExp([
+        "-",
+        "[",
+            "a-z",  // строчные латинские буквы, следующие за знаком минуса
+        "]"
+    ].join(""), "g");
+
+    /**
+     * @param {string} string
+     * @return {string}
+     */
+    function camelCase (string) {
+        return string.replace(camelCaseReg, function (match) {
+            return match.charAt(1).toUpperCase();
+        });
+    }
+
+    /**
+     * @param {string} string
+     * @return {string}
+     */
+    function removeSpaces (string) {
+        return string.replace(/\s+/g, "");
+    }
+
+    /** @constructor */
+    var F = Function();
+
+    /** @type {function (!Object): !Object} */
+    var objectCreate = 'create' in Object ? Object.create : function (proto) { F.prototype = proto; return new F; };
+
+    /**
      * @const
      * @type {boolean}
      */
@@ -297,6 +333,7 @@
         var style;
         if (USEDSTYLE_SUPPORTED) {
             style = goog.global.getComputedStyle(elem, null);
+            return style[propertyName];
         }
     }
 
@@ -324,7 +361,13 @@
     ].join(''), "i");
 
     /**
-     * @param {!Element} element
+     * @const
+     * @type {RegExp}
+     */
+    var COLOR_REG = new RegExp("color", "i");
+
+    /**
+     * @param {!Element} elem
      * @param {string} propertyName
      * @param {string} propertyValue
      * @param {string} vendorizedPropName
@@ -332,12 +375,28 @@
      */
     function toNumericValue (elem, propertyName, propertyValue, vendorizedPropName) {
 
-        if (goog.isNumber(propertyValue)) {
-            return [ propertyValue ];
+        if (!propertyValue) {
+            return [ ];
         }
 
-        if (vendorizedPropName.indexOf('color') !== NOT_FOUND) {
+        if (propertyName in toNumericValueHooks) {
+            return toNumericValueHooks[propertyName](elem, propertyName,  propertyValue, vendorizedPropName);
+        }
+
+        if ( COLOR_REG.test(vendorizedPropName) ) {
             return toNumericValueHooks['color'](elem, propertyName,  propertyValue, vendorizedPropName);
+        }
+
+        var isHoriz = horizAxisReg.test(vendorizedPropName);
+
+        if (!cssNumericValueReg.test(propertyValue)) {
+            // NON-numeric, like "auto"
+//            propertyValue = elem[ isHoriz ? "offsetWidth" : "offsetHeight" ];
+            propertyValue = 0;
+        }
+
+        if (goog.isNumber(propertyValue)) {
+            return [ propertyValue ];
         }
 
         var valueDescriptor = propertyValue.match(cssNumericValueReg);
@@ -345,13 +404,12 @@
         var value = valueDescriptor[ VALREG_VALUE ];
         var numericValue = parseFloat(value);
         var unit = valueDescriptor[ VALREG_DIMENSION ];
-        var isHoriz;
 
         if (unit === '' || unit === 'px') {
             return [ numericValue ];
         }
 
-        isHoriz = horizAxisReg.test(vendorizedPropName);
+
 
         if (unit === '%' && vendorizedPropName.indexOf('border') !== -1) {
             numericValue /= 100;
@@ -381,13 +439,22 @@
     var toNumericValueHooks = {};
 
     /**
-     * @param {!Element} element
+     * @param {!Element} elem
      * @param {string} propertyName
-     * @param {!Array.<number>} numericValue
+     * @param {null|Array.<number>} numericValue
      * @param {string} vendorizedPropName
      * @return {string}
      */
     function toStringValue (elem, propertyName, numericValue, vendorizedPropName) {
+
+        if (goog.isNull(numericValue)) {
+            return '';
+        }
+
+        if ( COLOR_REG.test(vendorizedPropName) ) {
+            return toStringValueHooks['color'](elem, propertyName, numericValue, vendorizedPropName);
+        }
+
         if (propertyName in toStringValueHooks) {
             return toStringValueHooks[propertyName](elem, propertyName, numericValue, vendorizedPropName);
         }
@@ -410,3 +477,51 @@
     };
 
     var blendHooks = {};
+
+    /**
+     * @const
+     * @type {number}
+     */
+    var DEGS_IN_TURN = 360;
+
+    /**
+     * @const
+     * @type {number}
+     */
+    var DEGS_IN_RAD = DEGS_IN_TURN / ( 2 * Math.PI );
+
+    /**
+     * @const
+     * @type {number}
+     */
+    var DEGS_IN_GRAD = 400 / DEGS_IN_TURN;
+
+    /**
+     * @param {string} cssAngle
+     * @return {number}
+     */
+    function toDeg (cssAngle) {
+        var cssValue = cssAngle.match(cssNumericValueReg);
+        var numeric = parseInt(cssValue[VALREG_VALUE], 10);
+        var unit = cssValue[VALREG_DIMENSION];
+        if (unit in toDegModificators) {
+            return toDegModificators[unit](numeric);
+        }
+        return numeric;
+    }
+
+    /**
+     * @enum {function (number): number}
+     * */
+    var toDegModificators = {
+        /* deg is undef */
+        "grad": function (grads) {
+            return grads * DEGS_IN_GRAD;
+        },
+        "rad": function (rads) {
+            return rads * DEGS_IN_RAD;
+        },
+        "turn": function (turns) {
+            return turns * DEGS_IN_TURN;
+        }
+    };

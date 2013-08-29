@@ -1,144 +1,182 @@
     /**
      * Низкоуровневый конструктор анимаций
      * @constructor
-     * @export
      */
     function Animation () {
         this.animId = generateId();
-        this.keyframes = [];
+        this.animatedProperties = new PropertyDescriptorCollection();
     }
 
     /** @type {string} */
     Animation.prototype.animId = 'none';
 
-    /** @type {(Element|Object)} */
-    Animation.prototype.animationTarget = null;
+    /** @type {!Element} */
+    Animation.prototype.animationTarget;
 
     /**
-     * @export
+     * Установка цели анимации.
+     * Объект, на который направлены
+     * - перевод строковых значений свойств в числовые
+     * - перевод относительных значений свойств в абсолютные
+     * - отрисовка значений свойств на каждом шаге
      * @param {(Element|Object)} target
      */
     Animation.prototype.setTarget = function (target) {
         this.animationTarget = target;
     };
 
+    goog.exportProperty(Animation.prototype, 'setTarget', Animation.prototype.setTarget);
+
     /**
-     * @export
+     * Вернёт текущую цель анимации
      * @return {(Element|Object)}
      */
     Animation.prototype.getTarget = function () {
         return this.animationTarget;
     };
 
-    /**
-     * @type {Array.<{
-         *   propName: string,
-         *   currentValue: !Array.<number>,
-         *   startingValue: string,
-         *   cachedIndex: number,
-         *   keyframes: !Array.<{
-         *       numericKey: number,
-         *       propVal: !Array.<number>,
-         *       isComputed: boolean
-         *       }>
-         *   }>}
-     */
-    Animation.prototype.keyframes = null;
+    goog.exportProperty(Animation.prototype, 'getTarget', Animation.prototype.getTarget);
 
     /**
-     * @export
-     * @param {string} propertyName
-     * @param {!Array.<number>} propertyValue
-     * @param {number} progress
-     * @param {string=}
+     * @type {!PropertyDescriptorCollection}
+     */
+    Animation.prototype.animatedProperties = null;
+
+    /**
+     * Установка значения свойства при прогрессе.
+     * @param {string} propertyName имя свойства
+     * @param {!Array.<number>} propertyValue числовое абсолютное значение свойства (массив с числами)
+     * @param {number} progress прогресс прохода в долях
+     * @param {string=} alternativeValue альтернативное значение. см Keyframe.alternativeValue
      */
     Animation.prototype.setPropAt = function (propertyName, propertyValue, progress, alternativeValue) {
 
-        var index;
+        /** @type {!PropertyDescriptor} */
+        var propertyDescriptor;
 
-        index = linearSearch(/** @type {!Array} */(this.keyframes), function (propertyDescriptor, i, data) {
-            return propertyDescriptor.propName === propertyName;
-        });
+        var propertyDescriptorIndex = this.animatedProperties.indexOf(propertyName);
 
-        var propertyKeyframes;
-
-        if (index === NOT_FOUND) {
-            propertyKeyframes = {
-                propName: propertyName,
-                vendorizedPropName: getVendorPropName(propertyName),
-                currentValue: [],
-                startingValue: '',
-                cachedIndex: 0,
-                keyframes: []
-            };
-            this.keyframes.push(propertyKeyframes);
+        if (propertyDescriptorIndex === NOT_FOUND) {
+            propertyDescriptor = this.animatedProperties.add(propertyName);
         } else {
-            propertyKeyframes = this.keyframes[index];
+            propertyDescriptor = this.animatedProperties.item(propertyDescriptorIndex);
         }
 
-        index = linearSearch(propertyKeyframes.keyframes, function (keyframe, i, keyframes) {
-            return keyframe.numericKey === progress;
-        });
+        /** @type {!KeyframesCollection} */
+        var propertyKeyframes = propertyDescriptor.getKeyframes();
 
+        var keyframeIndex = propertyKeyframes.indexOf(progress);
+
+        /**
+         * @type {!Keyframe}
+         */
         var keyframe;
 
-        var isComputed = goog.isDef(alternativeValue);
-
-        if (index === NOT_FOUND) {
-            keyframe = {
-                numericKey: progress,
-                propVal: propertyValue,
-                isComputed: isComputed,
-                alternativeValue: alternativeValue
-            };
-            propertyKeyframes.keyframes.push(keyframe);
-            bubbleSort(propertyKeyframes.keyframes, function (first, second, index, keyframes) {
-                if (first.numericKey === second.numericKey) {
-                    return SORT_EQUALS;
-                }
-                if (first.numericKey < second.numericKey) {
-                    return SORT_BIGGER;
-                }
-                return SORT_SMALLER;
-            });
+        if (keyframeIndex !== NOT_FOUND) {
+            keyframe = propertyKeyframes.item(keyframeIndex);
         } else {
-            keyframe = propertyKeyframes.keyframes[index];
-            keyframe.propVal = propertyValue.slice(0);
-            keyframe.isComputed = isComputed;
-            keyframe.alternativeValue = alternativeValue;
+            keyframe = propertyKeyframes.add(progress);
         }
+
+        keyframe.setValue(propertyValue);
+        keyframe.alternativeValue = goog.isString(alternativeValue) ? alternativeValue : '';
 
     };
 
+    goog.exportProperty(Animation.prototype, 'setPropAt', Animation.prototype.setPropAt);
+
     /**
-     * @export
-     * @param {string} propertyName
-     * @param {number} progress
-     * @return {null|number|!Array.<number>}
+     * Получение значения свойства при прогресса
+     * @param {string} propertyName имя свойства
+     * @param {number} progress прогресс прохода в долях
+     * @return {Array.<number>?}
      */
     Animation.prototype.getPropAt = function (propertyName, progress) {
-        var index;
 
-        index = linearSearch(/** @type {!Array} */(this.keyframes), function (propertyDescriptor, i, data) {
-            return propertyDescriptor.propName === propertyName;
-        });
-        if (index !== NOT_FOUND) {
-            var propertyDescriptor = this.keyframes[index];
-            index = linearSearch(propertyDescriptor.keyframes, function (keyframe, i, keyframes) {
-                return keyframe.numericKey === progress;
-            });
-            if (index !== NOT_FOUND) {
-                var keyframe = propertyDescriptor.keyframes[index];
-                return keyframe.propVal;
+        /** @type {!PropertyDescriptor} */
+        var propertyDescriptor;
+
+        var propertyDescriptorIndex = this.animatedProperties.indexOf(propertyName);
+
+        if (propertyDescriptorIndex !== NOT_FOUND) {
+            propertyDescriptor = this.animatedProperties.item(propertyDescriptorIndex);
+
+            /** @type {!KeyframesCollection} */
+            var propertyKeyframes = propertyDescriptor.getKeyframes();
+
+            var keyframeIndex = propertyKeyframes.indexOf(progress);
+
+            var keyframe;
+
+            if (keyframeIndex !== NOT_FOUND) {
+                keyframe = propertyKeyframes.item(progress);
+
+                return keyframe.getValue();
             }
         }
 
         return null;
     };
 
+    goog.exportProperty(Animation.prototype, 'getPropAt', Animation.prototype.getPropAt);
+
+    /**
+     * Установка стартового значения свойства
+     * Имеет смысл при 'fillMode' без 'forwards'
+     * Аргументы такие же, как и у Animation.setPropAt.
+     * @param {string} propertyName
+     * @param {!Array.<number>} propertyValue
+     * @param {string=} alternativeValue
+     */
+    Animation.prototype.setStartingValue = function (propertyName, propertyValue, alternativeValue) {
+        /** @type {!PropertyDescriptor} */
+        var propertyDescriptor;
+
+        var propertyDescriptorIndex = this.animatedProperties.indexOf(propertyName);
+
+        if (propertyDescriptorIndex === NOT_FOUND) {
+            propertyDescriptor = this.animatedProperties.add(propertyName);
+        } else {
+            propertyDescriptor = this.animatedProperties.item(propertyDescriptorIndex);
+        }
+
+        /** @type {!Keyframe} */
+        var startingValue = propertyDescriptor.startingValue;
+
+        startingValue.setValue(propertyValue);
+        startingValue.alternativeValue = goog.isString(alternativeValue) ? alternativeValue : '';
+
+    };
+
+    goog.exportProperty(Animation.prototype, 'setStartingValue', Animation.prototype.setStartingValue);
+
+    /**
+     * @param {string} propertyName
+     */
+    Animation.prototype.getStartingValue = function (propertyName) {
+
+        /** @type {!PropertyDescriptor} */
+        var propertyDescriptor;
+
+        var propertyDescriptorIndex = this.animatedProperties.indexOf(propertyName);
+
+        if (propertyDescriptorIndex !== NOT_FOUND) {
+            propertyDescriptor = this.animatedProperties.item(propertyDescriptorIndex);
+
+            /** @type {!Keyframe} */
+            var startingValue = propertyDescriptor.startingValue;
+
+            return startingValue.getValue();
+        }
+
+        return null;
+    };
+
+    goog.exportProperty(Animation.prototype, 'getStartingValue', Animation.prototype.getStartingValue);
+
     /**
      * @param {string} propName
-     * @param {!Array.<number>|string|number} currentValue
+     * @param {!Array.<number>|string|number|null} currentValue
      * @param {string=} vendorizedPropName
      */
     Animation.prototype.render = function (propName, currentValue, vendorizedPropName) {
@@ -146,35 +184,31 @@
         setStyle(this.animationTarget, propName, stringValue, vendorizedPropName);
     };
 
-    /**
-     * @param {function (string, !Array.<number>)} newRenderer
-     * @export
-     */
-    Animation.prototype.replaceRenderer = function (newRenderer) {
-        this.render = newRenderer;
-    };
-
     /** @type {number} */
     Animation.prototype.delayTime = DEFAULT_DELAY;
 
     /***
-     * @export
-     * @param {number} delay
+     * Установка задержки между стартом и началом проигрывания.
+     * @param {number} delay время в миллисекундах
      */
     Animation.prototype.setDelay = function (delay) {
         this.delayTime = delay;
     };
 
+    goog.exportProperty(Animation.prototype, 'setDelay', Animation.prototype.setDelay);
+
     /** @type {number} */
     Animation.prototype.cycleDuration = DEFAULT_DURATION;
 
     /**
-     * @param {number} duration
-     * @export
+     * Установка продолжительности одного прохода
+     * @param {number} duration время в миллисекундах
      */
     Animation.prototype.setDuration = function (duration) {
         this.cycleDuration = duration;
     };
+
+    goog.exportProperty(Animation.prototype, 'setDuration', Animation.prototype.setDuration);
 
     /** @type {number} */
     Animation.prototype.iterations = DEFAULT_ITERATIONS;
@@ -183,7 +217,7 @@
     Animation.prototype.integralIterations = DEFAULT_INTEGRAL_ITERATIONS;
 
     /**
-     * @export
+     * Установка числа проходов
      * @param {number} iterations
      */
     Animation.prototype.setIterations = function (iterations) {
@@ -197,6 +231,8 @@
         }
     };
 
+    goog.exportProperty(Animation.prototype, 'setIterations', Animation.prototype.setIterations);
+
     /** @type {boolean} */
     Animation.prototype.isAlternated = DEFAULT_IS_ALTERNATED;
 
@@ -204,16 +240,17 @@
     Animation.prototype.isReversed = DEFAULT_IS_REVERSED;
 
     /**
-     * @export
-     * @param {number} binaryDirection
+     * Установка режима направления
+     * @param {number} binaryDirection бинарные режим направления
      */
     Animation.prototype.setDirection = function (binaryDirection) {
         this.isAlternated = (binaryDirection & DIRECTION_ALTERNATE) !== 0;
         this.isReversed = (binaryDirection & DIRECTION_REVERSE) !== 0;
     };
 
+    goog.exportProperty(Animation.prototype, 'setDirection', Animation.prototype.setDirection);
+
     /**
-     * @export
      * @return {number}
      */
     Animation.prototype.getDirection = function () {
@@ -226,6 +263,8 @@
         }
         return binaryDirection;
     };
+
+    goog.exportProperty(Animation.prototype, 'getDirection', Animation.prototype.getDirection);
 
     /**
      * @return {boolean}
@@ -256,7 +295,6 @@
     Animation.prototype.fillsBackwards = DEFAULT_FILLS_BACKWARDS;
 
     /**
-     * @export
      * @param {number} binaryFillMode
      */
     Animation.prototype.setFillMode = function (binaryFillMode) {
@@ -264,20 +302,23 @@
         this.fillsBackwards = (binaryFillMode & FILLS_BACKWARDS) !== 0;
     };
 
+    goog.exportProperty(Animation.prototype, 'setFillMode', Animation.prototype.setFillMode);
+
     /**
-     * @export
      * @return {number}
      */
     Animation.prototype.getFillMode = function () {
         var binFillMode = 0;
         if (this.fillsForwards) {
-            binFillMode &= FILLS_FORWARDS;
+            binFillMode |= FILLS_FORWARDS;
         }
         if (this.fillsBackwards) {
-            binFillMode &= FILLS_BACKWARDS;
+            binFillMode |= FILLS_BACKWARDS;
         }
         return binFillMode;
     };
+
+    goog.exportProperty(Animation.prototype, 'getFillMode', Animation.prototype.getFillMode);
 
     /** @type {number} */
     Animation.prototype.elapsedTime = 0;
@@ -287,19 +328,21 @@
 
     /**
      * @param {!(Easing|CubicBezier|Steps)} easing
-     * @export
      */
     Animation.prototype.setEasing = function (easing) {
         this.smoothing = easing;
     };
 
+    goog.exportProperty(Animation.prototype, 'setEasing', Animation.prototype.setEasing);
+
     /**
      * @return {!(CubicBezier|Steps|Easing)}
-     * @export
      */
     Animation.prototype.getEasing = function () {
         return this.smoothing;
     };
+
+    goog.exportProperty(Animation.prototype, 'getEasing', Animation.prototype.getEasing);
 
     /** @type {number} */
     Animation.prototype.animationProgress = 0;
@@ -317,12 +360,13 @@
     Animation.prototype.currentIteration = 0;
 
     /**
-     * @export
      * @return {number}
      */
     Animation.prototype.getFractionalTime = function () {
         return this.fractionalTime;
     };
+
+    goog.exportProperty(Animation.prototype, 'getFractionalTime', Animation.prototype.getFractionalTime);
 
     /**
      * @param {number} deltaTime
@@ -374,61 +418,75 @@
 
     Animation.prototype.update = function () {
 
+        var leftKeyframeIndex;
         var propertyKeyframes, propertyDescriptor;
-        var properties = this.keyframes;
+        /**
+         * Глобальное смягчение - значение временной функции рпи прогрессе АНИМАЦИИ.
+         * Лениво инициализируется и используется, если локальный прогресс ключевых кадров
+         * равен прогрессу анимации.
+         * Этим экономятся вызовы функции смягчения.
+         * @type {number|null}
+         */
         var globalEasing = null;
         var localEasing, relativeFractionalTime;
         var leftKeyframe, rightKeyframe;
+        var alternativeKeyframe;
+        var blender = blend;
 
-        for (var i = 0; i < properties.length; i++) {
-            propertyDescriptor = properties[i];
-            propertyKeyframes = propertyDescriptor.keyframes;
+        for (var i = 0; i < this.animatedProperties.length; i++) {
 
-            leftKeyframe = propertyKeyframes[propertyDescriptor.cachedIndex];
-            rightKeyframe = propertyKeyframes[propertyDescriptor.cachedIndex + 1];
+            propertyDescriptor = this.animatedProperties.item(i);
+            propertyKeyframes = propertyDescriptor.getKeyframes();
 
-            // Поиск двух ключевых кадров для текущего прогресса
-            if (leftKeyframe.numericKey > this.fractionalTime || this.fractionalTime >= rightKeyframe.numericKey) {
-                do {
-                    if (!rightKeyframe || leftKeyframe.numericKey > this.fractionalTime) {
-                        propertyDescriptor.cachedIndex--;
-                    }
-                    if (rightKeyframe.numericKey < this.fractionalTime) {
-                        propertyDescriptor.cachedIndex++;
-                    }
-                    leftKeyframe = propertyKeyframes[propertyDescriptor.cachedIndex];
-                    rightKeyframe = propertyKeyframes[propertyDescriptor.cachedIndex + 1];
-                } while (leftKeyframe.numericKey > this.fractionalTime || rightKeyframe.numericKey < this.fractionalTime);
-            }
+            leftKeyframeIndex = propertyKeyframes.indexOfLeft(this.fractionalTime);
 
-            // Прогресс относительно двух ключевых кадров
+            leftKeyframe = propertyKeyframes.item(leftKeyframeIndex);
+            rightKeyframe = propertyKeyframes.item(leftKeyframeIndex + 1);
+
+            // Прогресс относительно двух найденных ключевых кадров
             if (leftKeyframe.numericKey === MINIMAL_PROGRESS && rightKeyframe.numericKey === MAXIMAL_PROGRESS) {
+                // Упрощённое нижележащее выражение при подстановке "0.0" и "1.0"
                 relativeFractionalTime = this.fractionalTime;
             } else {
                 relativeFractionalTime = (this.fractionalTime - leftKeyframe.numericKey) / (rightKeyframe.numericKey - leftKeyframe.numericKey);
             }
 
             if (relativeFractionalTime === MINIMAL_PROGRESS || relativeFractionalTime === MAXIMAL_PROGRESS) {
-                // В начале и в конце (прогресс 0.0 и 1.0) значение смягчения всегда равно прогрессу
-                // Вычислять промежуточное значение не требуется.
-                //localEasing = relativeFractionalTime;
-                //leftKeyframe = rightKeyframe = relativeFractionalTime === MINIMAL_PROGRESS ? leftKeyframe : rightKeyframe;
-                var alternativeKeyframe = relativeFractionalTime === MINIMAL_PROGRESS ? leftKeyframe : rightKeyframe;
-                if (alternativeKeyframe.isComputed) {
-                    this.render(propertyDescriptor.propName, leftKeyframe.alternativeValue, propertyDescriptor.vendorizedPropName);
-                }
+                // В начале и в конце (прогресс 0.0 и 1.0) прогресса относительно ключевых кадров
+                // значение смягчения всегда равно прогрессу
+                // Вычислять значение смягчения, промежуточное значение свойства и переводить его в строку не требуется.
+                alternativeKeyframe = (relativeFractionalTime === MINIMAL_PROGRESS) ? leftKeyframe : rightKeyframe;
+                if (alternativeKeyframe.alternativeValue.length) {
+                    this.render(propertyDescriptor.propName, alternativeKeyframe.alternativeValue, propertyDescriptor.vendorizedPropName);
+                } // else Альтернативное значение не задано. Будет происходить вычисление промежуточного и перевод его в строку.
             } else if (relativeFractionalTime === this.fractionalTime) {
+                // Локальный прогресс ключевых кадров равен прогрессу анимации
+                // Экономия вызова значения временной функции смягчения
                 if (goog.isNull(globalEasing)) {
                     globalEasing = this.smoothing.compute(relativeFractionalTime)
                 }
                 localEasing = globalEasing;
             } else {
+                //
                 localEasing = this.smoothing.compute(relativeFractionalTime);
             }
 
-            if ((!alternativeKeyframe || !alternativeKeyframe.isComputed) && blend(leftKeyframe.propVal, rightKeyframe.propVal, localEasing, propertyDescriptor.currentValue)) {
-                // Отрисовываем в том случае, если значение свойства изменено
-                this.render(propertyDescriptor.propName, propertyDescriptor.currentValue, propertyDescriptor.vendorizedPropName);
+            if (!alternativeKeyframe) {
+                // Нет высчитанного строкового значения
+                // Высчет промежуточного значения и перевод его в строку, а затем отрисовка полученного
+                // Худший случай
+
+                if ( COLOR_REG.test(propertyDescriptor.propName) ) {
+                    blender = blendHooks['color'];
+                } else if (propertyDescriptor.propName in blendHooks) {
+                    blender = blendHooks[propertyDescriptor.propName];
+                }
+
+                if ( blender(leftKeyframe.propVal, rightKeyframe.propVal, localEasing, propertyDescriptor.currentValue, BLEND_DIGITS)) {
+                    // Отрисовываем в том случае, если значение свойства изменено
+                    this.render(propertyDescriptor.propName, propertyDescriptor.currentValue, propertyDescriptor.vendorizedPropName);
+                } // else Отрисованное значение эквивалентно текущему промежуточному. Пропуск отрисовки
+
             }
 
         }
@@ -441,7 +499,9 @@
     /** @type {number} */
     Animation.prototype.tickerId;
 
-    /** @export */
+    /**
+     * Запускает проигрывание анимации
+     */
     Animation.prototype.start = function () {
         this.elapsedTime = 0;
 
@@ -458,16 +518,36 @@
         this.resume();
     };
 
-    /** @export */
+    goog.exportProperty(Animation.prototype, 'start', Animation.prototype.start);
+
+    /**
+     * Останавливает анимацию
+     * */
     Animation.prototype.stop = function () {
         if (this.fillsForwards) {
+            // Установка конечных значений для свойств.
             this.fractionalTime = 1;
             this.update();
+        } else {
+            // Возвращение анимированных свойств в доанимированное состояние
+            for (var i = 0; i < this.animatedProperties.length; i++) {
+                var propertyDescriptor = this.animatedProperties.item(i);
+                var startingValue = propertyDescriptor.startingValue;
+                if (startingValue.alternativeValue.length) {
+                    this.render(propertyDescriptor.propName, startingValue.alternativeValue, propertyDescriptor.vendorizedPropName);
+                } else {
+                    this.render(propertyDescriptor.propName, startingValue.getValue(), propertyDescriptor.vendorizedPropName);
+                }
+            }
         }
         this.pause();
     };
 
-    /** @export */
+    goog.exportProperty(Animation.prototype, 'stop', Animation.prototype.stop);
+
+    /**
+     * Снимает анимацию с паузы
+     * */
     Animation.prototype.resume = function () {
         var self = this;
         this.tickerId = Ticker.on(function (delta) {
@@ -475,62 +555,86 @@
         });
     };
 
-    /** @export */
+    goog.exportProperty(Animation.prototype, 'resume', Animation.prototype.resume);
+
+    /**
+     * Приостанавливает анимацию
+     * */
     Animation.prototype.pause = function () {
         Ticker.off(this.tickerId);
     };
+
+    goog.exportProperty(Animation.prototype, 'pause', Animation.prototype.pause);
 
     /** @type {boolean} */
     Animation.prototype.usesCSS3;
 
     /**
+     * Форсирует анимации классический режим (JS-анимации)
      * @param {boolean} value
-     * @export
      */
     Animation.prototype.setClassicMode = function (value) {
         this.usesCSS3 = !value;
     };
 
+    goog.exportProperty(Animation.prototype, 'setClassicMode', Animation.prototype.setClassicMode);
+
     /** @type {!Function} */
     Animation.prototype.oncomplete = goog.nullFunction;
 
     /**
+     * Установка обработчика завершения анимации
+     * Функция исполнится, когда анимация завершится естественным ходом.
+     * (без ручного вызова Animation.stop)
      * @param {!Function} callback
-     * @export
      */
     Animation.prototype.onComplete = function (callback) {
         this.oncomplete = callback;
     };
 
+    goog.exportProperty(Animation.prototype, 'onComplete', Animation.prototype.onComplete);
+
     /** @type {!Function} */
     Animation.prototype.onstart = goog.nullFunction;
 
     /**
+     * Установка обработчика старта анимации.
+     * Исполнится, когда анимация начнёт проигрываться.
+     * Может быть таймаут между стартом и началом проигрывания.
+     * Этот таймаут устанавливается методом 'setDelay'
      * @param {!Function} callback
-     * @export
      */
     Animation.prototype.onStart = function (callback) {
         this.onstart = callback;
     };
 
+    goog.exportProperty(Animation.prototype, 'onStart', Animation.prototype.onStart);
+
     /** @type {!Function} */
     Animation.prototype.onstep = goog.nullFunction;
 
     /**
+     * Установка функции, исполняющейся при каждом шаге анимации.
+     * Исполняется после обновления состояния анимации (метод 'update')
      * @param {!Function} callback
-     * @export
      */
     Animation.prototype.onStep = function (callback) {
         this.onstep = callback;
     };
 
+    goog.exportProperty(Animation.prototype, 'onStep', Animation.prototype.onStep);
+
     /** @type {!Function} */
     Animation.prototype.oniteration = goog.nullFunction;
 
     /**
+     * Установка обработчика завершения прохода.
+     * Имеет смысл, если число проходов больше одного.
+     * Число проходов устанавливается методом 'setIterations'
      * @param {!Function} callback
-     * @export
      */
     Animation.prototype.onIteration = function (callback) {
         this.oniteration = callback;
     };
+
+    goog.exportProperty(Animation.prototype, 'onIteration', Animation.prototype.onIteration);
