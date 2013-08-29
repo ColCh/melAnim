@@ -46,7 +46,9 @@
 
     var element = document.getElementById("css");
 
-    var anim = new melAnim.Animation(element);
+    var anim = new melAnim.Animation();
+
+    anim.target(element);
 
     anim.setClassicMode(forceClassic);
 

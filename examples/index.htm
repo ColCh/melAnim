@@ -30,7 +30,7 @@
 </head>
 <body>
 
-<div style="top: 10px; border-width: 1px; width: 200px" class="anim css" id="css">Anim me ONE!</div>
+<div style="top: 10px; border-width: 1px; /* width: 200px */" class="anim css" id="css">Anim me ONE!</div>
 
 
 <script type="text/javascript">
@@ -71,15 +71,15 @@
 //    anim.propAt("box-shadow", "100px 100px 50px 50px red");
 //    anim.propAt("text-shadow", "100px 0px 0px green");
 //
-//    anim.propAt("width", "300px", "from");
+    anim.propAt("width", "300px", "from");
 //    anim.propAt("color", "blue");
 //    anim.propAt("font-size", "36px");
 //    anim.propAt("height", "250px");
 //    anim.propAt("top", "250px");
-//    anim.propAt("width", 700, "100%");
+    anim.propAt("width", 700, "100%");
 //
-    anim.propAt("color", "rgb(150, 120, 20)", "from");
-    anim.propAt("color", "hsl(0, 100%, 50%)");
+//    anim.propAt("color", "rgb(150, 120, 20)", "from");
+//    anim.propAt("color", "hsl(0, 100%, 50%)");
 //
 //    anim.propAt("transform", "skew(180deg, 180deg) scale(1.5, 1.5) rotate(360deg)", "100%");
 //    anim.propAt("transform", "skew(180deg, 180deg)", "100%");
@@ -135,7 +135,7 @@
 //
 //    anim.delay("0s");
 //
-//    anim.fillMode("none");
+    anim.fillMode("none");
 
 //    var i = 3;
     var i = 1;
