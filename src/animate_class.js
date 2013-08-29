@@ -1,41 +1,4 @@
     /**
-     * @const
-     * @type {number}
-     */
-    var MINIMAL_PROGRESS = 0;
-    /**
-     * @const
-     * @type {number}
-     */
-    var MAXIMAL_PROGRESS = 1.0;
-    /**
-     * @const
-     * @type {number}
-     */
-    var DIRECTION_ALTERNATE = 2; // bin: 10
-    /**
-     * @const
-     * @type {number}
-     */
-    var DIRECTION_REVERSE = 1; // bin: 01
-    /**
-     * @const
-     * @type {number}
-     */
-    var FILLS_FORWARDS = 2; // bin: 10
-    /**
-     * @const
-     * @type {number}
-     */
-    var FILLS_BACKWARDS = 1; // bin: 01
-    /**
-     * @const
-     * @type {string}
-     */
-    var TIMING_FUNCTION = 'timing-function';
-
-
-    /**
      * Низкоуровневый конструктор анимаций
      * @constructor
      * @export
