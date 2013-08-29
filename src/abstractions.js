@@ -270,6 +270,10 @@
                 timingFunction = self.build( /** @type {(string|!Array)} */ (req) );
             }
 
+            if (goog.isNull(timingFunction)) {
+                return null;
+            }
+
             var index = linearSearch(self.easings, function (easing, i, easingsArray) {
                 return easing.equals(timingFunction);
             });
@@ -297,7 +301,7 @@
                 if (camelCased in cssEasingAliases) {
                     // Передан алиас к аргументам смягчения CSS
                     args = cssEasingAliases[ camelCased ];
-                } else {
+                } else if (cssFunctionReg.test(trimmed)) {
                     // Передана строка временной функции CSS
                     // строка аргументов к временной функции. разделены запятой
                     matched = trimmed.match(cssFunctionReg);
@@ -308,7 +312,7 @@
                 args = /** @type {!Array} */ (contain);
             }
 
-            argsLength = args.length;
+            argsLength = goog.isArray(args) ? args.length : 0;
 
             if (argsLength == 4) {
                 // заинлайненный цикл
