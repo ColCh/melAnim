@@ -1,4 +1,4 @@
-/** melAnim - v0.1.0 - 2013-07-07
+/** melAnim - v0.1.0 - 2013-08-29
 * Copyright (c) 2013 ColCh; Licensed GPLv3 */
 // Copyright 2006 The Closure Library Authors. All Rights Reserved.
 //
@@ -1549,6 +1549,15 @@ goog.scope = function(fn) {
 
 /*---------------------------------------*/
 
+
+/**@license melAnim.js by melky (coloured_chalk@mail.ru). Licensed under the GPLv3 license. */
+(function (window) {
+	"DONT use strict";
+
+
+/*---------------------------------------*/
+
+
     /**********************************
      *      ОБЩИЕ ВВОДНЫЕ ПЕРЕМЕННЫЕ
      * ********************************/
@@ -1643,6 +1652,65 @@ goog.scope = function(fn) {
 /*---------------------------------------*/
 
     /**
+     * @const
+     * @type {number}
+     */
+    var BLEND_DIGITS = 0;
+
+
+    /**
+     * @const
+     * @type {number}
+     */
+    var TICKER_BASE_FPS = 60;
+
+
+    /**
+     * @const
+     * @type {number}
+     */
+    var MINIMAL_PROGRESS = 0;
+
+    /**
+     * @const
+     * @type {number}
+     */
+    var MAXIMAL_PROGRESS = 1.0;
+
+    var PROGRESS_START = 'start';
+
+    /**
+     * @const
+     * @type {number}
+     */
+    var NOT_FOUND = -1;
+
+
+    /** @const */
+    var SORT_BIGGER = -1;
+
+    /** @const */
+    var SORT_EQUALS = 0;
+
+    /** @const */
+    var SORT_SMALLER = 1;
+
+    /**
+     * @const
+     * @type {number}
+     */
+    var BLEND_ROUND = Math.pow(10, BLEND_DIGITS);
+
+    /**
+     * @const
+     * @type {number}
+     */
+    var TICKER_BASE_INTERVAL = 1e3 / TICKER_BASE_FPS;
+
+
+/*---------------------------------------*/
+
+    /**
      * @return {number}
      */
     function uuid () {
@@ -1656,11 +1724,6 @@ goog.scope = function(fn) {
         return /** @type {string} */ (mel + uuid());
     }
 
-    /**
-     * @const
-     * @type {number}
-     */
-    var NOT_FOUND = -1;
 
     /**
      * Линейный поиск по массиву с функцией обратного вызова
@@ -1677,199 +1740,10 @@ goog.scope = function(fn) {
     }
 
     /**
-     * @type {function (): number}
-     * @const
-     *  */
-    var now = 'performance' in goog.global && 'now' in goog.global.performance ? function () { return goog.global.performance.timing.navigationStart + goog.global.performance.now(); } : 'now' in Date ? Date.now : function () { return +new Date(); };
-
-    /** @const */
-    var Ticker = {
-        /** @type {Array.<{
-        *   clb: !Function,
-        *   timeoutId: number
-        * }>}
-         */
-        listeners: [],
-        /**
-         * @param {!Function} callback
-         * @return {number}
-         * */
-        on: function (callback) {
-            var id = uuid();
-            var descriptor = {
-                clb: callback,
-                timeoutId: id
-            };
-            this.listeners.push(descriptor);
-            if (!this.isAwaken) {
-                this.awake();
-            }
-            return id;
-        },
-        /**
-         * @param {number} id
-         */
-        off: function (id) {
-            var index = linearSearch(this.listeners, function (descriptor, i, listeners) {
-                return descriptor.timeoutId === id;
-            });
-            this.listeners.splice(index, 1);
-            if (this.listeners.length === 0 && this.isAwaken) {
-                this.sleep();
-            }
-        },
-
-        useRAF: false,
-        isAwaken: false,
-        frequency: 1e3 / 60,
-
-        awake: function () {
-            if (!this.isAwaken) {
-                this.lastReflow = this.currentTimeStamp = now();
-                this.isAwaken = true;
-            }
-            this.intervalId = this.useRAF ? requestAnimationFrame(this.tick, rootElement) : setTimeout(this.tick, this.frequency);
-        },
-        sleep: function () {
-            if (this.isAwaken) {
-                this.isAwaken = false;
-                this.lastReflow = this.currentTimeStamp = this.delta = 0;
-            }
-            (this.useRAF ? cancelRequestAnimationFrame : clearTimeout)(this.intervalId);
-        },
-
-        /** @type {number} */
-        currentTimeStamp: 0,
-        /** @type {number} */
-        lastReflow: 0,
-        /** @type {number} */
-        delta: 0,
-
-        /** @this {Window} */
-        tick: function () {
-
-            Ticker.currentTimeStamp = now();
-
-            Ticker.delta = Ticker.currentTimeStamp - Ticker.lastReflow;
-
-            for (var i = 0, m = Ticker.listeners.length; i < m; i++) {
-                Ticker.listeners[i].clb(Ticker.delta);
-            }
-
-            Ticker.lastReflow = Ticker.currentTimeStamp;
-
-            if (Ticker.listeners.length) {
-                Ticker.awake();
-            }
-        },
-
-        /** @type {number} */
-        fps: 60,
-
-        /**
-         * @param {number} fps
-         */
-        setFPS: function (fps) {
-            this.frequency = 1e3 / fps;
-        }
-    };
-
-    goog.exportProperty(Ticker, "attach", Ticker.on);
-    goog.exportProperty(Ticker, "detach", Ticker.off);
-    goog.exportProperty(Ticker, "setFPS", Ticker.setFPS);
-
-    /** @const */
-    var SORT_BIGGER = -1;
-    /** @const */
-    var SORT_EQUALS = 0;
-    /** @const */
-    var SORT_SMALLER = 1;
-
-    /**
-     * @param {!Array} array
-     * @param {!function (*, *, number, Array): number} compare
-     */
-    function bubbleSort(array, compare) {
-
-        var cache;
-
-        for (var j = 0; j < array.length - 1; j += 1) {
-            for (var i = 0; i < array.length - 1 - j; i += 1) {
-                if (compare(array[i], array[i + 1], i, array) === SORT_SMALLER) {
-                    cache = array[i];
-                    array[i] = array[i + 1];
-                    array[i + 1] = cache;
-                }
-            }
-        }
-    }
-
-    /**
-     * @param {!Array.<number>} from
-     * @param {!Array.<number>} to
-     * @param {number} progress
-     * @param {!Array.<number>} currentValue
-     * @return {boolean}
-     */
-    function blend (from, to, progress, currentValue) {
-
-        var valueIsChanged = false;
-        for (var i = 0, m = from.length; i < m; i++) {
-            valueIsChanged = (currentValue[i] !== (currentValue[i] = ( (to[i] - from[i]) * progress + from[i] ) | 0 )) || valueIsChanged;
-        }
-        return valueIsChanged;
-    }
-
-
-    /**
-     * @param {string} string
-     * @return {string}
-     */
-    function trim (string) {
-        return string.replace(/^\s+|\s+$/g, "");
-    }
-
-    /**
-     * @type {RegExp}
-     * @const
-     */
-    var camelCaseReg = new RegExp([
-        "-",
-        "[",
-            "a-z",  // строчные латинские буквы, следующие за знаком минуса
-        "]"
-    ].join(""), "g");
-
-    /**
-     * @param {string} string
-     * @return {string}
-     */
-    function camelCase (string) {
-        return string.replace(camelCaseReg, function (match) {
-            return match.charAt(1).toUpperCase();
-        });
-    }
-
-    /**
-     * @param {string} string
-     * @return {string}
-     */
-    function removeSpaces (string) {
-        return string.replace(/\s+/g, "");
-    }
-
-    /** @constructor */
-    var F = Function();
-
-    /** @type {function (!Object): !Object} */
-    var objectCreate = 'create' in Object ? Object.create : function (proto) { F.prototype = proto; return new F; };
-
-    /**
      * @const
      * @type {!CSSStyleDeclaration}
      */
     var dummy = rootElement.style;
-
 
     /**
      * @type {Array.<string>}
@@ -1922,6 +1796,236 @@ goog.scope = function(fn) {
     }
 
     /**
+     * @type {function (): number}
+     * @const
+     *  */
+    var now = 'performance' in goog.global && 'now' in goog.global.performance ? function () { return goog.global.performance.timing.navigationStart + goog.global.performance.now(); } : 'now' in Date ? Date.now : function () { return +new Date(); };
+
+    var isRAFSupported = getVendorPropName('requestAnimationFrame', true) !== "";
+
+    var rAF;
+    var cancelRAF;
+
+    if (isRAFSupported) {
+        rAF = goog.global[ getVendorPropName('requestAnimationFrame', true) ];
+        cancelRAF = goog.global[ getVendorPropName('cancelRequestAnimationFrame', true) ];
+    }
+
+    /** @const */
+    var Ticker = {
+        /**
+         * @type {Object.<string, !Function>}
+         */
+        listeners: {},
+        /**
+         * @type {number}
+         */
+        listenersLength: 0,
+        /**
+         * @param {!Function} callback
+         * @return {number}
+         * */
+        on: function (callback) {
+            var id = uuid();
+
+            this.listeners[id] = callback;
+            this.listenersLength++;
+
+            if (!this.isAwaken) {
+                this.awake();
+            }
+
+            return id;
+        },
+        /**
+         * @param {number} id
+         */
+        off: function (id) {
+            if (id in this.listeners) {
+                delete this.listeners[id];
+                this.listenersLength--;
+                if (this.listenersLength === 0 && this.isAwaken) {
+                    this.sleep();
+                }
+            }
+        },
+
+        useRAF: isRAFSupported,
+        isAwaken: false,
+        frequency: TICKER_BASE_INTERVAL,
+
+        awake: function () {
+            if (!this.isAwaken) {
+                this.lastReflow = this.currentTimeStamp = now();
+                this.isAwaken = true;
+                this.intervalId = this.useRAF ? rAF(this.tick, rootElement) : setTimeout(this.tick, this.frequency);
+            }
+        },
+        sleep: function () {
+            if (this.isAwaken) {
+                this.isAwaken = false;
+                this.lastReflow = this.currentTimeStamp = this.delta = 0;
+                (this.useRAF ? cancelRAF : clearTimeout)(this.intervalId);
+            }
+        },
+
+        /** @type {number} */
+        currentTimeStamp: 0,
+        /** @type {number} */
+        lastReflow: 0,
+        /** @type {number} */
+        delta: 0,
+
+        /** @this {Window} */
+        tick: function () {
+
+            Ticker.currentTimeStamp = now();
+
+            Ticker.delta = Ticker.currentTimeStamp - Ticker.lastReflow;
+
+            if (Ticker.delta) {
+                var id;
+
+                for (id in Ticker.listeners) {
+                    Ticker.listeners[id](Ticker.delta);
+                }
+
+                Ticker.lastReflow = Ticker.currentTimeStamp;
+            }
+
+            if (Ticker.listenersLength) {
+                Ticker.isAwaken = false;
+                Ticker.awake();
+            } else {
+                Ticker.sleep();
+            }
+        },
+
+        /** @type {number} */
+        fps: TICKER_BASE_FPS,
+
+        /**
+         * @param {number} fps
+         */
+        setFPS: function (fps) {
+            this.frequency = 1e3 / fps;
+        },
+
+        /**
+         * @param {boolean} ignoreRAF
+         */
+        ignoreReflow: function (ignoreRAF) {
+            this.sleep();
+            this.useRAF = isRAFSupported && !Boolean(ignoreRAF);
+            this.awake();
+        }
+    };
+
+    /**
+     * @param {!Array} array
+     * @param {!function (*, *, number, !Array): number} compare
+     */
+    function bubbleSort(array, compare) {
+
+        var cache;
+
+        for (var j = 0; j < array.length - 1; j += 1) {
+            for (var i = 0; i < array.length - 1 - j; i += 1) {
+                if (compare(array[i], array[i + 1], i, array) === SORT_SMALLER) {
+                    cache = array[i];
+                    array[i] = array[i + 1];
+                    array[i + 1] = cache;
+                }
+            }
+        }
+    }
+
+    /**
+     * @param {!Array} array
+     * @param {!function (*, *, number, !Array): number} compare_callback
+     */
+    function sortArray (array, compare_callback) {
+        return bubbleSort(array, compare_callback);
+    }
+
+    /**
+     * @param {number} number
+     * @param {number} digits
+     */
+    function round (number, digits) {
+        return parseFloat( number.toFixed(digits) );
+    }
+
+    /**
+     * @param {!Array.<number>} from
+     * @param {!Array.<number>} to
+     * @param {number} progress
+     * @param {!Array.<number>} currentValue
+     * @param {number} roundDigits
+     * @return {boolean}
+     */
+    function blend (from, to, progress, currentValue, roundDigits) {
+
+        var valueIsChanged = false;
+        var previousValue, newValue;
+        var delta;
+        for (var i = 0, m = from.length; i < m; i++) {
+            previousValue = currentValue[i];
+            delta = to[i] - from[i];
+            newValue = round( delta * progress + from[i] , roundDigits);
+            if (previousValue !== newValue) {
+                currentValue[i] = newValue;
+                valueIsChanged = true;
+            }
+        }
+        return valueIsChanged;
+    }
+
+
+    /**
+     * @param {string} string
+     * @return {string}
+     */
+    function trim (string) {
+        return string.replace(/^\s+|\s+$/g, "");
+    }
+
+    /**
+     * @type {RegExp}
+     * @const
+     */
+    var camelCaseReg = new RegExp([
+        "-",
+        "[",
+            "a-z",  // строчные латинские буквы, следующие за знаком минуса
+        "]"
+    ].join(""), "g");
+
+    /**
+     * @param {string} string
+     * @return {string}
+     */
+    function camelCase (string) {
+        return string.replace(camelCaseReg, function (match) {
+            return match.charAt(1).toUpperCase();
+        });
+    }
+
+    /**
+     * @param {string} string
+     * @return {string}
+     */
+    function removeSpaces (string) {
+        return string.replace(/\s+/g, "");
+    }
+
+    /** @constructor */
+    var F = Function();
+
+    /** @type {function (!Object): !Object} */
+    var objectCreate = 'create' in Object ? Object.create : function (proto) { F.prototype = proto; return new F; };
+
+    /**
      * @const
      * @type {boolean}
      */
@@ -1941,6 +2045,7 @@ goog.scope = function(fn) {
         var style;
         if (USEDSTYLE_SUPPORTED) {
             style = goog.global.getComputedStyle(elem, null);
+            return style[propertyName];
         }
     }
 
@@ -1968,7 +2073,13 @@ goog.scope = function(fn) {
     ].join(''), "i");
 
     /**
-     * @param {!Element} element
+     * @const
+     * @type {RegExp}
+     */
+    var COLOR_REG = new RegExp("color", "i");
+
+    /**
+     * @param {!Element} elem
      * @param {string} propertyName
      * @param {string} propertyValue
      * @param {string} vendorizedPropName
@@ -1976,12 +2087,28 @@ goog.scope = function(fn) {
      */
     function toNumericValue (elem, propertyName, propertyValue, vendorizedPropName) {
 
-        if (goog.isNumber(propertyValue)) {
-            return [ propertyValue ];
+        if (!propertyValue) {
+            return [ ];
         }
 
-        if (vendorizedPropName.indexOf('color') !== NOT_FOUND) {
+        if (propertyName in toNumericValueHooks) {
+            return toNumericValueHooks[propertyName](elem, propertyName,  propertyValue, vendorizedPropName);
+        }
+
+        if ( COLOR_REG.test(vendorizedPropName) ) {
             return toNumericValueHooks['color'](elem, propertyName,  propertyValue, vendorizedPropName);
+        }
+
+        var isHoriz = horizAxisReg.test(vendorizedPropName);
+
+        if (!cssNumericValueReg.test(propertyValue)) {
+            // NON-numeric, like "auto"
+//            propertyValue = elem[ isHoriz ? "offsetWidth" : "offsetHeight" ];
+            propertyValue = 0;
+        }
+
+        if (goog.isNumber(propertyValue)) {
+            return [ propertyValue ];
         }
 
         var valueDescriptor = propertyValue.match(cssNumericValueReg);
@@ -1989,13 +2116,12 @@ goog.scope = function(fn) {
         var value = valueDescriptor[ VALREG_VALUE ];
         var numericValue = parseFloat(value);
         var unit = valueDescriptor[ VALREG_DIMENSION ];
-        var isHoriz;
 
         if (unit === '' || unit === 'px') {
             return [ numericValue ];
         }
 
-        isHoriz = horizAxisReg.test(vendorizedPropName);
+
 
         if (unit === '%' && vendorizedPropName.indexOf('border') !== -1) {
             numericValue /= 100;
@@ -2025,13 +2151,22 @@ goog.scope = function(fn) {
     var toNumericValueHooks = {};
 
     /**
-     * @param {!Element} element
+     * @param {!Element} elem
      * @param {string} propertyName
-     * @param {!Array.<number>} numericValue
+     * @param {null|Array.<number>} numericValue
      * @param {string} vendorizedPropName
      * @return {string}
      */
     function toStringValue (elem, propertyName, numericValue, vendorizedPropName) {
+
+        if (goog.isNull(numericValue)) {
+            return '';
+        }
+
+        if ( COLOR_REG.test(vendorizedPropName) ) {
+            return toStringValueHooks['color'](elem, propertyName, numericValue, vendorizedPropName);
+        }
+
         if (propertyName in toStringValueHooks) {
             return toStringValueHooks[propertyName](elem, propertyName, numericValue, vendorizedPropName);
         }
@@ -2055,7 +2190,299 @@ goog.scope = function(fn) {
 
     var blendHooks = {};
 
+    /**
+     * @const
+     * @type {number}
+     */
+    var DEGS_IN_TURN = 360;
+
+    /**
+     * @const
+     * @type {number}
+     */
+    var DEGS_IN_RAD = DEGS_IN_TURN / ( 2 * Math.PI );
+
+    /**
+     * @const
+     * @type {number}
+     */
+    var DEGS_IN_GRAD = 400 / DEGS_IN_TURN;
+
+    /**
+     * @param {string} cssAngle
+     * @return {number}
+     */
+    function toDeg (cssAngle) {
+        var cssValue = cssAngle.match(cssNumericValueReg);
+        var numeric = parseInt(cssValue[VALREG_VALUE], 10);
+        var unit = cssValue[VALREG_DIMENSION];
+        if (unit in toDegModificators) {
+            return toDegModificators[unit](numeric);
+        }
+        return numeric;
+    }
+
+    /**
+     * @enum {function (number): number}
+     * */
+    var toDegModificators = {
+        /* deg is undef */
+        "grad": function (grads) {
+            return grads * DEGS_IN_GRAD;
+        },
+        "rad": function (rads) {
+            return rads * DEGS_IN_RAD;
+        },
+        "turn": function (turns) {
+            return turns * DEGS_IN_TURN;
+        }
+    };
+
 /*---------------------------------------*/
+
+    /**
+     * Конструктор ключевого кадра
+     * @param {number} progress
+     * @constructor
+     */
+    function Keyframe (progress) {
+        this.numericKey = progress;
+        this.propVal = [];
+    }
+
+    /**
+     * @type {number}
+     */
+    Keyframe.prototype.numericKey = MAXIMAL_PROGRESS;
+
+    /**
+     * Численное значение свойства. Всегда абсолютно.
+     * @type {Array.<number>}
+     */
+    Keyframe.prototype.propVal;
+
+    /**
+     * Строковое и вычисленное значение.
+     * Тут может быть "50%" или "3em".
+     * Будет ускорена отрисовка благодаря пропуску высчета
+     * промежуточного значения
+     * и перевода типа значения в строковый,
+     * ЕСЛИ
+     *     у ключевого кадра прогресс равен локальному (между двумя найденными).
+     * ЛОКАЛЬНЫЙ прогресс высчитывается так:
+     *     ( ПРОГРЕСС_АНИМАЦИИ - ПРОГРЕСС_ЛЕВОГО ) / ( ПРОГРЕСС_ПРАВОГО - ПРОГРЕСС_ЛЕВОГО ).
+     * ЛЕВЫЙ и ПРАВЫЙ ключевые кадры - те, для которых выполняется следующее :
+     *      ПРОГРЕСС_ЛЕВОГО < ПРОГРЕСС_АНИМАЦИИ <= ПРОГРЕСС_ПРАВОГО.
+     *
+     * @type {string}
+     */
+    Keyframe.prototype.alternativeValue = '';
+
+    /**
+     * Изменение значения ключевого кадра путём копирования.
+     * @param {!Array.<number>} newValue
+     */
+    Keyframe.prototype.setValue = function (newValue) {
+        this.propVal.length = 0;
+        this.propVal.push.apply(this.propVal, newValue);
+    };
+
+    /**
+     * Вернёт текущее значение
+     * @return {null|Array.<number>}
+     */
+    Keyframe.prototype.getValue = function () {
+        return this.propVal.length ? this.propVal.concat() : null;
+    };
+
+    /**
+     *  Класс коллекции ключевых кадров
+     *  @constructor
+     *  @extends {Array}
+     */
+    function KeyframesCollection () {
+    }
+
+    goog.inherits(KeyframesCollection, Array);
+
+    /**
+     * @param {number} progress
+     * @returns {Keyframe?}
+     * @override
+     */
+    KeyframesCollection.prototype.indexOf = function (progress) {
+        return linearSearch(this, function (keyframe, i, keyframes) {
+            return keyframe.numericKey === progress;
+        });
+    };
+
+    /**
+     * @const
+     * @param {!Keyframe} first
+     * @param {!Keyframe} second
+     * @param {number} index
+     * @param {!KeyframesCollection} keyframes
+     * @returns {*}
+     */
+    var compare_keyframes = function (first, second, index, keyframes) {
+        if (first.numericKey === second.numericKey) {
+            return SORT_EQUALS;
+        }
+        if (first.numericKey < second.numericKey) {
+            return SORT_BIGGER;
+        }
+        return SORT_SMALLER;
+    };
+
+    /**
+     * @param {number} progress
+     * @return {!Keyframe}
+     */
+    KeyframesCollection.prototype.add = function (progress) {
+        var keyframe = new Keyframe(progress);
+        this.push(keyframe);
+        sortArray(this, compare_keyframes);
+        return keyframe;
+    };
+
+    /**
+     * Кэшированный индекс найденного ЛЕВОГО ключевого кадра.
+     * @type {number}
+     */
+    KeyframesCollection.prototype.cachedIndex = MINIMAL_PROGRESS;
+
+    /**
+     * Поиск индекса ЛЕВОГО ключевого кадра для определённого прогресса.
+     * @param {number} progress
+     */
+    KeyframesCollection.prototype.indexOfLeft = function (progress) {
+        var leftKeyframe, rightKeyframe;
+
+        if (this.length < 2) {
+            return NOT_FOUND;
+        }
+
+        leftKeyframe = this[ this.cachedIndex ];
+        rightKeyframe = this[ this.cachedIndex + 1 ];
+
+        if (leftKeyframe.numericKey > progress || progress >= rightKeyframe.numericKey) {
+            do {
+
+                if (!rightKeyframe || leftKeyframe.numericKey > progress) {
+                    this.cachedIndex--;
+                }
+                if (rightKeyframe.numericKey < progress) {
+                    this.cachedIndex++;
+                }
+                leftKeyframe = this[ this.cachedIndex ];
+                rightKeyframe = this[ this.cachedIndex + 1 ];
+            } while (leftKeyframe.numericKey > progress || rightKeyframe.numericKey < progress);
+        }
+
+        return this.cachedIndex;
+    };
+
+    /**
+     * Вернёт ключевой кадр по индексу
+     * @param {number} index
+     */
+    KeyframesCollection.prototype.item = function (index) {
+        return this[index];
+    };
+
+    /**
+     * Объект с описанием анимируемого свойства
+     * @param {string} propertyName
+     * @constructor
+     */
+    function PropertyDescriptor (propertyName) {
+        this.propName = propertyName;
+        this.vendorizedPropName = getVendorPropName(propertyName);
+        this.currentValue = [];
+        this.keyframes = new KeyframesCollection();
+        this.startingValue = new Keyframe(null);
+    }
+
+    /**
+     * Идентификатор свойства.
+     * ("top", "transform")
+     * @type {string}
+     */
+    PropertyDescriptor.prototype.propName = '';
+
+    /**
+     * Имя свойства для стиля
+     * ("top", "webkitTransform")
+     * @type {string}
+     */
+    PropertyDescriptor.prototype.vendorizedPropName = '';
+
+    /**
+     * Текущее значение свойства на моменте анимации.
+     * @type {Array.<number>}
+     */
+    PropertyDescriptor.prototype.currentValue;
+
+    /**
+     * Значение свойства на момент старта анимации.
+     * @type {!Keyframe}
+     */
+    PropertyDescriptor.prototype.startingValue;
+
+    /**
+     * Коллекция значений ключевых кадров для свойства
+     * @type {!KeyframesCollection}
+     */
+    PropertyDescriptor.prototype.keyframes;
+
+    /**
+     * @return {!KeyframesCollection}
+     */
+    PropertyDescriptor.prototype.getKeyframes = function () {
+        return this.keyframes;
+    };
+
+    /**
+     * Коллекция анимируемых свойств
+     * @constructor
+     * @extends {Array}
+     */
+    function PropertyDescriptorCollection () {
+    }
+
+    goog.inherits(PropertyDescriptorCollection, Array);
+
+    /**
+     * Поиск дескриптора для опредлённого свойства
+     * @param {string} propertyName
+     * @return {number}
+     * @override
+     */
+    PropertyDescriptorCollection.prototype.indexOf = function (propertyName) {
+        return linearSearch(this, function (propertyDescriptor, i, data) {
+            return propertyDescriptor.propName === propertyName;
+        });
+    };
+
+    /**
+     * Добавление нового свойства в коллекцию
+     * @param {string} propertyName
+     * @return {!PropertyDescriptor}
+     */
+    PropertyDescriptorCollection.prototype.add = function (propertyName) {
+        var propertyDescriptor = new PropertyDescriptor(propertyName);
+        this.push(propertyDescriptor);
+        return propertyDescriptor;
+    };
+
+    /**
+     * Вернёт дескриптор свойства по определённому индексу
+     * @param {number} index
+     * @return {!PropertyDescriptor}
+     */
+    PropertyDescriptorCollection.prototype.item = function (index) {
+        return this[ index ];
+    };
 
     /** @const */
     var EasingRegistry = {
@@ -2085,6 +2512,10 @@ goog.scope = function(fn) {
                 timingFunction = self.build( /** @type {(string|!Array)} */ (req) );
             }
 
+            if (goog.isNull(timingFunction)) {
+                return null;
+            }
+
             var index = linearSearch(self.easings, function (easing, i, easingsArray) {
                 return easing.equals(timingFunction);
             });
@@ -2112,7 +2543,7 @@ goog.scope = function(fn) {
                 if (camelCased in cssEasingAliases) {
                     // Передан алиас к аргументам смягчения CSS
                     args = cssEasingAliases[ camelCased ];
-                } else {
+                } else if (cssFunctionReg.test(trimmed)) {
                     // Передана строка временной функции CSS
                     // строка аргументов к временной функции. разделены запятой
                     matched = trimmed.match(cssFunctionReg);
@@ -2123,7 +2554,7 @@ goog.scope = function(fn) {
                 args = /** @type {!Array} */ (contain);
             }
 
-            argsLength = args.length;
+            argsLength = goog.isArray(args) ? args.length : 0;
 
             if (argsLength == 4) {
                 // заинлайненный цикл
@@ -2337,7 +2768,6 @@ goog.scope = function(fn) {
      * @override
      */
     Steps.prototype.equals = function (easing) {
-        /** @type {!Steps} */(easing);
         var isAmountEquals = this.stepsAmount === easing.stepsAmount;
         var isCountSourceEquals = this.countFromStart === easing.countFromStart;
         return isAmountEquals && isCountSourceEquals;
@@ -2452,13 +2882,10 @@ goog.scope = function(fn) {
 
 
     toStringValueHooks["color"] = function (elem, propertyName, numericValue, vendorizedPropName) {
-        return "rgb" + "(" + numericValue + ")";
+        return "rgb" + "(" + numericValue.toString() + ")";
     };
 
-    blendHooks["color"] = function (from, to, easing, current, id) {
-        var changed = false;
-
-        current[id] = id in current ? current[id] : ( current[id] = [ 0, 0, 0 ] );
+    blendHooks["color"] = function (from, to, easing, current, round) {
 
         // Цветовой канал лежит в интервале [ 0, 255 ]
         if (easing < MINIMAL_PROGRESS) {
@@ -2467,61 +2894,39 @@ goog.scope = function(fn) {
             easing = MAXIMAL_PROGRESS;
         }
 
+        return blend(from, to, easing, current, 1);
 
-        for (var i = 0; i < 3; i++) {
-            changed = blend(from[i], to[i], easing, current[id], '' + i) || changed;
-        }
-
-        return changed;
     };
 
 
     /* ------------------   РАБОТА С TRANSFORM   --------------------- */
 
+    var cssTransformFuncReg = new RegExp([
+        "\\s",    // пробел
+        "(?!",   // за которым нет
+            "[-\\.\\d]",  // CSS-значения
+        ")"
+    ].join(""));
+
+    /** @const */
     var TRANSFORMDATA_ROTATE = 0;
-
+    /** @const */
     var TRANSFORMDATA_SCALE_X = 1;
+    /** @const */
     var TRANSFORMDATA_SCALE_Y = 2;
-
+    /** @const */
     var TRANSFORMDATA_SKEW_X = 3;
+    /** @const */
     var TRANSFORMDATA_SKEW_Y = 4;
-
+    /** @const */
     var TRANSFORMDATA_TRANSLATE_X = 5;
+    /** @const */
     var TRANSFORMDATA_TRANSLATE_Y = 6;
-
-    function TransformData () {
-        // Матрица преобразований
-        this.matrix = [ 0, 0, 0, 0, 0, 0 ];
-        // Декомпозированные из матрицы данные
-        this.data = [ 0, 100, 100, 0, 0, 0, 0 ];
-    }
-
-    TransformData.prototype.setData = function (value) {
-
-        if (value === "none" || value === "") {
-            return;
-        }
-
-        var matched;
-
-        var transforms = value.split(cssTransformFuncReg);
-
-        for (var i = 0; i < transforms.length; i++) {
-
-            matched = transforms[i].match(cssFunctionReg);
-
-            var func = matched[1]+"";
-            var args = removeSpaces(matched[2]+"").split(cssFuncArgsSeparator);
-
-            this.setters[func](args, this.data);
-        }
-
-    };
 
     /**
      * @enum {function (!Array, !Array.<Array>)}
      */
-    TransformData.prototype.setters = {
+    var TransformSetters = {
 
         "scaleX": function (args, data) {
             data[TRANSFORMDATA_SCALE_X] = parseFloat(args[0]) * 100;
@@ -2556,8 +2961,8 @@ goog.scope = function(fn) {
             data[TRANSFORMDATA_TRANSLATE_Y] = parseFloat(args[0]);
         },
         "translate": function (args, data) {
-            data[TRANSFORMDATA_TRANSLATE_Y] = parseFloat(args[0]);
-            data[TRANSFORMDATA_TRANSLATE_X] = parseFloat(args[1]);
+            data[TRANSFORMDATA_TRANSLATE_X] = parseFloat(args[0]);
+            data[TRANSFORMDATA_TRANSLATE_Y] = parseFloat(args[1]);
         },
 
 
@@ -2620,57 +3025,55 @@ goog.scope = function(fn) {
 
     };
 
-    TransformData.toArray = function () {
-        //TODO экспорт TransformData как матрицу
-        return this.matrix;
+    toNumericValueHooks["transform"] = function (elem, propertyName,  propertyValue, vendorizedPropName) {
+
+        // Декомпозированные данные трансформации
+        var transformData = [ 0, 100, 100, 0, 0, 0, 0 ];
+
+        if (propertyValue === "none" || propertyValue === "") {
+            return;
+        }
+
+        var matched;
+
+        var transforms = propertyValue.split(cssTransformFuncReg);
+
+        for (var i = 0; i < transforms.length; i++) {
+
+            matched = transforms[i].match(cssFunctionReg);
+
+            var func = matched[FUNCREG_FUNC];
+            var args = removeSpaces(matched[FUNCREG_ARGS]).split(cssFuncArgsSeparator);
+
+            TransformSetters[func](args, transformData);
+        }
+
+        return transformData;
     };
 
-    TransformData.prototype.toString = function () {
-        var data = this.data;
-
+    toStringValueHooks["transform"] = function (elem, propertyName, numericValue, vendorizedPropName) {
         var currentTransforms = "";
 
-        if (data[TRANSFORMDATA_SCALE_X] !== 100 || data[TRANSFORMDATA_SCALE_Y] !== 100) {
-            currentTransforms += " " +  "scale(" + data[TRANSFORMDATA_SCALE_X] / 100 + "," + data[TRANSFORMDATA_SCALE_Y] / 100 + ")";
+        if ( numericValue[TRANSFORMDATA_ROTATE] % 360 !== 0 ) {
+            currentTransforms += " " + "rotate(" + numericValue[TRANSFORMDATA_ROTATE] + "deg" + ")";
         }
 
-        if ( data[TRANSFORMDATA_ROTATE] % 360 !== 0 ) {
-            currentTransforms += " " + "rotate(" + data[TRANSFORMDATA_ROTATE] + "deg" + ")";
+        if (numericValue[TRANSFORMDATA_SKEW_X] !== 0 || numericValue[TRANSFORMDATA_SKEW_Y] !== 0 ) {
+            currentTransforms += " " + "skew(" + numericValue[TRANSFORMDATA_SKEW_X] + "deg" + "," + numericValue[TRANSFORMDATA_SKEW_Y] + "deg" + ")";
         }
 
-        if (data[TRANSFORMDATA_SKEW_X] !== 0 || data[TRANSFORMDATA_SKEW_Y] !== 0 ) {
-            currentTransforms += " " + "skew(" + data[TRANSFORMDATA_SKEW_X] + "deg" + "," + data[TRANSFORMDATA_SKEW_Y] + "deg" + ")";
+        if (numericValue[TRANSFORMDATA_TRANSLATE_X] !== 0 || numericValue[TRANSFORMDATA_TRANSLATE_Y] !== 0) {
+            currentTransforms += " " + "translate(" + numericValue[TRANSFORMDATA_TRANSLATE_X] + "px" + "," + numericValue[TRANSFORMDATA_TRANSLATE_Y] + "px" + ")";
         }
 
-        if (data[TRANSFORMDATA_TRANSLATE_X] !== 0 || data[TRANSFORMDATA_TRANSLATE_Y] !== 0) {
-            currentTransforms += " " + "translate(" + data[TRANSFORMDATA_TRANSLATE_X] + "px" + "," + data[TRANSFORMDATA_TRANSLATE_Y] + "px" + ")";
-            console.log("translate(" + data[TRANSFORMDATA_TRANSLATE_X] + "px" + "," + data[TRANSFORMDATA_TRANSLATE_Y] + "px" + ")");
+        // Scale должна идти в конце трансформаций, иначе будет влиять на них. "scaleX(32) translateX(1px)" даст смещение в "32px"
+        if (numericValue[TRANSFORMDATA_SCALE_X] !== 100 || numericValue[TRANSFORMDATA_SCALE_Y] !== 100) {
+            currentTransforms += " " +  "scale(" + numericValue[TRANSFORMDATA_SCALE_X] / 100 + "," + numericValue[TRANSFORMDATA_SCALE_Y] / 100 + ")";
         }
 
         return currentTransforms;
     };
 
-    toNumericValueHooks["transform"] = function (propertyValue) {
-        var transformData = new TransformData();
-        transformData.setData(propertyValue);
-        return transformData;
-    };
-    blendHooks["transform"] = function (from, to, easing, current, id) {
-
-        var changed = false;
-
-        current[id] = id in current ? current[id] : ( current[id] = new TransformData() );
-
-        var data = current[id].data;
-
-        for (var i = 0, m = data.length; i < m; i++) {
-            if (blend(from.data[i], to.data[i], easing, data, '' + i) && !changed) {
-                changed = true;
-            }
-        }
-
-        return changed;
-    };
 
     /* ------------------   РАБОТА С SHADOW   --------------------- */
     var SHADOW_X = 0;
@@ -2699,7 +3102,7 @@ goog.scope = function(fn) {
         // Цвет в любом формате
         var color = shadow.replace(props, "");
 
-        this.data[SHADOW_COLOR] = normalizeHooks["color"](null, "color", color, false);
+        this.data[SHADOW_COLOR] = toNumericValueHooks["color"](null, "color", color, false);
 
         // Х, У, размытие и длина тени, разделённые пробелом
         props = props.split(" ");
@@ -2727,7 +3130,7 @@ goog.scope = function(fn) {
                 shadow += (this.data[i] / 10) + "px" + " ";
             }
         }
-        shadow += normalizeHooks["color"](null, "color", this.data[SHADOW_COLOR], true);
+        shadow += toNumericValueHooks["color"](null, "color", this.data[SHADOW_COLOR], true);
         return shadow;
     };
 
@@ -2800,12 +3203,10 @@ goog.scope = function(fn) {
     };
 
     /* ------------------   РАБОТА С OPACITY   --------------------- */
-    toNumericValueHooks["opacity"] = function (propertyValue) {
-        return parseFloat(propertyValue) * 100;
+    var BLEND_OPACITY_ROUND = 2;
+    blendHooks["opacity"] = function (from, to, easing, current, round) {
+        return blend(from, to, easing, current, BLEND_OPACITY_ROUND);
     };
-    toStringValueHooks["opacity"] = function (propertyValue) {
-        return propertyValue / 100 + '';
-    }
 
 /*---------------------------------------*/
 
@@ -2838,7 +3239,7 @@ goog.scope = function(fn) {
         green: [0, 128, 0],
         red: [255, 0, 0],
         transparent: [255, 255, 255]
-    }
+    };
 
 /*---------------------------------------*/
 
@@ -2847,79 +3248,79 @@ goog.scope = function(fn) {
      * @type {number}
      */
     var DEFAULT_DURATION = 400;
+
      /**
      * @const
      * @type {number}
      */
     var DEFAULT_DELAY = 0;
+
     /**
      * @const
      * @type {number}
      */
     var DEFAULT_ITERATIONS = 1;
+
     /**
      * @const
      * @type {number}
      */
     var DEFAULT_INTEGRAL_ITERATIONS = 1;
+
     /**
      * @const
      * @type {boolean}
      */
     var DEFAULT_IS_ALTERNATED = false;
+
     /**
      * @const
      * @type {boolean}
      */
     var DEFAULT_IS_REVERSED = false;
+
     /**
      * @const
      * @type {boolean}
      */
     var DEFAULT_FILLS_FORWARDS = true;
+
     /**
      * @const
      * @type {boolean}
      */
     var DEFAULT_FILLS_BACKWARDS = false;
+
     /**
      * @const
      * @type {!Easing}
      */
     var DEFAULT_EASING = new Easing();
 
-/*---------------------------------------*/
-
-    /**
-     * @const
-     * @type {number}
-     */
-    var MINIMAL_PROGRESS = 0;
-    /**
-     * @const
-     * @type {number}
-     */
-    var MAXIMAL_PROGRESS = 1.0;
     /**
      * @const
      * @type {number}
      */
     var DIRECTION_ALTERNATE = 2; // bin: 10
+
     /**
      * @const
      * @type {number}
      */
     var DIRECTION_REVERSE = 1; // bin: 01
+
     /**
      * @const
      * @type {number}
      */
     var FILLS_FORWARDS = 2; // bin: 10
+
     /**
      * @const
      * @type {number}
      */
     var FILLS_BACKWARDS = 1; // bin: 01
+
     /**
      * @const
      * @type {string}
@@ -2927,147 +3328,187 @@ goog.scope = function(fn) {
     var TIMING_FUNCTION = 'timing-function';
 
 
+/*---------------------------------------*/
+
     /**
      * Низкоуровневый конструктор анимаций
      * @constructor
-     * @export
      */
     function Animation () {
         this.animId = generateId();
-        this.keyframes = [];
+        this.animatedProperties = new PropertyDescriptorCollection();
     }
 
     /** @type {string} */
     Animation.prototype.animId = 'none';
 
-    /** @type {(Element|Object)} */
-    Animation.prototype.animationTarget = null;
+    /** @type {!Element} */
+    Animation.prototype.animationTarget;
 
     /**
-     * @export
+     * Установка цели анимации.
+     * Объект, на который направлены
+     * - перевод строковых значений свойств в числовые
+     * - перевод относительных значений свойств в абсолютные
+     * - отрисовка значений свойств на каждом шаге
      * @param {(Element|Object)} target
      */
     Animation.prototype.setTarget = function (target) {
         this.animationTarget = target;
     };
 
+    goog.exportProperty(Animation.prototype, 'setTarget', Animation.prototype.setTarget);
+
     /**
-     * @export
+     * Вернёт текущую цель анимации
      * @return {(Element|Object)}
      */
     Animation.prototype.getTarget = function () {
         return this.animationTarget;
     };
 
-    /**
-     * @type {Array.<{
-         *   propName: string,
-         *   currentValue: !Array.<number>,
-         *   startingValue: string,
-         *   cachedIndex: number,
-         *   keyframes: !Array.<{
-         *       numericKey: number,
-         *       propVal: !Array.<number>,
-         *       isComputed: boolean
-         *       }>
-         *   }>}
-     */
-    Animation.prototype.keyframes = null;
+    goog.exportProperty(Animation.prototype, 'getTarget', Animation.prototype.getTarget);
 
     /**
-     * @export
-     * @param {string} propertyName
-     * @param {!Array.<number>} propertyValue
-     * @param {number} progress
-     * @param {string=}
+     * @type {!PropertyDescriptorCollection}
+     */
+    Animation.prototype.animatedProperties = null;
+
+    /**
+     * Установка значения свойства при прогрессе.
+     * @param {string} propertyName имя свойства
+     * @param {!Array.<number>} propertyValue числовое абсолютное значение свойства (массив с числами)
+     * @param {number} progress прогресс прохода в долях
+     * @param {string=} alternativeValue альтернативное значение. см Keyframe.alternativeValue
      */
     Animation.prototype.setPropAt = function (propertyName, propertyValue, progress, alternativeValue) {
 
-        var index;
+        /** @type {!PropertyDescriptor} */
+        var propertyDescriptor;
 
-        index = linearSearch(/** @type {!Array} */(this.keyframes), function (propertyDescriptor, i, data) {
-            return propertyDescriptor.propName === propertyName;
-        });
+        var propertyDescriptorIndex = this.animatedProperties.indexOf(propertyName);
 
-        var propertyKeyframes;
-
-        if (index === NOT_FOUND) {
-            propertyKeyframes = {
-                propName: propertyName,
-                vendorizedPropName: getVendorPropName(propertyName),
-                currentValue: [],
-                startingValue: '',
-                cachedIndex: 0,
-                keyframes: []
-            };
-            this.keyframes.push(propertyKeyframes);
+        if (propertyDescriptorIndex === NOT_FOUND) {
+            propertyDescriptor = this.animatedProperties.add(propertyName);
         } else {
-            propertyKeyframes = this.keyframes[index];
+            propertyDescriptor = this.animatedProperties.item(propertyDescriptorIndex);
         }
 
-        index = linearSearch(propertyKeyframes.keyframes, function (keyframe, i, keyframes) {
-            return keyframe.numericKey === progress;
-        });
+        /** @type {!KeyframesCollection} */
+        var propertyKeyframes = propertyDescriptor.getKeyframes();
 
+        var keyframeIndex = propertyKeyframes.indexOf(progress);
+
+        /**
+         * @type {!Keyframe}
+         */
         var keyframe;
 
-        var isComputed = goog.isDef(alternativeValue);
-
-        if (index === NOT_FOUND) {
-            keyframe = {
-                numericKey: progress,
-                propVal: propertyValue,
-                isComputed: isComputed,
-                alternativeValue: alternativeValue
-            };
-            propertyKeyframes.keyframes.push(keyframe);
-            bubbleSort(propertyKeyframes.keyframes, function (first, second, index, keyframes) {
-                if (first.numericKey === second.numericKey) {
-                    return SORT_EQUALS;
-                }
-                if (first.numericKey < second.numericKey) {
-                    return SORT_BIGGER;
-                }
-                return SORT_SMALLER;
-            });
+        if (keyframeIndex !== NOT_FOUND) {
+            keyframe = propertyKeyframes.item(keyframeIndex);
         } else {
-            keyframe = propertyKeyframes.keyframes[index];
-            keyframe.propVal = propertyValue.slice(0);
-            keyframe.isComputed = isComputed;
-            keyframe.alternativeValue = alternativeValue;
+            keyframe = propertyKeyframes.add(progress);
         }
+
+        keyframe.setValue(propertyValue);
+        keyframe.alternativeValue = goog.isString(alternativeValue) ? alternativeValue : '';
 
     };
 
+    goog.exportProperty(Animation.prototype, 'setPropAt', Animation.prototype.setPropAt);
+
     /**
-     * @export
-     * @param {string} propertyName
-     * @param {number} progress
-     * @return {null|number|!Array.<number>}
+     * Получение значения свойства при прогресса
+     * @param {string} propertyName имя свойства
+     * @param {number} progress прогресс прохода в долях
+     * @return {Array.<number>?}
      */
     Animation.prototype.getPropAt = function (propertyName, progress) {
-        var index;
 
-        index = linearSearch(/** @type {!Array} */(this.keyframes), function (propertyDescriptor, i, data) {
-            return propertyDescriptor.propName === propertyName;
-        });
-        if (index !== NOT_FOUND) {
-            var propertyDescriptor = this.keyframes[index];
-            index = linearSearch(propertyDescriptor.keyframes, function (keyframe, i, keyframes) {
-                return keyframe.numericKey === progress;
-            });
-            if (index !== NOT_FOUND) {
-                var keyframe = propertyDescriptor.keyframes[index];
-                return keyframe.propVal;
+        /** @type {!PropertyDescriptor} */
+        var propertyDescriptor;
+
+        var propertyDescriptorIndex = this.animatedProperties.indexOf(propertyName);
+
+        if (propertyDescriptorIndex !== NOT_FOUND) {
+            propertyDescriptor = this.animatedProperties.item(propertyDescriptorIndex);
+
+            /** @type {!KeyframesCollection} */
+            var propertyKeyframes = propertyDescriptor.getKeyframes();
+
+            var keyframeIndex = propertyKeyframes.indexOf(progress);
+
+            var keyframe;
+
+            if (keyframeIndex !== NOT_FOUND) {
+                keyframe = propertyKeyframes.item(progress);
+
+                return keyframe.getValue();
             }
         }
 
         return null;
     };
 
+    goog.exportProperty(Animation.prototype, 'getPropAt', Animation.prototype.getPropAt);
+
+    /**
+     * Установка стартового значения свойства
+     * Имеет смысл при 'fillMode' без 'forwards'
+     * Аргументы такие же, как и у Animation.setPropAt.
+     * @param {string} propertyName
+     * @param {!Array.<number>} propertyValue
+     * @param {string=} alternativeValue
+     */
+    Animation.prototype.setStartingValue = function (propertyName, propertyValue, alternativeValue) {
+        /** @type {!PropertyDescriptor} */
+        var propertyDescriptor;
+
+        var propertyDescriptorIndex = this.animatedProperties.indexOf(propertyName);
+
+        if (propertyDescriptorIndex === NOT_FOUND) {
+            propertyDescriptor = this.animatedProperties.add(propertyName);
+        } else {
+            propertyDescriptor = this.animatedProperties.item(propertyDescriptorIndex);
+        }
+
+        /** @type {!Keyframe} */
+        var startingValue = propertyDescriptor.startingValue;
+
+        startingValue.setValue(propertyValue);
+        startingValue.alternativeValue = goog.isString(alternativeValue) ? alternativeValue : '';
+
+    };
+
+    goog.exportProperty(Animation.prototype, 'setStartingValue', Animation.prototype.setStartingValue);
+
+    /**
+     * @param {string} propertyName
+     */
+    Animation.prototype.getStartingValue = function (propertyName) {
+
+        /** @type {!PropertyDescriptor} */
+        var propertyDescriptor;
+
+        var propertyDescriptorIndex = this.animatedProperties.indexOf(propertyName);
+
+        if (propertyDescriptorIndex !== NOT_FOUND) {
+            propertyDescriptor = this.animatedProperties.item(propertyDescriptorIndex);
+
+            /** @type {!Keyframe} */
+            var startingValue = propertyDescriptor.startingValue;
+
+            return startingValue.getValue();
+        }
+
+        return null;
+    };
+
+    goog.exportProperty(Animation.prototype, 'getStartingValue', Animation.prototype.getStartingValue);
+
     /**
      * @param {string} propName
-     * @param {!Array.<number>|string|number} currentValue
+     * @param {!Array.<number>|string|number|null} currentValue
      * @param {string=} vendorizedPropName
      */
     Animation.prototype.render = function (propName, currentValue, vendorizedPropName) {
@@ -3075,35 +3516,31 @@ goog.scope = function(fn) {
         setStyle(this.animationTarget, propName, stringValue, vendorizedPropName);
     };
 
-    /**
-     * @param {function (string, !Array.<number>)} newRenderer
-     * @export
-     */
-    Animation.prototype.replaceRenderer = function (newRenderer) {
-        this.render = newRenderer;
-    };
-
     /** @type {number} */
     Animation.prototype.delayTime = DEFAULT_DELAY;
 
     /***
-     * @export
-     * @param {number} delay
+     * Установка задержки между стартом и началом проигрывания.
+     * @param {number} delay время в миллисекундах
      */
     Animation.prototype.setDelay = function (delay) {
         this.delayTime = delay;
     };
 
+    goog.exportProperty(Animation.prototype, 'setDelay', Animation.prototype.setDelay);
+
     /** @type {number} */
     Animation.prototype.cycleDuration = DEFAULT_DURATION;
 
     /**
-     * @param {number} duration
-     * @export
+     * Установка продолжительности одного прохода
+     * @param {number} duration время в миллисекундах
      */
     Animation.prototype.setDuration = function (duration) {
         this.cycleDuration = duration;
     };
+
+    goog.exportProperty(Animation.prototype, 'setDuration', Animation.prototype.setDuration);
 
     /** @type {number} */
     Animation.prototype.iterations = DEFAULT_ITERATIONS;
@@ -3112,7 +3549,7 @@ goog.scope = function(fn) {
     Animation.prototype.integralIterations = DEFAULT_INTEGRAL_ITERATIONS;
 
     /**
-     * @export
+     * Установка числа проходов
      * @param {number} iterations
      */
     Animation.prototype.setIterations = function (iterations) {
@@ -3126,6 +3563,8 @@ goog.scope = function(fn) {
         }
     };
 
+    goog.exportProperty(Animation.prototype, 'setIterations', Animation.prototype.setIterations);
+
     /** @type {boolean} */
     Animation.prototype.isAlternated = DEFAULT_IS_ALTERNATED;
 
@@ -3133,16 +3572,17 @@ goog.scope = function(fn) {
     Animation.prototype.isReversed = DEFAULT_IS_REVERSED;
 
     /**
-     * @export
-     * @param {number} binaryDirection
+     * Установка режима направления
+     * @param {number} binaryDirection бинарные режим направления
      */
     Animation.prototype.setDirection = function (binaryDirection) {
         this.isAlternated = (binaryDirection & DIRECTION_ALTERNATE) !== 0;
         this.isReversed = (binaryDirection & DIRECTION_REVERSE) !== 0;
     };
 
+    goog.exportProperty(Animation.prototype, 'setDirection', Animation.prototype.setDirection);
+
     /**
-     * @export
      * @return {number}
      */
     Animation.prototype.getDirection = function () {
@@ -3155,6 +3595,8 @@ goog.scope = function(fn) {
         }
         return binaryDirection;
     };
+
+    goog.exportProperty(Animation.prototype, 'getDirection', Animation.prototype.getDirection);
 
     /**
      * @return {boolean}
@@ -3185,7 +3627,6 @@ goog.scope = function(fn) {
     Animation.prototype.fillsBackwards = DEFAULT_FILLS_BACKWARDS;
 
     /**
-     * @export
      * @param {number} binaryFillMode
      */
     Animation.prototype.setFillMode = function (binaryFillMode) {
@@ -3193,20 +3634,23 @@ goog.scope = function(fn) {
         this.fillsBackwards = (binaryFillMode & FILLS_BACKWARDS) !== 0;
     };
 
+    goog.exportProperty(Animation.prototype, 'setFillMode', Animation.prototype.setFillMode);
+
     /**
-     * @export
      * @return {number}
      */
     Animation.prototype.getFillMode = function () {
         var binFillMode = 0;
         if (this.fillsForwards) {
-            binFillMode &= FILLS_FORWARDS;
+            binFillMode |= FILLS_FORWARDS;
         }
         if (this.fillsBackwards) {
-            binFillMode &= FILLS_BACKWARDS;
+            binFillMode |= FILLS_BACKWARDS;
         }
         return binFillMode;
     };
+
+    goog.exportProperty(Animation.prototype, 'getFillMode', Animation.prototype.getFillMode);
 
     /** @type {number} */
     Animation.prototype.elapsedTime = 0;
@@ -3216,19 +3660,21 @@ goog.scope = function(fn) {
 
     /**
      * @param {!(Easing|CubicBezier|Steps)} easing
-     * @export
      */
     Animation.prototype.setEasing = function (easing) {
         this.smoothing = easing;
     };
 
+    goog.exportProperty(Animation.prototype, 'setEasing', Animation.prototype.setEasing);
+
     /**
      * @return {!(CubicBezier|Steps|Easing)}
-     * @export
      */
     Animation.prototype.getEasing = function () {
         return this.smoothing;
     };
+
+    goog.exportProperty(Animation.prototype, 'getEasing', Animation.prototype.getEasing);
 
     /** @type {number} */
     Animation.prototype.animationProgress = 0;
@@ -3246,12 +3692,13 @@ goog.scope = function(fn) {
     Animation.prototype.currentIteration = 0;
 
     /**
-     * @export
      * @return {number}
      */
     Animation.prototype.getFractionalTime = function () {
         return this.fractionalTime;
     };
+
+    goog.exportProperty(Animation.prototype, 'getFractionalTime', Animation.prototype.getFractionalTime);
 
     /**
      * @param {number} deltaTime
@@ -3303,61 +3750,75 @@ goog.scope = function(fn) {
 
     Animation.prototype.update = function () {
 
+        var leftKeyframeIndex;
         var propertyKeyframes, propertyDescriptor;
-        var properties = this.keyframes;
+        /**
+         * Глобальное смягчение - значение временной функции рпи прогрессе АНИМАЦИИ.
+         * Лениво инициализируется и используется, если локальный прогресс ключевых кадров
+         * равен прогрессу анимации.
+         * Этим экономятся вызовы функции смягчения.
+         * @type {number|null}
+         */
         var globalEasing = null;
         var localEasing, relativeFractionalTime;
         var leftKeyframe, rightKeyframe;
+        var alternativeKeyframe;
+        var blender = blend;
 
-        for (var i = 0; i < properties.length; i++) {
-            propertyDescriptor = properties[i];
-            propertyKeyframes = propertyDescriptor.keyframes;
+        for (var i = 0; i < this.animatedProperties.length; i++) {
 
-            leftKeyframe = propertyKeyframes[propertyDescriptor.cachedIndex];
-            rightKeyframe = propertyKeyframes[propertyDescriptor.cachedIndex + 1];
+            propertyDescriptor = this.animatedProperties.item(i);
+            propertyKeyframes = propertyDescriptor.getKeyframes();
 
-            // Поиск двух ключевых кадров для текущего прогресса
-            if (leftKeyframe.numericKey > this.fractionalTime || this.fractionalTime >= rightKeyframe.numericKey) {
-                do {
-                    if (!rightKeyframe || leftKeyframe.numericKey > this.fractionalTime) {
-                        propertyDescriptor.cachedIndex--;
-                    }
-                    if (rightKeyframe.numericKey < this.fractionalTime) {
-                        propertyDescriptor.cachedIndex++;
-                    }
-                    leftKeyframe = propertyKeyframes[propertyDescriptor.cachedIndex];
-                    rightKeyframe = propertyKeyframes[propertyDescriptor.cachedIndex + 1];
-                } while (leftKeyframe.numericKey > this.fractionalTime || rightKeyframe.numericKey < this.fractionalTime);
-            }
+            leftKeyframeIndex = propertyKeyframes.indexOfLeft(this.fractionalTime);
 
-            // Прогресс относительно двух ключевых кадров
+            leftKeyframe = propertyKeyframes.item(leftKeyframeIndex);
+            rightKeyframe = propertyKeyframes.item(leftKeyframeIndex + 1);
+
+            // Прогресс относительно двух найденных ключевых кадров
             if (leftKeyframe.numericKey === MINIMAL_PROGRESS && rightKeyframe.numericKey === MAXIMAL_PROGRESS) {
+                // Упрощённое нижележащее выражение при подстановке "0.0" и "1.0"
                 relativeFractionalTime = this.fractionalTime;
             } else {
                 relativeFractionalTime = (this.fractionalTime - leftKeyframe.numericKey) / (rightKeyframe.numericKey - leftKeyframe.numericKey);
             }
 
             if (relativeFractionalTime === MINIMAL_PROGRESS || relativeFractionalTime === MAXIMAL_PROGRESS) {
-                // В начале и в конце (прогресс 0.0 и 1.0) значение смягчения всегда равно прогрессу
-                // Вычислять промежуточное значение не требуется.
-                //localEasing = relativeFractionalTime;
-                //leftKeyframe = rightKeyframe = relativeFractionalTime === MINIMAL_PROGRESS ? leftKeyframe : rightKeyframe;
-                var alternativeKeyframe = relativeFractionalTime === MINIMAL_PROGRESS ? leftKeyframe : rightKeyframe;
-                if (alternativeKeyframe.isComputed) {
-                    this.render(propertyDescriptor.propName, leftKeyframe.alternativeValue, propertyDescriptor.vendorizedPropName);
-                }
+                // В начале и в конце (прогресс 0.0 и 1.0) прогресса относительно ключевых кадров
+                // значение смягчения всегда равно прогрессу
+                // Вычислять значение смягчения, промежуточное значение свойства и переводить его в строку не требуется.
+                alternativeKeyframe = (relativeFractionalTime === MINIMAL_PROGRESS) ? leftKeyframe : rightKeyframe;
+                if (alternativeKeyframe.alternativeValue.length) {
+                    this.render(propertyDescriptor.propName, alternativeKeyframe.alternativeValue, propertyDescriptor.vendorizedPropName);
+                } // else Альтернативное значение не задано. Будет происходить вычисление промежуточного и перевод его в строку.
             } else if (relativeFractionalTime === this.fractionalTime) {
+                // Локальный прогресс ключевых кадров равен прогрессу анимации
+                // Экономия вызова значения временной функции смягчения
                 if (goog.isNull(globalEasing)) {
                     globalEasing = this.smoothing.compute(relativeFractionalTime)
                 }
                 localEasing = globalEasing;
             } else {
+                //
                 localEasing = this.smoothing.compute(relativeFractionalTime);
             }
 
-            if ((!alternativeKeyframe || !alternativeKeyframe.isComputed) && blend(leftKeyframe.propVal, rightKeyframe.propVal, localEasing, propertyDescriptor.currentValue)) {
-                // Отрисовываем в том случае, если значение свойства изменено
-                this.render(propertyDescriptor.propName, propertyDescriptor.currentValue, propertyDescriptor.vendorizedPropName);
+            if (!alternativeKeyframe) {
+                // Нет высчитанного строкового значения
+                // Высчет промежуточного значения и перевод его в строку, а затем отрисовка полученного
+                // Худший случай
+
+                if ( COLOR_REG.test(propertyDescriptor.propName) ) {
+                    blender = blendHooks['color'];
+                } else if (propertyDescriptor.propName in blendHooks) {
+                    blender = blendHooks[propertyDescriptor.propName];
+                }
+
+                if ( blender(leftKeyframe.propVal, rightKeyframe.propVal, localEasing, propertyDescriptor.currentValue, BLEND_DIGITS)) {
+                    // Отрисовываем в том случае, если значение свойства изменено
+                    this.render(propertyDescriptor.propName, propertyDescriptor.currentValue, propertyDescriptor.vendorizedPropName);
+                } // else Отрисованное значение эквивалентно текущему промежуточному. Пропуск отрисовки
+
             }
 
         }
@@ -3370,7 +3831,9 @@ goog.scope = function(fn) {
     /** @type {number} */
     Animation.prototype.tickerId;
 
-    /** @export */
+    /**
+     * Запускает проигрывание анимации
+     */
     Animation.prototype.start = function () {
         this.elapsedTime = 0;
 
@@ -3387,16 +3850,36 @@ goog.scope = function(fn) {
         this.resume();
     };
 
-    /** @export */
+    goog.exportProperty(Animation.prototype, 'start', Animation.prototype.start);
+
+    /**
+     * Останавливает анимацию
+     * */
     Animation.prototype.stop = function () {
         if (this.fillsForwards) {
+            // Установка конечных значений для свойств.
             this.fractionalTime = 1;
             this.update();
+        } else {
+            // Возвращение анимированных свойств в доанимированное состояние
+            for (var i = 0; i < this.animatedProperties.length; i++) {
+                var propertyDescriptor = this.animatedProperties.item(i);
+                var startingValue = propertyDescriptor.startingValue;
+                if (startingValue.alternativeValue.length) {
+                    this.render(propertyDescriptor.propName, startingValue.alternativeValue, propertyDescriptor.vendorizedPropName);
+                } else {
+                    this.render(propertyDescriptor.propName, startingValue.getValue(), propertyDescriptor.vendorizedPropName);
+                }
+            }
         }
         this.pause();
     };
 
-    /** @export */
+    goog.exportProperty(Animation.prototype, 'stop', Animation.prototype.stop);
+
+    /**
+     * Снимает анимацию с паузы
+     * */
     Animation.prototype.resume = function () {
         var self = this;
         this.tickerId = Ticker.on(function (delta) {
@@ -3404,66 +3887,89 @@ goog.scope = function(fn) {
         });
     };
 
-    /** @export */
+    goog.exportProperty(Animation.prototype, 'resume', Animation.prototype.resume);
+
+    /**
+     * Приостанавливает анимацию
+     * */
     Animation.prototype.pause = function () {
         Ticker.off(this.tickerId);
     };
+
+    goog.exportProperty(Animation.prototype, 'pause', Animation.prototype.pause);
 
     /** @type {boolean} */
     Animation.prototype.usesCSS3;
 
     /**
+     * Форсирует анимации классический режим (JS-анимации)
      * @param {boolean} value
-     * @export
      */
     Animation.prototype.setClassicMode = function (value) {
         this.usesCSS3 = !value;
     };
 
+    goog.exportProperty(Animation.prototype, 'setClassicMode', Animation.prototype.setClassicMode);
+
     /** @type {!Function} */
     Animation.prototype.oncomplete = goog.nullFunction;
 
     /**
+     * Установка обработчика завершения анимации
+     * Функция исполнится, когда анимация завершится естественным ходом.
+     * (без ручного вызова Animation.stop)
      * @param {!Function} callback
-     * @export
      */
     Animation.prototype.onComplete = function (callback) {
         this.oncomplete = callback;
     };
 
+    goog.exportProperty(Animation.prototype, 'onComplete', Animation.prototype.onComplete);
+
     /** @type {!Function} */
     Animation.prototype.onstart = goog.nullFunction;
 
     /**
+     * Установка обработчика старта анимации.
+     * Исполнится, когда анимация начнёт проигрываться.
+     * Может быть таймаут между стартом и началом проигрывания.
+     * Этот таймаут устанавливается методом 'setDelay'
      * @param {!Function} callback
-     * @export
      */
     Animation.prototype.onStart = function (callback) {
         this.onstart = callback;
     };
 
+    goog.exportProperty(Animation.prototype, 'onStart', Animation.prototype.onStart);
+
     /** @type {!Function} */
     Animation.prototype.onstep = goog.nullFunction;
 
     /**
+     * Установка функции, исполняющейся при каждом шаге анимации.
+     * Исполняется после обновления состояния анимации (метод 'update')
      * @param {!Function} callback
-     * @export
      */
     Animation.prototype.onStep = function (callback) {
         this.onstep = callback;
     };
 
+    goog.exportProperty(Animation.prototype, 'onStep', Animation.prototype.onStep);
+
     /** @type {!Function} */
     Animation.prototype.oniteration = goog.nullFunction;
 
     /**
+     * Установка обработчика завершения прохода.
+     * Имеет смысл, если число проходов больше одного.
+     * Число проходов устанавливается методом 'setIterations'
      * @param {!Function} callback
-     * @export
      */
     Animation.prototype.onIteration = function (callback) {
         this.oniteration = callback;
     };
 
+    goog.exportProperty(Animation.prototype, 'onIteration', Animation.prototype.onIteration);
 
 /*---------------------------------------*/
 
@@ -3482,7 +3988,6 @@ goog.scope = function(fn) {
      * Установит или получит текущий элемент для анимирования
      * @param {Object=} target
      * @return {Object|!AnimationWrap}
-     * @export
      */
     AnimationWrap.prototype.target = function (target) {
         if (goog.isObject(target)) {
@@ -3492,6 +3997,8 @@ goog.scope = function(fn) {
             return this.getTarget();
         }
     };
+
+    goog.exportProperty(AnimationWrap.prototype, 'target', AnimationWrap.prototype.target);
 
     /**
      * @const
@@ -3511,13 +4018,14 @@ goog.scope = function(fn) {
 
     /**
      * Установка или получение значения свойства при переданном прогрессе
-     * @export
      * @param {string} propName
      * @param {(string|number|!Array.<number>)=} propValue Значение свойства. Для получения значения можно пропустить.
      * @param {(string|number)=} position Прогресс в строке или числе процентов. По умолчанию равен 100 (или "100%").
      * @return {null|number|!Array.<number>|!AnimationWrap}
      */
     AnimationWrap.prototype.propAt = function (propName, propValue, position) {
+        var numericValue;
+        var usedValue;
         var numericPosition = MAXIMAL_PROGRESS;
         if (goog.isDef(position)) {
             if (goog.isNumber(position)) {
@@ -3528,7 +4036,7 @@ goog.scope = function(fn) {
                 } else {
                     var matched = /** @type {string} */(position).match(cssNumericValueReg);
                     if (goog.isArray(matched) && (!matched[VALREG_DIMENSION] || matched[VALREG_DIMENSION] === PERCENT)) {
-                        numericPosition = matched[VALREG_VALUE] * 1;
+                        numericPosition = +matched[VALREG_VALUE];
                     }
                 }
             }
@@ -3540,13 +4048,40 @@ goog.scope = function(fn) {
             }
         }
         if (goog.isDef(propValue)) {
-            var numericValue = toNumericValue(this.animationTarget, propName, propValue, getVendorPropName(propName));
-            this.setPropAt(propName, numericValue, numericPosition, propValue);
+
+            if (goog.isArray(propValue)) {
+                numericValue = propValue;
+            } else if (goog.isNumber(propValue)) {
+                numericValue = [ propValue ];
+            } else {
+                numericValue = toNumericValue(this.animationTarget, propName, propValue, getVendorPropName(propName));
+            }
+
+            this.setPropAt(propName, numericValue, numericPosition, goog.isString(propValue) ? propValue : '');
+
+            // Для анимации необходимо минимум 2 значения
+            if (  goog.isNull(this.getPropAt(propName, MINIMAL_PROGRESS)) ) {
+                usedValue = getStyle(this.animationTarget, propName, true);
+                numericValue = toNumericValue(this.animationTarget, propName, usedValue, getVendorPropName(propName));
+                this.setPropAt(propName, numericValue, MINIMAL_PROGRESS, usedValue);
+            }
+            if ( goog.isNull(this.getPropAt(propName, MAXIMAL_PROGRESS)) ) {
+                usedValue = getStyle(this.animationTarget, propName, true);
+                numericValue = toNumericValue(this.animationTarget, propName, usedValue, getVendorPropName(propName));
+                this.setPropAt(propName, numericValue, MAXIMAL_PROGRESS, usedValue);
+            }
+            if ( goog.isNull(this.getStartingValue(propName)) ) {
+                usedValue = getStyle(this.animationTarget, propName, false);
+                numericValue = toNumericValue(this.animationTarget, propName, usedValue, getVendorPropName(propName));
+                this.setStartingValue(propName, numericValue, usedValue);
+            }
             return this;
         } else {
             return this.getPropAt(propName, numericPosition);
         }
     };
+
+    goog.exportProperty(AnimationWrap.prototype, 'propAt', AnimationWrap.prototype.propAt);
 
     /**
      * Алиасы к времени продолжительности.
@@ -3563,23 +4098,24 @@ goog.scope = function(fn) {
      * Отрицательные значения игнорируются.
      * Нулевое значение соответствует мгновенному проходу анимации, при этом
      * все механизмы работают так же, как и при положительной продолжительности.
-     * @export
      * @param {(string|number)=} duration Алиас, время в формате CSS или миллисекунды
      * @return {number|!AnimationWrap} время в миллисекундах или текущий экземпляр
      */
     AnimationWrap.prototype.duration = function (duration) {
         var numericDuration;
         if (goog.isDef(duration)) {
-            if (goog.isString(duration)) {
+            if (goog.isNumber(duration)) {
+                numericDuration = duration;
+            } else if (goog.isString(duration)) {
                 if (duration in durationAliases) {
                     numericDuration = durationAliases[duration];
                 } else {
                     var matched = /** @type {string} */(duration).match(cssNumericValueReg);
                     numericDuration = matched[VALREG_VALUE] * (matched[VALREG_DIMENSION] === 's' ? 1e3:1);
                 }
-                if (numericDuration >= 0) {
-                    this.setDuration(numericDuration);
-                }
+            }
+            if (numericDuration >= 0) {
+                this.setDuration(numericDuration);
             }
             return this;
         } else {
@@ -3587,11 +4123,12 @@ goog.scope = function(fn) {
         }
     };
 
+    goog.exportProperty(AnimationWrap.prototype, 'duration', AnimationWrap.prototype.duration);
+
     /**
      * Установка задержки старта.
      * Если значение положительное, старт анимации будет отложен на численное представление.
      * Если отрицательное, то при старте будет считаться, что прошло уже указанное по модулю время со старта.
-     * @export
      * @param {(number|string)=} delay Строка времени в формате CSS или число миллисекунд.
      * @return {number|!AnimationWrap}
      */
@@ -3605,13 +4142,15 @@ goog.scope = function(fn) {
                 numericDelay = matched[VALREG_VALUE] * (matched[VALREG_DIMENSION] === 's' ? 1e3:1);
             }
             if (isFinite(numericDelay)) {
-                this.setDelay(numericDelay);
+                this.setDelay(/** @type {number} */(numericDelay));
             }
             return this;
         } else {
             return this.delayTime;
         }
     };
+
+    goog.exportProperty(AnimationWrap.prototype, 'delay', AnimationWrap.prototype.delay);
 
     var ITERATIONCOUNT_INFINITE = 'infinite';
 
@@ -3620,7 +4159,6 @@ goog.scope = function(fn) {
      * Значение "infinite" соответствует бесконечному числу повторений анимации.
      * Дробные значения соответствуют конечному значению прогресса по проходу.
      * Отрицательные значения игнорируются.
-     * @export
      * @param {(number|string)=} iterations
      * @return {number|!AnimationWrap}
      */
@@ -3642,6 +4180,8 @@ goog.scope = function(fn) {
         }
     };
 
+    goog.exportProperty(AnimationWrap.prototype, 'iterationCount', AnimationWrap.prototype.iterationCount);
+
     /** @enum {number} */
     var directions = {
         'normal': 0,
@@ -3657,7 +4197,6 @@ goog.scope = function(fn) {
      * Значение "alternate" соответствует направлению "normal" для нечётных проходов и "reverse" для чётных.( binary: 10 )
      * Значение "alternate-reverse" соответствует направлению "reverse" для нечётных проходов и "normal" для чётных.( binary: 11 )
      * Числовому значению соответствует побитовая маска.
-     * @export
      * @param {(string|number)=} direction
      * @return {number|!AnimationWrap}
      */
@@ -3678,6 +4217,8 @@ goog.scope = function(fn) {
         }
     };
 
+    goog.exportProperty(AnimationWrap.prototype, 'direction', AnimationWrap.prototype.direction);
+
     /** @enum {number} */
     var fillModes = {
         'none': 0,
@@ -3694,12 +4235,12 @@ goog.scope = function(fn) {
      * конечного ключевого кадра после окончания анимации. ( binary:  10 )
      * Значение "none" не соответствует ни одному из значений; ( binary:  00 )
      * Значение "both" соответствует и первому, и второму одновременно. ( binary:  11 )
-     * @export
      * @param {(string|number)=} fillMode
-     * @return {number|!AnimationWrap}
+     * @return {string|!AnimationWrap}
      */
     AnimationWrap.prototype.fillMode = function (fillMode) {
         var binFillMode = NOT_FOUND;
+        var strFillMode = '';
         if (goog.isDef(fillMode)) {
             if (goog.isNumber(fillMode)) {
                 binFillMode = fillMode;
@@ -3711,15 +4252,23 @@ goog.scope = function(fn) {
             }
             return this;
         } else {
-            return this.getFillMode();
+            binFillMode = this.getFillMode();
+            for (var fillModeEnum in fillModes) {
+                if (fillModes[fillModeEnum] === binFillMode) {
+                    strFillMode = fillModeEnum;
+                    break;
+                }
+            }
+            return strFillMode;
         }
     };
+
+    goog.exportProperty(AnimationWrap.prototype, 'fillMode', AnimationWrap.prototype.fillMode);
 
     /**
      * Установка или получение смягчения анимации.
      * (!) Абсциссы первой и второй точек для кубической кривой Безье должны принадлежать промежутку [0, 1].
      * (!) Число ступеней в Steps всегда целочисленное.
-     * @export
      * @param {(string|!Array.<number>|!Easing|!CubicBezier|!Steps)=} easing временная функция CSS, алиас смягчения или массив точек (2 - Steps, 4 - CubicBezier)
      * @return {!(CubicBezier|Steps|Easing|AnimationWrap)}
      */
@@ -3735,6 +4284,8 @@ goog.scope = function(fn) {
             return this.getEasing();
         }
     };
+
+    goog.exportProperty(AnimationWrap.prototype, 'easing', AnimationWrap.prototype.easing);
 
 /*---------------------------------------*/
 
@@ -3754,22 +4305,29 @@ goog.scope = function(fn) {
 
         var progress;
 
-        if (arguments.length === 3) {
-            duration = properties['duration'];
-            easing = properties['easing'];
-            progress = properties['progress'];
-            complete = properties['complete'];
-            self.delay(properties['delay']);
-            self.fillMode(properties['fillMode']);
-            self.direction(properties['direction']);
-            self.iterationCount(properties['iterationCount']);
+        self.target(element);
+
+        var options;
+
+        if ( arguments.length === 3 && goog.isObject(duration) ) {
+            options = duration;
+            duration = options['duration'];
+            easing = options['easing'];
+            progress = options['progress'];
+            complete = options['complete'];
+            self.delay(options['delay']);
+            self.fillMode(options['fillMode']);
+            self.direction(options['direction']);
+            self.iterationCount(options['iterationCount']);
         }
 
         self.duration(duration);
         self.easing(easing);
+
         if (goog.isFunction(progress)) {
             self.onStep(progress);
         }
+
         if (goog.isFunction(complete)) {
             self.onComplete(complete);
         }
@@ -3786,6 +4344,28 @@ goog.scope = function(fn) {
 /*---------------------------------------*/
 
     var melAnim = animate;
+
     goog.global['melAnim'] = melAnim;
-    melAnim['Animation'] = AnimationWrap;
-    melAnim['Ticker'] = Ticker;
+
+    goog.exportProperty(melAnim, 'Animation', AnimationWrap);
+
+    goog.exportProperty(melAnim, 'css', /**@type {function (!Element, string, string?): (string|undefined)} */(function (element, propertyName, propertyValue) {
+        if (goog.isString(propertyValue)) {
+            setStyle(element, propertyName, /** @type {string} */(propertyValue));
+        } else {
+            return getStyle(element, propertyName, true);
+        }
+    }));
+
+    goog.exportProperty(melAnim, 'now', now);
+
+    goog.exportProperty(melAnim, 'Ticker', Ticker);
+
+    goog.exportProperty(Ticker, "attach", Ticker.on);
+    goog.exportProperty(Ticker, "detach", Ticker.off);
+    goog.exportProperty(Ticker, "setFPS", Ticker.setFPS);
+    goog.exportProperty(Ticker, "ignoreReflow", Ticker.ignoreReflow);
+
+/*---------------------------------------*/
+
+})();
