@@ -196,6 +196,7 @@
          * @param {number} fps
          */
         setFPS: function (fps) {
+            this.fps = fps;
             this.frequency = 1e3 / fps;
         },
 
@@ -241,7 +242,11 @@
      * @param {number} digits
      */
     function round (number, digits) {
-        return parseFloat( number.toFixed(digits) );
+        if (digits === 1) {
+            return Math.round(number);
+        } else {
+            return parseFloat( number.toFixed(digits) );
+        }
     }
 
     /**
@@ -260,7 +265,9 @@
         for (var i = 0, m = from.length; i < m; i++) {
             previousValue = currentValue[i];
             delta = to[i] - from[i];
+
             newValue = round( delta * progress + from[i] , roundDigits);
+
             if (previousValue !== newValue) {
                 currentValue[i] = newValue;
                 valueIsChanged = true;
