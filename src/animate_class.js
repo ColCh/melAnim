@@ -5,6 +5,10 @@
     function Animation () {
         this.animId = generateId();
         this.animatedProperties = new PropertyDescriptorCollection();
+        var self = this;
+        this.selfTick = function (delta) {
+            self.tick(delta);
+        };
     }
 
     /** @type {string} */
@@ -546,13 +550,15 @@
     goog.exportProperty(Animation.prototype, 'stop', Animation.prototype.stop);
 
     /**
+     * @type {function (number)}
+     */
+    Animation.prototype.selfTick;
+
+    /**
      * Снимает анимацию с паузы
      * */
     Animation.prototype.resume = function () {
-        var self = this;
-        this.tickerId = Ticker.on(function (delta) {
-            self.tick(delta);
-        });
+        this.tickerId = Ticker.on(this.selfTick);
     };
 
     goog.exportProperty(Animation.prototype, 'resume', Animation.prototype.resume);
