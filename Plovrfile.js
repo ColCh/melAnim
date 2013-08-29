@@ -17,7 +17,7 @@
 	 "level": "VERBOSE",
 	 
 	 "checks": {
-	 	 "checkTypes": "ERROR",
+	 	 //"checkTypes": "ERROR",
          "globalThis": "OFF"
 	 },
 
@@ -75,7 +75,7 @@
 
 //         "runtimeTypeCheck": true,
          "moveFunctionDeclarations": true,
-         "generateExports": true,
+//         "generateExports": true,
          "markAsCompiled": true
 
 	 }
