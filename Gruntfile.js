@@ -21,8 +21,9 @@ module.exports = function (grunt) {
 
                 src:[
                     'goog-base.js',
+                    'src/start.js',
                     'src/begin.js',
-//                    'src/constants.js',
+                    'src/constants.js',
                     'src/utils.js',
                     'src/abstractions.js',
                     'src/hooks.js',
@@ -32,6 +33,7 @@ module.exports = function (grunt) {
                     'src/animate_wrap.js',
                     'src/animate_func.js',
                     'src/exports.js',
+                    'src/end.js',
                 ]
             }
         },
