@@ -534,3 +534,33 @@
     Steps.prototype.toString = function () {
         return 'steps' + "(" + this.stepsAmount + ", " + (this.countFromStart ? "start" : "end") + ")";
     };
+
+    /**
+     * То, что идёт после собаки ("@") в CSS-правилах
+     * Как правило, в нему дописыватеся вендорный префикс, если у
+     * свойства анимации тоже есть префикс.
+     * @type {string}
+     * @const
+     */
+    var KEYFRAME_PREFIX = (getVendorPropName("animation") === "animation" ? "" : "-" + lowPrefix + "-" + "keyframes");
+
+
+    /**
+     * @const
+     */
+    var KeyframesRulesRegistry = {
+        /** @type {!Array.<!CSSKeyframesRule>} */
+        rules: [],
+        /** @param {!CSSKeyframesRule} keyframesRule */
+        slay: function (keyframesRule) {
+            keyframesRule.name = ANIMATION_NAME_NONE;
+            this.rules.push(keyframesRule);
+        },
+        request: function () {
+            if (this.rules.length === 0) {
+                return addRule("@" + KEYFRAME_PREFIX + " " + ANIMATION_NAME_NONE);
+            } else {
+                return this.rules.pop();
+            }
+        }
+    };
