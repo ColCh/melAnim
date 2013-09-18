@@ -580,7 +580,7 @@
      * @param {boolean} value
      */
     Animation.prototype.setClassicMode = function (value) {
-        this.usesCSS3 = !value;
+        this.usesCSS3 = CSSANIMATIONS_SUPPORTED && !value;
     };
 
     goog.exportProperty(Animation.prototype, 'setClassicMode', Animation.prototype.setClassicMode);
