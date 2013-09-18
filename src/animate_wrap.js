@@ -223,10 +223,11 @@
      * Значение "alternate-reverse" соответствует направлению "reverse" для нечётных проходов и "normal" для чётных.( binary: 11 )
      * Числовому значению соответствует побитовая маска.
      * @param {(string|number)=} direction
-     * @return {number|!AnimationWrap}
+     * @return {string|!AnimationWrap}
      */
     AnimationWrap.prototype.direction = function (direction) {
         var binaryDirection = NOT_FOUND;
+        var strDirection = '';
         if (goog.isDef(direction)) {
             if (goog.isNumber(direction)) {
                 binaryDirection = direction;
@@ -238,7 +239,14 @@
             }
             return this;
         } else {
-            return this.getDirection();
+            binaryDirection = this.getFillMode();
+            for (var directionEnum in fillModes) {
+                if (directions[directionEnum] === binaryDirection) {
+                    strDirection = directionEnum;
+                    break;
+                }
+            }
+            return strDirection;
         }
     };
 
