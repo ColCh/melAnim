@@ -515,3 +515,37 @@
             return turns * DEGS_IN_TURN;
         }
     };
+
+    /**
+     * Каскадная таблица стилей
+     * с ленивой инициализацией
+     * @type {CSSStyleSheet|undefined}
+     */
+     var STYLESHEET;
+
+    /**
+     * @param {string} selector
+     * @return {CSSRule} Добавленное правило
+     */
+    function addRule(selector) {
+
+        var style;
+
+        if (!stylesheet) {
+            var style = document.getElementsByTagName("head")[0].parentNode.appendChild(document.createElement("style"));
+            STYLESHEET = style.sheet || style.styleSheet;
+        }
+
+        var stylesheet = /** @type {CSSStyleSheet} */ (STYLESHEET);
+
+        var rules = stylesheet.cssRules || stylesheet.rules;
+        var index = rules.length;
+
+        if (stylesheet.insertRule) {
+            stylesheet.insertRule(selector + " " + "{" + " " + "}", index);
+        } else {
+            stylesheet.addRule(selector, " ", rules.length);
+        }
+
+        return rules[index];
+    }
