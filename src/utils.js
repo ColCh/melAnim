@@ -208,25 +208,6 @@
 
     /**
      * @param {!Array} array
-     * @param {!function (*, *, number, !Array): number} compare
-     */
-    function bubbleSort(array, compare) {
-
-        var cache;
-
-        for (var j = 0; j < array.length - 1; j += 1) {
-            for (var i = 0; i < array.length - 1 - j; i += 1) {
-                if (compare(array[i], array[i + 1], i, array) === SORT_SMALLER) {
-                    cache = array[i];
-                    array[i] = array[i + 1];
-                    array[i + 1] = cache;
-                }
-            }
-        }
-    }
-
-    /**
-     * @param {!Array} array
      * @param {!function (*, *, number, !Array): number} compare_callback
      */
     function sortArray (array, compare_callback) {
