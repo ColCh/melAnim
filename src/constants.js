@@ -53,3 +53,9 @@
      * @type {number}
      */
     var TICKER_BASE_INTERVAL = 1e3 / TICKER_BASE_FPS;
+
+    /**
+     * @const
+     * @type {string}
+     */
+    var ANIMATION_NAME_NONE = 'none';
