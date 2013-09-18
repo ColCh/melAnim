@@ -503,23 +503,81 @@
     /** @type {number} */
     Animation.prototype.tickerId;
 
+    /** @type {CSSKeyframesRule} */
+    Animation.prototype.keyframesRule;
+
     /**
      * Запускает проигрывание анимации
      */
     Animation.prototype.start = function () {
-        this.elapsedTime = 0;
 
-        if (this.fillsBackwards) {
-            this.update();
-        }
+        if (this.usesCSS3) {
 
-        if (this.delayTime <= 0) {
-            if (this.onstart !== goog.nullFunction) {
-                this.onstart();
+            debugger;
+
+            this.keyframesRule = KeyframesRulesRegistry.request();
+            this.keyframesRule.name = this.animId;
+
+            for (var i = 0; i < this.animatedProperties.length; i++) {
+
+                var propertyDescriptor = this.animatedProperties.item(i);
+                var propertyKeyframes = propertyDescriptor.getKeyframes();
+
+                for (var j = 0; j < propertyKeyframes.length; j++) {
+
+                    var propertyKeyframe = propertyKeyframes.item(j);
+                    var key = propertyKeyframe.numericKey * 1e2 + '%';
+
+                    var cssKeyframe = this.keyframesRule.findRule(key);
+
+                    if (!cssKeyframe) {
+                        // у Chrome было неверное следование спецификации - неверное имя метода для добавления ключевых кадров.
+                        var keyframesAppendRule = this.keyframesRule.appendRule || this.keyframesRule.insertRule;
+                        keyframesAppendRule.call(this.keyframesRule, key + ' ' + '{' + ' ' + '}');
+                        cssKeyframe = this.keyframesRule.findRule(key);
+                    }
+
+                    var stringValue;
+
+                    if (propertyKeyframe.alternativeValue) {
+                        stringValue = propertyKeyframe.alternativeValue;
+                    } else {
+                        stringValue = toStringValue(this.animationTarget, propertyDescriptor.propName, propertyKeyframe.getValue(), propertyDescriptor.vendorizedPropName);
+                        propertyKeyframe.alternativeValue = stringValue;
+                    }
+
+                    cssKeyframe.style[ propertyDescriptor.vendorizedPropName ] = propertyKeyframe.alternativeValue;
+                }
             }
+
+            var singleAnimation = '';
+
+            singleAnimation += this.animId;
+            singleAnimation += ' ' + this.duration() + 'ms';
+            singleAnimation += ' ' + this.getEasing();
+            singleAnimation += ' ' + this.delay() + 'ms';
+            singleAnimation += ' ' + this.iterationCount();
+            singleAnimation += ' ' + this.direction();
+            singleAnimation += ' ' + this.fillMode();
+
+            setStyle(this.animationTarget, "animation", singleAnimation);
+
+        } else {
+            this.elapsedTime = 0;
+
+            if (this.fillsBackwards) {
+                this.update();
+            }
+
+            if (this.delayTime <= 0) {
+                if (this.onstart !== goog.nullFunction) {
+                    this.onstart();
+                }
+            }
+
+            this.resume();
         }
 
-        this.resume();
     };
 
     goog.exportProperty(Animation.prototype, 'start', Animation.prototype.start);
