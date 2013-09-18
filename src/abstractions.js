@@ -50,7 +50,7 @@
      * @return {null|Array.<number>}
      */
     Keyframe.prototype.getValue = function () {
-        return this.propVal.length ? this.propVal.concat() : null;
+        return this.propVal.length ? this.propVal : null;
     };
 
     /**
