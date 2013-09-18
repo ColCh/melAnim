@@ -306,6 +306,12 @@
     var USEDSTYLE_SUPPORTED = 'getComputedStyle' in goog.global;
 
     /**
+     * @const
+     * @type {boolean}
+     */
+    var CSSANIMATIONS_SUPPORTED = getVendorPropName('animation').length > 0;
+
+    /**
      * @param {!Element} elem
      * @param {string} propName
      * @param {boolean} usedValue вернуть ли значение из вычисленного стиля
