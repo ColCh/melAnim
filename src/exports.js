@@ -1,6 +1,6 @@
     var melAnim = animate;
 
-    goog.global['melAnim'] = melAnim;
+    goog.exportProperty(goog.global, 'melAnim', melAnim);
 
     goog.exportProperty(melAnim, 'Animation', AnimationWrap);
 
