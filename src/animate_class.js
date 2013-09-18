@@ -113,7 +113,7 @@
             var keyframe;
 
             if (keyframeIndex !== NOT_FOUND) {
-                keyframe = propertyKeyframes.item(progress);
+                keyframe = propertyKeyframes.item(keyframeIndex);
 
                 return keyframe.getValue();
             }
