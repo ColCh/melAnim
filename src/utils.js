@@ -143,18 +143,14 @@
         frequency: TICKER_BASE_INTERVAL,
 
         awake: function () {
-            if (!this.isAwaken) {
-                this.lastReflow = this.currentTimeStamp = now();
-                this.isAwaken = true;
-                this.intervalId = this.useRAF ? rAF(this.tick, rootElement) : setTimeout(this.tick, this.frequency);
-            }
+            this.lastReflow = this.currentTimeStamp = now();
+            this.isAwaken = true;
+            this.intervalId = this.useRAF ? rAF(this.tick, rootElement) : setTimeout(this.tick, this.frequency);
         },
         sleep: function () {
-            if (this.isAwaken) {
-                this.isAwaken = false;
-                this.lastReflow = this.currentTimeStamp = this.delta = 0;
-                (this.useRAF ? cancelRAF : clearTimeout)(this.intervalId);
-            }
+            this.isAwaken = false;
+            this.lastReflow = this.currentTimeStamp = this.delta = 0;
+            (this.useRAF ? cancelRAF : clearTimeout)(this.intervalId);
         },
 
         /** @type {number} */
@@ -234,7 +230,9 @@
      * @param {!function (*, *, number, !Array): number} compare_callback
      */
     function sortArray (array, compare_callback) {
-        return bubbleSort(array, compare_callback);
+        // Кажется, внутри браузера сортировка идёт с помощью Quick Sort.
+        // http://jsperf.com/quicksort-vs-heapsort
+        array.sort(compare_callback);
     }
 
     /**
@@ -415,8 +413,6 @@
         if (unit === '' || unit === 'px') {
             return [ numericValue ];
         }
-
-
 
         if (unit === '%' && vendorizedPropName.indexOf('border') !== -1) {
             numericValue /= 100;
