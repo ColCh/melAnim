@@ -41,8 +41,10 @@
      * @param {!Array.<number>} newValue
      */
     Keyframe.prototype.setValue = function (newValue) {
-        this.propVal.length = 0;
-        this.propVal.push.apply(this.propVal, newValue);
+        this.propVal.length = newValue.length;
+        for (var i = 0, m = newValue.length; i < m; i++) {
+            this.propVal[i] = newValue[i];
+        }
     };
 
     /**
