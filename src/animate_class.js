@@ -9,6 +9,29 @@
         this.selfTick = function (delta) {
             self.tick(delta);
         };
+
+        // Закрепление контекста у функций, порождающих события
+        this.fireOnStart = function () {
+            self._not_self_fireOnStart();
+        };
+        this.fireOnStep = function () {
+            self._not_self_fireOnStep();
+        };
+        this.fireOnIteration = function () {
+            self._not_self_fireOnIteration();
+        };
+        this.fireOnComplete = function () {
+            self._not_self_fireOnComplete();
+        };
+        this.fireOnCompleteWithStop = function () {
+            self._not_self_fireOnCompleteWithStop();
+        };
+
+        // Обёртки над обработчиками событий CSS анимации
+        delegatorCallbacks[ ANIMATION_START_EVENTTYPE ][ this.animId ] = this.fireOnStart;
+        delegatorCallbacks[ ANIMATION_ITERATION_EVENTTYPE ][ this.animId ] = this.fireOnIteration;
+        delegatorCallbacks[ ANIMATION_END_EVENTTYPE ][ this.animId ] = this.fireOnCompleteWithStop;
+
     }
 
     /** @type {string} */
@@ -406,17 +429,15 @@
             this.update();
 
             if (this.delayTime > 0 && elapsedTime <= deltaTime && this.elapsedTime >= this.delayTime) {
-                if (this.onstart !== goog.nullFunction) {
-                    this.onstart();
-                }
-            } else if (this.onstep !== goog.nullFunction && this.fractionalTime !== 0) {
-                this.onstep();
+                this.fireOnStart();
+            } else if (this.previousIteration !== this.currentIteration) {
+                this.fireOnIteration();
+            } if (this.fractionalTime !== 0) {
+                this.fireOnStep();
             }
         } else {
             this.stop();
-            if (this.oncomplete !== goog.nullFunction) {
-                this.oncomplete();
-            }
+            this.fireOnComplete();
         }
     };
 
@@ -513,11 +534,10 @@
 
         if (this.usesCSS3) {
 
-            debugger;
-
             this.keyframesRule = KeyframesRulesRegistry.request();
             this.keyframesRule.name = this.animId;
 
+            // Формирование тела правила "@keyframes"
             for (var i = 0; i < this.animatedProperties.length; i++) {
 
                 var propertyDescriptor = this.animatedProperties.item(i);
@@ -550,17 +570,45 @@
                 }
             }
 
-            var singleAnimation = '';
+            // Формирование параметров текущей анимации
+            var appliedAnimationNames = getStyle(this.animationTarget, ANIMATION_NAME, true);
+            var isAlreadyApplied = appliedAnimationNames.indexOf( this.animId ) !== NOT_FOUND;
 
-            singleAnimation += this.animId;
-            singleAnimation += ' ' + this.duration() + 'ms';
-            singleAnimation += ' ' + this.getEasing();
-            singleAnimation += ' ' + this.delay() + 'ms';
-            singleAnimation += ' ' + this.iterationCount();
-            singleAnimation += ' ' + this.direction();
-            singleAnimation += ' ' + this.fillMode();
+            if (!isAlreadyApplied) {
 
-            setStyle(this.animationTarget, "animation", singleAnimation);
+                var singleAnimation = [
+                    this.animId,
+                    ANIMATION_PLAY_STATE_PAUSED,
+                    this.duration() + 'ms',
+                    this.getEasing().toString(),
+                    this.delay() + 'ms',
+                    this.iterationCount().toString(),
+                    this.direction(),
+                    this.fillMode()
+                ];
+
+                var singleAnimationProperties = [
+                    ANIMATION_NAME,
+                    ANIMATION_PLAY_STATE,
+                    ANIMATION_DURATION,
+                    ANIMATION_TIMING_FUNCTION,
+                    ANIMATION_DELAY,
+                    ANIMATION_ITERATION_COUNT,
+                    ANIMATION_DIRECTION,
+                    ANIMATION_FILL_MODE
+                ];
+
+                var currentPropertyValue;
+                var newPropertyValue;
+                var currentAnimationIndex = appliedAnimationNames.split(ANIMATIONS_SEPARATOR).length;
+
+                for (var i = 0; i < singleAnimation.length; i++) {
+                    currentPropertyValue = getStyle(this.animationTarget, singleAnimationProperties[i], true).split(ANIMATIONS_SEPARATOR);
+                    currentPropertyValue[ currentAnimationIndex ] = singleAnimation[i];
+                    setStyle(this.animationTarget, singleAnimationProperties[i], currentPropertyValue.join(ANIMATIONS_JOINER));
+                }
+
+            } // else уже применена. Что делаем?
 
         } else {
             this.elapsedTime = 0;
@@ -570,13 +618,12 @@
             }
 
             if (this.delayTime <= 0) {
-                if (this.onstart !== goog.nullFunction) {
-                    this.onstart();
-                }
+                this.fireOnStart();
             }
 
-            this.resume();
         }
+
+        this.resume();
 
     };
 
@@ -586,6 +633,37 @@
      * Останавливает анимацию
      * */
     Animation.prototype.stop = function () {
+        if (this.usesCSS3) {
+            KeyframesRulesRegistry.slay(this.keyframesRule);
+            this.keyframesRule = null;
+
+            var appliedAnimationNames = getStyle(this.animationTarget, ANIMATION_NAME, true);
+
+            var singleAnimationProperties = [
+                ANIMATION_NAME,
+                ANIMATION_PLAY_STATE,
+                ANIMATION_DURATION,
+                ANIMATION_TIMING_FUNCTION,
+                ANIMATION_DELAY,
+                ANIMATION_ITERATION_COUNT,
+                ANIMATION_DIRECTION,
+                ANIMATION_FILL_MODE
+            ];
+
+            var currentPropertyValue;
+            var newPropertyValue;
+            var thisAnimationName = this.animId;
+            var currentAnimationIndex = linearSearch(appliedAnimationNames.split(ANIMATIONS_SEPARATOR), function (name) {
+                return name === thisAnimationName;
+            });
+
+            for (var i = 0; i < singleAnimationProperties.length; i++) {
+                currentPropertyValue = getStyle(this.animationTarget, singleAnimationProperties[i], true).split(ANIMATIONS_SEPARATOR);
+                currentPropertyValue.splice(currentAnimationIndex, 1);
+                setStyle(this.animationTarget, singleAnimationProperties[i], currentPropertyValue.join(ANIMATIONS_JOINER));
+            }
+
+        }
         if (this.fillsForwards) {
             // Установка конечных значений для свойств.
             this.fractionalTime = 1;
@@ -616,7 +694,11 @@
      * Снимает анимацию с паузы
      * */
     Animation.prototype.resume = function () {
-        this.tickerId = Ticker.on(this.selfTick);
+        if (this.usesCSS3) {
+            this.rewriteParameter(ANIMATION_PLAY_STATE, ANIMATION_PLAY_STATE_RUNNING);
+        } else {
+            this.tickerId = Ticker.on(this.selfTick);
+        }
     };
 
     goog.exportProperty(Animation.prototype, 'resume', Animation.prototype.resume);
@@ -702,3 +784,121 @@
     };
 
     goog.exportProperty(Animation.prototype, 'onIteration', Animation.prototype.onIteration);
+
+    /**
+     * @param {string} parameterName
+     * @param {string} parameterValue
+     */
+    Animation.prototype.rewriteParameter = function (parameterName, parameterValue) {
+        var paramsList = getStyle(this.animationTarget, parameterName, true).split(ANIMATIONS_SEPARATOR);
+        var appliedAnimationNames = getStyle(this.animationTarget, ANIMATION_NAME, true).split(ANIMATIONS_SEPARATOR);
+        var thisAnimationName = this.animId;
+        var animationIndex = linearSearch(appliedAnimationNames, function (name) {
+            return name === thisAnimationName;
+        });
+        paramsList[ animationIndex ] = parameterValue;
+        setStyle(this.animationTarget, parameterName, paramsList.join(ANIMATIONS_JOINER));
+    };
+
+    /**
+     * Обёртка над порождением события старта анимации
+     * с закреплённым контекстом
+     * @type {function ()}
+     */
+    Animation.prototype.fireOnStart;
+
+    /**
+     * Обёртка над порождением события старта анимации
+     * без закреплённого контекста
+     */
+    Animation.prototype._not_self_fireOnStart = function () {
+        if (this.onstart !== goog.nullFunction) {
+            this.onstart.call(this);
+        }
+    };
+
+    /**
+     * Обёртка над порождением события завершения прохода анимации
+     * с закреплённым контекстом
+     * @type {function ()}
+     */
+    Animation.prototype.fireOnIteration;
+
+    /**
+     * Обёртка над порождением события завершения прохода анимации
+     * без закреплённого контекста
+     */
+    Animation.prototype._not_self_fireOnIteration = function () {
+        if (this.oniteration !== goog.nullFunction) {
+            this.oniteration.call(this);
+        }
+    };
+
+    /**
+     * Обёртка над порождением события отрисовки кадра
+     * с закреплённым контекстом
+     * @type {function ()}
+     */
+    Animation.prototype.fireOnStep;
+
+    /**
+     * Обёртка над порождением события отрисовки кадра
+     * без закреплённого контекста
+     */
+    Animation.prototype._not_self_fireOnStep = function () {
+        if (this.onstep !== goog.nullFunction) {
+            this.onstep.call(this);
+        }
+    };
+
+    /**
+     * Обёртка над порождением события завершения прохода анимации
+     * с закреплённым контекстом
+     * @type {function ()}
+     */
+    Animation.prototype.fireOnIteration;
+
+    /**
+     * Обёртка над порождением события завершения прохода анимации
+     * без закреплённого контекста
+     */
+    Animation.prototype._not_self_fireOnIteration = function () {
+        if (this.oniteration !== goog.nullFunction) {
+            this.oniteration.call(this);
+        }
+    };
+
+    /**
+     * Обёртка над порождением события завершения анимации
+     * с закреплённым контекстом
+     * @type {function ()}
+     */
+    Animation.prototype.fireOnComplete;
+
+    /**
+     * Обёртка над порождением события завершения анимации
+     * без закреплённого контекста
+     */
+    Animation.prototype._not_self_fireOnComplete = function () {
+        if (this.oncomplete !== goog.nullFunction) {
+            this.oncomplete.call(this);
+        }
+    };
+
+    /**
+     * Обёртка над порождением события завершения анимации
+     * с закреплённым контекстом
+     * @type {function ()}
+     */
+    Animation.prototype.fireOnCompleteWithStop;
+
+    /**
+     * Обёртка над порождением события завершения анимации
+     * без закреплённого контекста
+     */
+    Animation.prototype._not_self_fireOnCompleteWithStop = function () {
+        this.stop();
+        if (this.oncomplete !== goog.nullFunction) {
+            this.oncomplete.call(this);
+        }
+    };
