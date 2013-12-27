@@ -549,3 +549,97 @@
 
         return rules[index];
     }
+
+    /**
+     * Первичная функция-обработчик событий
+     * т.к. обработчики установлены на все события, которые могут никогда и не исполниться
+     * (например, у webkit никогда не будет события с вендорным префиксом "ms")
+     * то лучше убрать остальные мусорные обработчики и оставить один,
+     * что и делает данная функция
+     * @param {(AnimationEvent|Event)} event
+     */
+    function exclusiveHandler (event) {
+        var eventName = /** @type {string} */(event.type);
+        var lowerCased = eventName.toLowerCase();
+        var eventNames = [];
+
+        // Определение типа поступившего события
+        if (lowerCased.indexOf("start") !== NOT_FOUND) {
+            eventNames = ANIMATION_START_EVENTNAMES;
+        } else if (lowerCased.indexOf("iteration") !== NOT_FOUND) {
+            eventNames = ANIMATION_ITERATION_EVENTNAMES;
+        } else if (lowerCased.indexOf("end") !== NOT_FOUND) {
+            eventNames = ANIMATION_END_EVENTNAMES;
+        } // else unreachable code
+
+        // снимаем все навешанные обработчики событий
+        for (var i = 0; i < eventNames.length; i++) {
+            rootElement.removeEventListener(eventNames[i], exclusiveHandler, ANIMATION_HANDLER_USES_CAPTURE);
+        }
+
+        // вешаем обратно обычный обработчик на точно определённое имя события
+        rootElement.addEventListener(eventName, animationHandlerDelegator, ANIMATION_HANDLER_USES_CAPTURE);
+
+        // вызываем тут же оригинальный обработчик
+        animationHandlerDelegator(event);
+    }
+
+    if (CSSANIMATIONS_SUPPORTED) {
+        // навешиваем обработчики на все имена событий анимаций
+        // * бывают курьёзы, вроде FireFox - когда свойство "animation" с префиксом ("-moz-animation")
+        // * а имя события - без префикса, ещё и в нижнем регистре ("animationend")
+        var ANIMATION_ALL_EVENTNAMES = ANIMATION_END_EVENTNAMES.concat(ANIMATION_ITERATION_EVENTNAMES).concat(ANIMATION_START_EVENTNAMES);
+        for (var i = 0; i < ANIMATION_ALL_EVENTNAMES.length; i++) {
+            rootElement.addEventListener(ANIMATION_ALL_EVENTNAMES[i], exclusiveHandler, ANIMATION_HANDLER_USES_CAPTURE);
+        }
+    }
+
+    /**
+     * Объект с функциями-обработчиками всех событий анимаций
+     * Ключ - имя события, значение - объект с именем анимации и функцей-обработчиком
+     * @type {Object.<string, Object.<string, Function>>}
+     */
+    var delegatorCallbacks = {};
+
+    /**
+     * Объект с обработчиками событий окончания анимаций
+     * @type {Object.<string, Function>}
+     */
+    delegatorCallbacks[ ANIMATION_END_EVENTTYPE ] = {};
+
+    /**
+     * Объект с обработчиками событий конца итераций анимаций
+     * @type {Object.<string, Function>}
+     */
+    delegatorCallbacks[ ANIMATION_ITERATION_EVENTTYPE ] = {};
+
+    /**
+     * Объект с обработчиками событий старта анимаций
+     * @type {Object.<string, Function>}
+     */
+    delegatorCallbacks[ ANIMATION_START_EVENTTYPE ] = {};
+
+    /**
+     * Функция будет ловить все поступающих события конца анимации
+     * @param {(AnimationEvent|Event)} event
+     */
+    var animationHandlerDelegator = function (event) {
+        var animationName = event.animationName, eventType, handlersList;
+        var eventName = event.type;
+        var lowerCased = eventName.toLowerCase();
+
+        if (lowerCased.indexOf("start") !== NOT_FOUND) {
+            eventType = ANIMATION_START_EVENTTYPE;
+        } else if (lowerCased.indexOf("iteration") !== NOT_FOUND) {
+            eventType = ANIMATION_ITERATION_EVENTTYPE
+        } else if (lowerCased.indexOf("end") !== NOT_FOUND) {
+            eventType = ANIMATION_END_EVENTTYPE;
+        } // else unreachable code
+
+        if (eventType in delegatorCallbacks) {
+            handlersList = delegatorCallbacks[eventType];
+            if (animationName in handlersList) {
+                handlersList[animationName](event);
+            } // else незарегистрированная анимация. ничего не можем сделать.
+        }
+    };
