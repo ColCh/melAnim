@@ -250,7 +250,7 @@
         var transformData = [ 0, 100, 100, 0, 0, 0, 0 ];
 
         if (propertyValue === "none" || propertyValue === "") {
-            return;
+            return transformData;
         }
 
         var matched;
