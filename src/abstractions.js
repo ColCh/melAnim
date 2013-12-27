@@ -556,6 +556,12 @@
         /** @param {!CSSKeyframesRule} keyframesRule */
         slay: function (keyframesRule) {
             keyframesRule.name = ANIMATION_NAME_NONE;
+            var keyframes = keyframesRule.cssRules;
+            var key;
+            while ( keyframes.length ) {
+                key = keyframes[0].keyText;
+                keyframesRule.deleteRule(key);
+            }
             this.rules.push(keyframesRule);
         },
         request: function () {
