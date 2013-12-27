@@ -177,3 +177,10 @@
      * @const
      */
     var ANIMATION_PLAY_STATE_RUNNING = "running";
+
+    /**
+     * Сколько чисел после запятой у точек в кубических кривых Безье.
+     * @type {number}
+     * @const
+     */
+    var CUBIC_BEZIER_POINTS_DIGITS = 3;

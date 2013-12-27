@@ -383,10 +383,10 @@
      * @extends Easing
      */
     function CubicBezier (p1x, p1y, p2x, p2y) {
-        this.p1x = p1x;
-        this.p1y = p1y;
-        this.p2x = p2x;
-        this.p2y = p2y;
+        this.p1x = round(p1x, CUBIC_BEZIER_POINTS_DIGITS);
+        this.p1y = round(p1y, CUBIC_BEZIER_POINTS_DIGITS);
+        this.p2x = round(p2x, CUBIC_BEZIER_POINTS_DIGITS);
+        this.p2y = round(p2y, CUBIC_BEZIER_POINTS_DIGITS);
     }
 
     goog.inherits(CubicBezier, Easing);
