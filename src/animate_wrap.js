@@ -239,8 +239,8 @@
             }
             return this;
         } else {
-            binaryDirection = this.getFillMode();
-            for (var directionEnum in fillModes) {
+            binaryDirection = this.getDirection();
+            for (var directionEnum in directions) {
                 if (directions[directionEnum] === binaryDirection) {
                     strDirection = directionEnum;
                     break;
