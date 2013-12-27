@@ -544,7 +544,7 @@
      * @type {string}
      * @const
      */
-    var KEYFRAME_PREFIX = (getVendorPropName("animation") === "animation" ? "" : "-" + lowPrefix + "-" + "keyframes");
+    var KEYFRAME_PREFIX = (getVendorPropName("animation") === "animation" ? "" : "-" + lowPrefix + "-") + "keyframes";
 
 
     /**
