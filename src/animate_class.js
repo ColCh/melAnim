@@ -28,9 +28,11 @@
         };
 
         // Обёртки над обработчиками событий CSS анимации
-        delegatorCallbacks[ ANIMATION_START_EVENTTYPE ][ this.animId ] = this.fireOnStart;
-        delegatorCallbacks[ ANIMATION_ITERATION_EVENTTYPE ][ this.animId ] = this.fireOnIteration;
-        delegatorCallbacks[ ANIMATION_END_EVENTTYPE ][ this.animId ] = this.fireOnCompleteWithStop;
+        if (CSSANIMATIONS_SUPPORTED) {
+            delegatorCallbacks[ ANIMATION_START_EVENTTYPE ][ this.animId ] = this.fireOnStart;
+            delegatorCallbacks[ ANIMATION_ITERATION_EVENTTYPE ][ this.animId ] = this.fireOnIteration;
+            delegatorCallbacks[ ANIMATION_END_EVENTTYPE ][ this.animId ] = this.fireOnCompleteWithStop;
+        }
 
     }
 
@@ -113,7 +115,7 @@
     goog.exportProperty(Animation.prototype, 'setPropAt', Animation.prototype.setPropAt);
 
     /**
-     * Получение значения свойства при прогресса
+     * Получение значения свойства при прогрессе
      * @param {string} propertyName имя свойства
      * @param {number} progress прогресс прохода в долях
      * @return {Array.<number>?}
@@ -150,7 +152,9 @@
     /**
      * Установка стартового значения свойства
      * Имеет смысл при 'fillMode' без 'forwards'
-     * Аргументы такие же, как и у Animation.setPropAt.
+     * Аргументы такие же, как и у Animation.setPropAt, без учета прогресса
+     * Разница в том, что стартовое значение свойства не всегда
+     * равно значению свойства на минимальном прогрессае
      * @param {string} propertyName
      * @param {!Array.<number>} propertyValue
      * @param {string=} alternativeValue
@@ -178,6 +182,7 @@
     goog.exportProperty(Animation.prototype, 'setStartingValue', Animation.prototype.setStartingValue);
 
     /**
+     * Получение стартового значения свойства
      * @param {string} propertyName
      */
     Animation.prototype.getStartingValue = function (propertyName) {
@@ -202,9 +207,11 @@
     goog.exportProperty(Animation.prototype, 'getStartingValue', Animation.prototype.getStartingValue);
 
     /**
-     * @param {string} propName
-     * @param {!Array.<number>|string|number|null} currentValue
-     * @param {string=} vendorizedPropName
+     * Функция отрисовки на цели
+     * Для отрисовки используется CSS
+     * @param {string} propName имя свойства
+     * @param {!Array.<number>|string|number|null} currentValue текущее значение свойства
+     * @param {string=} vendorizedPropName DOM-имя для CSS свойства
      */
     Animation.prototype.render = function (propName, currentValue, vendorizedPropName) {
         var stringValue = goog.isString(currentValue) ?  currentValue : toStringValue(this.animationTarget, propName, currentValue, vendorizedPropName);
@@ -230,6 +237,7 @@
     /**
      * Установка продолжительности одного прохода
      * @param {number} duration время в миллисекундах
+     * @see {Animation.cycleDuration}
      */
     Animation.prototype.setDuration = function (duration) {
         this.cycleDuration = duration;
@@ -441,6 +449,9 @@
         }
     };
 
+    /**
+     * Вычислит и отрисует текущие значения свойств
+     */
     Animation.prototype.update = function () {
 
         var leftKeyframeIndex;
@@ -457,6 +468,8 @@
         var leftKeyframe, rightKeyframe;
         var alternativeKeyframe;
         var blender = blend;
+
+        var isPropertyValueChanged;
 
         for (var i = 0; i < this.animatedProperties.length; i++) {
 
@@ -492,7 +505,6 @@
                 }
                 localEasing = globalEasing;
             } else {
-                //
                 localEasing = this.smoothing.compute(relativeFractionalTime);
             }
 
@@ -507,8 +519,9 @@
                     blender = blendHooks[propertyDescriptor.propName];
                 }
 
-                if ( blender(leftKeyframe.propVal, rightKeyframe.propVal, localEasing, propertyDescriptor.currentValue, BLEND_DIGITS)) {
-                    // Отрисовываем в том случае, если значение свойства изменено
+                isPropertyValueChanged = blender(leftKeyframe.propVal, rightKeyframe.propVal, localEasing, propertyDescriptor.currentValue, BLEND_DIGITS);
+
+                if (isPropertyValueChanged) {
                     this.render(propertyDescriptor.propName, propertyDescriptor.currentValue, propertyDescriptor.vendorizedPropName);
                 } // else Отрисованное значение эквивалентно текущему промежуточному. Пропуск отрисовки
 
