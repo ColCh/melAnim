@@ -184,3 +184,19 @@
      * @const
      */
     var CUBIC_BEZIER_POINTS_DIGITS = 3;
+
+    /**
+     * Массив, по которому строго следует определение одной CSS3 анимации
+     * @const
+     * @type {Array}
+     */
+    var SINGLE_ANIMATION_PROPERTIES = [
+        ANIMATION_NAME,
+        ANIMATION_PLAY_STATE,
+        ANIMATION_DURATION,
+        ANIMATION_TIMING_FUNCTION,
+        ANIMATION_DELAY,
+        ANIMATION_ITERATION_COUNT,
+        ANIMATION_DIRECTION,
+        ANIMATION_FILL_MODE
+    ];

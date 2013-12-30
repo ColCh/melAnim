@@ -600,25 +600,14 @@
                     this.fillMode()
                 ];
 
-                var singleAnimationProperties = [
-                    ANIMATION_NAME,
-                    ANIMATION_PLAY_STATE,
-                    ANIMATION_DURATION,
-                    ANIMATION_TIMING_FUNCTION,
-                    ANIMATION_DELAY,
-                    ANIMATION_ITERATION_COUNT,
-                    ANIMATION_DIRECTION,
-                    ANIMATION_FILL_MODE
-                ];
-
                 var currentPropertyValue;
                 var newPropertyValue;
                 var currentAnimationIndex = appliedAnimationNames.split(ANIMATIONS_SEPARATOR).length;
 
                 for (var i = 0; i < singleAnimation.length; i++) {
-                    currentPropertyValue = getStyle(this.animationTarget, singleAnimationProperties[i], true).split(ANIMATIONS_SEPARATOR);
+                    currentPropertyValue = getStyle(this.animationTarget, SINGLE_ANIMATION_PROPERTIES[i], true).split(ANIMATIONS_SEPARATOR);
                     currentPropertyValue[ currentAnimationIndex ] = singleAnimation[i];
-                    setStyle(this.animationTarget, singleAnimationProperties[i], currentPropertyValue.join(ANIMATIONS_JOINER));
+                    setStyle(this.animationTarget, SINGLE_ANIMATION_PROPERTIES[i], currentPropertyValue.join(ANIMATIONS_JOINER));
                 }
 
             } // else уже применена. Что делаем?
@@ -652,17 +641,6 @@
 
             var appliedAnimationNames = getStyle(this.animationTarget, ANIMATION_NAME, true);
 
-            var singleAnimationProperties = [
-                ANIMATION_NAME,
-                ANIMATION_PLAY_STATE,
-                ANIMATION_DURATION,
-                ANIMATION_TIMING_FUNCTION,
-                ANIMATION_DELAY,
-                ANIMATION_ITERATION_COUNT,
-                ANIMATION_DIRECTION,
-                ANIMATION_FILL_MODE
-            ];
-
             var currentPropertyValue;
             var newPropertyValue;
             var thisAnimationName = this.animId;
@@ -670,10 +648,10 @@
                 return name === thisAnimationName;
             });
 
-            for (var i = 0; i < singleAnimationProperties.length; i++) {
-                currentPropertyValue = getStyle(this.animationTarget, singleAnimationProperties[i], true).split(ANIMATIONS_SEPARATOR);
+            for (var i = 0; i < SINGLE_ANIMATION_PROPERTIES.length; i++) {
+                currentPropertyValue = getStyle(this.animationTarget, SINGLE_ANIMATION_PROPERTIES[i], true).split(ANIMATIONS_SEPARATOR);
                 currentPropertyValue.splice(currentAnimationIndex, 1);
-                setStyle(this.animationTarget, singleAnimationProperties[i], currentPropertyValue.join(ANIMATIONS_JOINER));
+                setStyle(this.animationTarget, SINGLE_ANIMATION_PROPERTIES[i], currentPropertyValue.join(ANIMATIONS_JOINER));
             }
 
         }
