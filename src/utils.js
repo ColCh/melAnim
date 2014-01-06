@@ -102,13 +102,13 @@
     /** @const */
     var Ticker = {
         /**
-         * @type {Object.<string, !Function>}
+         * @type {Array.<{id: number, clb: !Function}>}
          */
-        listeners: {},
+        listeners: [],
         /**
-         * @type {number}
+         * @type {Array.<{id: number, clb: !Function}>}
          */
-        listenersLength: 0,
+        listenersBuffer: [],
         /**
          * @param {!Function} callback
          * @return {number}
@@ -116,8 +116,12 @@
         on: function (callback) {
             var id = uuid();
 
-            this.listeners[id] = callback;
-            this.listenersLength++;
+            var listenerInfo = {
+                id: id,
+                clb: callback
+            };
+
+            this.listeners.push(listenerInfo);
 
             if (!this.isAwaken) {
                 this.awake();
@@ -129,12 +133,12 @@
          * @param {number} id
          */
         off: function (id) {
-            if (id in this.listeners) {
-                delete this.listeners[id];
-                this.listenersLength--;
-                if (this.listenersLength === 0 && this.isAwaken) {
-                    this.sleep();
-                }
+            var infoIndex = linearSearch(this.listeners, function (listenerInfo) {
+                "use strict";
+                return listenerInfo.id === id;
+            });
+            if (infoIndex !== NOT_FOUND) {
+                this.listeners.splice(infoIndex, 1);
             }
         },
 
@@ -170,16 +174,24 @@
             Ticker.awake();
 
             if (Ticker.delta) {
-                var id;
 
-                for (id in Ticker.listeners) {
-                    Ticker.listeners[id](Ticker.delta);
+                var swap;
+
+                swap = Ticker.listenersBuffer;
+                Ticker.listenersBuffer = Ticker.listeners;
+                Ticker.listeners = swap;
+
+                var listenerInfo;
+
+                while ( (listenerInfo = Ticker.listenersBuffer.pop()) ) {
+                    Ticker.listeners.push(listenerInfo);
+                    listenerInfo.clb(Ticker.delta);
                 }
 
                 Ticker.lastReflow = Ticker.currentTimeStamp;
             }
 
-            if (!Ticker.listenersLength) {
+            if (!Ticker.listeners.length) {
                 Ticker.sleep();
             }
         },
