@@ -414,6 +414,12 @@
 
         var ctx = elem;
 
+        var isValueNegative = numericValue < 0;
+
+        if (isValueNegative) {
+            propertyValue = -numericValue + unit;
+        }
+
         if (unit === '%' || !ctx.appendChild) {
             ctx = elem.parentNode || document.body;
             tempElement.style[ isHoriz ? "width" : "height" ] = propertyValue;
@@ -424,6 +430,10 @@
         ctx.appendChild(tempElement);
         var normalized = tempElement[ isHoriz ? "offsetWidth" : "offsetHeight" ];
         ctx.removeChild(tempElement);
+
+        if (isValueNegative) {
+            normalized *= -1;
+        }
 
         return [ normalized ];
     }
