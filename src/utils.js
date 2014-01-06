@@ -167,6 +167,8 @@
 
             Ticker.delta = Ticker.currentTimeStamp - Ticker.lastReflow;
 
+            Ticker.awake();
+
             if (Ticker.delta) {
                 var id;
 
@@ -177,10 +179,7 @@
                 Ticker.lastReflow = Ticker.currentTimeStamp;
             }
 
-            if (Ticker.listenersLength) {
-                Ticker.isAwaken = false;
-                Ticker.awake();
-            } else {
+            if (!Ticker.listenersLength) {
                 Ticker.sleep();
             }
         },
