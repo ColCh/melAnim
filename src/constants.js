@@ -61,6 +61,13 @@
     var ANIMATION_NAME_NONE = 'none';
 
     /**
+     * Имя CSS-свойства для назначения \ получения анимации (shorthand).
+     * @type {string}
+     * @const
+     */
+    var ANIMATION = "animation";
+
+    /**
      * Имя CSS-свойства для назначения \ получения имени анимации.
      * @type {string}
      * @const
