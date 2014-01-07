@@ -114,7 +114,7 @@
      * @param {number} digits
      */
     function round (number, digits) {
-        if (digits === 1) {
+        if (digits === 0) {
             return Math.round(number);
         } else {
             return parseFloat( number.toFixed(digits) );
