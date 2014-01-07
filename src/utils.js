@@ -398,7 +398,7 @@
      */
     function toDeg (cssAngle) {
         var cssValue = cssAngle.match(cssNumericValueReg);
-        var numeric = parseInt(cssValue[VALREG_VALUE], 10);
+        var numeric = parseFloat(cssValue[VALREG_VALUE]);
         var unit = cssValue[VALREG_DIMENSION];
         if (unit in toDegModificators) {
             return toDegModificators[unit](numeric);
