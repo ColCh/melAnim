@@ -636,9 +636,9 @@
      */
     Steps.prototype.compute = function (x) {
         if (this.countFromStart) {
-            return Math.min(Math.ceil(this.stepsAmount * x) / this.stepsAmount, MAXIMAL_PROGRESS);
+            return Math.ceil(this.stepsAmount * x) / this.stepsAmount;
         } else {
-            return (Math.floor(this.stepsAmount * x) ) / this.stepsAmount;
+            return Math.floor(this.stepsAmount * x) / this.stepsAmount;
         }
     };
 
