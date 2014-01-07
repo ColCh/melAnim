@@ -279,8 +279,7 @@
 
         if (!cssNumericValueReg.test(propertyValue)) {
             // NON-numeric, like "auto"
-//            propertyValue = elem[ isHoriz ? "offsetWidth" : "offsetHeight" ];
-            propertyValue = 0;
+            propertyValue = elem[ isHoriz ? "offsetWidth" : "offsetHeight" ];
         }
 
         if (goog.isNumber(propertyValue)) {
