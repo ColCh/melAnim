@@ -232,7 +232,6 @@ test('toStringValue', function () {
 
 test('toDeg', function () {
     // W3C: ‘90deg’ or ‘100grad’ or ‘0.25turn’ or approximately ‘1.570796326794897rad’.
-    var equalsAppox = function (firstNumber, secondNumber) { return (firstNumber - secondNumber) / secondNumber <= 0.05; };
     strictEqual(toDeg('90deg'), 90, 'check degrees to numeric degree conversion');
     ok(equalsAppox(toDeg('100grad'), 90), 'check grads to numeric degree conversion(with inaccuracy)');
     ok(equalsAppox(toDeg('0.25turn'), 90), 'check turns to numeric degree conversion(with inaccuracy)');

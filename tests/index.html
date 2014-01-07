@@ -10,6 +10,14 @@
 
     <script src='../dist/mel-anim.compiled.js'></script>
 
+    <script>
+        var equalsPart = function (firstNumber, secondNumber, epsilon) {
+            var fractionDiff = Math.abs(firstNumber / secondNumber );
+            return fractionDiff >= (1 - epsilon) && fractionDiff <= (1 + epsilon);
+        };
+        var equalsAppox = function (firstNumber, secondNumber) { return equalsPart(firstNumber, secondNumber, 0.05); };
+    </script>
+
     <script src='./tests/utils.js'></script>
 
 </head>
