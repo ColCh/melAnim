@@ -302,7 +302,7 @@
             return [ numericValue ];
         }
 
-        tempElement.style.cssText = "border-style:solid; border-width:0; position:absolute; line-height:0;";
+        tempElement.style.cssText = "border-style:solid; border-width:0; line-height:0;";
 
         var ctx = elem;
 
