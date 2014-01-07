@@ -116,8 +116,7 @@
         }
     };
 
-
-/**
+    /**
      * Конструктор ключевого кадра
      * @param {number} progress
      * @constructor
