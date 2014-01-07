@@ -185,7 +185,7 @@
 
     /**
      * @param {number} progress
-     * @returns {Keyframe?}
+     * @return {number}
      * @override
      */
     KeyframesCollection.prototype.indexOf = function (progress) {
