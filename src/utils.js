@@ -390,7 +390,7 @@
      * @const
      * @type {number}
      */
-    var DEGS_IN_GRAD = 400 / DEGS_IN_TURN;
+    var DEGS_IN_GRAD = 1 / (400 / DEGS_IN_TURN);
 
     /**
      * @param {string} cssAngle
