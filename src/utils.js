@@ -312,10 +312,11 @@
             propertyValue = -numericValue + unit;
         }
 
-        if (unit === '%' || !ctx.appendChild) {
+        if (unit === '%' || !ctx.appendChild || /font-?size/i.test(vendorizedPropName)) {
             ctx = elem.parentNode || document.body;
             tempElement.style[ isHoriz ? "width" : "height" ] = propertyValue;
         } else {
+            tempElement.style.position = 'absolute';
             tempElement.style[ isHoriz ? "borderLeftWidth" : "borderTopWidth" ] = propertyValue;
         }
 
