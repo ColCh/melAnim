@@ -518,11 +518,10 @@
     CubicBezier.prototype.B = function (p1, p2, t) {
         // (3*t * (1 - t)^2) * P1  + (3*t^2 *  (1 - t) )* P2 + (t^3);
         // --------->
-        // 3*t * (1 - t) * (  (1 - t) * P1  +  3*t * P2 ) + t^3
+        // 3 * t * (-1 + t)^2 * P1 + t^2 (-3 * (-1 + t) * P2 + t)
 
-        var t3 = 3 * t;
-        var revt = 1 - t;
-        return t3 * revt * (revt * p1 + t3 * p2) + t * t * t;
+        var revt = -1 + t;
+        return 3*t*revt*revt * p1 + t*t * (-3*revt * p2 + t);
     };
 
     /**
@@ -541,9 +540,8 @@
         // ( 9 * t^2 - 12*t+ 3 ) * P1 + ( 6*t  -  9 * t^2 ) * P2  +  3 * t^2
         // ----->
         // 3 * (  (t*(3*t - 4) + 1) * P1  +  t * (  ( 2 - 3*t ) * P2 + t  )  )
-         var B1d = t * (3 * t - 4)  + 1;
-         var B2d = 2 - 3 * t;
-         return 3 * ( B1d * this.p1x + t * ( B2d * this.p2x + t ) );
+        // 3*(t*(P2*(2 - 3*t) + t) + P1*(1-4*t+3*t^2))
+        return 3*(t*(this.p2x*(2 - 3*t) + t) + this.p1x*(1-4*t+3*t*t));
     };
 
     /**
@@ -581,10 +579,14 @@
             derivative = this.B_derivative_I_absciss(X0);
             F =  this.B_absciss(X0) - y;
             X1 = X0 - F / this.B_derivative_I_absciss( X0 - F / ( 2 * derivative ) );
+            if (derivative === 0) {
+                // Обычно производная равна нулю на границах ( 0 и 1 )
+                break;
+            }
             X0 = X1;
-        } while ( i-- !== 0 && derivative !== 0 && this.B_absciss(X1) > range);
+        } while ( i-- !== 0 && this.B_absciss(X1) > range);
 
-        t = X1;
+        t = X0;
 
         return this.B_ordinate(t);
     };
