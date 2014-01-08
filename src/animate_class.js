@@ -76,9 +76,8 @@
      * @param {string} propertyName имя свойства
      * @param {!Array.<number>} propertyValue числовое абсолютное значение свойства (массив с числами)
      * @param {number} progress прогресс прохода в долях
-     * @param {string=} alternativeValue альтернативное значение. см Keyframe.alternativeValue
      */
-    Animation.prototype.setPropAt = function (propertyName, propertyValue, progress, alternativeValue) {
+    Animation.prototype.setPropAt = function (propertyName, propertyValue, progress) {
 
         /** @type {!PropertyDescriptor} */
         var propertyDescriptor;
@@ -108,7 +107,6 @@
         }
 
         keyframe.setValue(propertyValue);
-        keyframe.alternativeValue = goog.isString(alternativeValue) ? alternativeValue : '';
 
     };
 
@@ -157,9 +155,8 @@
      * равно значению свойства на минимальном прогрессае
      * @param {string} propertyName
      * @param {!Array.<number>} propertyValue
-     * @param {string=} alternativeValue
      */
-    Animation.prototype.setStartingValue = function (propertyName, propertyValue, alternativeValue) {
+    Animation.prototype.setStartingValue = function (propertyName, propertyValue) {
         /** @type {!PropertyDescriptor} */
         var propertyDescriptor;
 
@@ -175,7 +172,6 @@
         var startingValue = propertyDescriptor.startingValue;
 
         startingValue.setValue(propertyValue);
-        startingValue.alternativeValue = goog.isString(alternativeValue) ? alternativeValue : '';
 
     };
 
@@ -492,11 +488,7 @@
             if (relativeFractionalTime === MINIMAL_PROGRESS || relativeFractionalTime === MAXIMAL_PROGRESS) {
                 // В начале и в конце (прогресс 0.0 и 1.0) прогресса относительно ключевых кадров
                 // значение смягчения всегда равно прогрессу
-                // Вычислять значение смягчения, промежуточное значение свойства и переводить его в строку не требуется.
-                alternativeKeyframe = (relativeFractionalTime === MINIMAL_PROGRESS) ? leftKeyframe : rightKeyframe;
-                if (goog.isString(alternativeKeyframe.alternativeValue)) {
-                    this.render(propertyDescriptor.propName, alternativeKeyframe.alternativeValue, propertyDescriptor.vendorizedPropName);
-                } // else Альтернативное значение не задано. Будет происходить вычисление промежуточного и перевод его в строку.
+                localEasing = relativeFractionalTime;
             } else if (relativeFractionalTime === this.fractionalTime) {
                 // Локальный прогресс ключевых кадров равен прогрессу анимации
                 // Экономия вызова значения временной функции смягчения
@@ -572,14 +564,9 @@
 
                     var stringValue;
 
-                    if (propertyKeyframe.alternativeValue) {
-                        stringValue = propertyKeyframe.alternativeValue;
-                    } else {
-                        stringValue = toStringValue(this.animationTarget, propertyDescriptor.propName, propertyKeyframe.getValue(), propertyDescriptor.vendorizedPropName);
-                        propertyKeyframe.alternativeValue = stringValue;
-                    }
+                    stringValue = toStringValue(this.animationTarget, propertyDescriptor.propName, propertyKeyframe.getValue(), propertyDescriptor.vendorizedPropName);
 
-                    cssKeyframe.style[ propertyDescriptor.vendorizedPropName ] = propertyKeyframe.alternativeValue;
+                    cssKeyframe.style[ propertyDescriptor.vendorizedPropName ] = stringValue;
                 }
             }
 
@@ -677,11 +664,7 @@
             for (var i = 0; i < this.animatedProperties.length; i++) {
                 var propertyDescriptor = this.animatedProperties.item(i);
                 var startingValue = propertyDescriptor.startingValue;
-                if (goog.isString(startingValue.alternativeValue)) {
-                    this.render(propertyDescriptor.propName, startingValue.alternativeValue, propertyDescriptor.vendorizedPropName);
-                } else {
-                    this.render(propertyDescriptor.propName, startingValue.getValue(), propertyDescriptor.vendorizedPropName);
-                }
+                this.render(propertyDescriptor.propName, startingValue.getValue(), propertyDescriptor.vendorizedPropName);
             }
         }
         this.pause();

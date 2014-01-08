@@ -82,23 +82,23 @@
                 numericValue = toNumericValue(this.animationTarget, propName, propValue, getVendorPropName(propName));
             }
 
-            this.setPropAt(propName, numericValue, numericPosition, goog.isString(propValue) ? propValue : '');
+            this.setPropAt(propName, numericValue, numericPosition);
 
             // Для анимации необходимо минимум 2 значения
             if (  goog.isNull(this.getPropAt(propName, MINIMAL_PROGRESS)) ) {
                 usedValue = getStyle(this.animationTarget, propName, true);
                 numericValue = toNumericValue(this.animationTarget, propName, usedValue, getVendorPropName(propName));
-                this.setPropAt(propName, numericValue, MINIMAL_PROGRESS, usedValue);
+                this.setPropAt(propName, numericValue, MINIMAL_PROGRESS);
             }
             if ( goog.isNull(this.getPropAt(propName, MAXIMAL_PROGRESS)) ) {
                 usedValue = getStyle(this.animationTarget, propName, true);
                 numericValue = toNumericValue(this.animationTarget, propName, usedValue, getVendorPropName(propName));
-                this.setPropAt(propName, numericValue, MAXIMAL_PROGRESS, usedValue);
+                this.setPropAt(propName, numericValue, MAXIMAL_PROGRESS);
             }
             if ( goog.isNull(this.getStartingValue(propName)) ) {
                 usedValue = getStyle(this.animationTarget, propName, false);
                 numericValue = toNumericValue(this.animationTarget, propName, usedValue, getVendorPropName(propName));
-                this.setStartingValue(propName, numericValue, usedValue);
+                this.setStartingValue(propName, numericValue);
             }
             return this;
         } else {
