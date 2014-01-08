@@ -21,7 +21,7 @@
 
             for (var i = 0; i < args.length; i++) {
                 matched = args[i].match(cssNumericValueReg);
-                args[i] = [ parseInt(matched[1]), matched[2] ];
+                args[i] = [ parseFloat(matched[1]), matched[2] ];
             }
 
             if (func in colorFunctions) {
@@ -64,9 +64,9 @@
             var lightness = args[2][0] / 100;
             var m2 = (lightness <= 0.5) ? lightness * (saturation + 1) : (lightness + saturation - lightness * saturation);
             var m1 = lightness * 2 - m2;
-            var red = hueToRGB(m1, m2, hue + 1/3) * 255;
-            var green = hueToRGB(m1, m2, hue) * 255;
-            var blue = hueToRGB(m1, m2, hue - 1/3) * 255;
+            var red = round(hueToRGB(m1, m2, hue + 1/3) * 255, 0);
+            var green = round(hueToRGB(m1, m2, hue) * 255, 0);
+            var blue = round(hueToRGB(m1, m2, hue - 1/3) * 255, 0);
             return [ red, green, blue ];
         },
 
@@ -90,23 +90,23 @@
                 }
             }
 
-            red = args[0][0];
-            green = args[1][0];
-            blue = args[2][0];
+            red = round(args[0][0], 0);
+            green = round(args[1][0], 0);
+            blue = round(args[2][0], 0);
 
             return [ red, green, blue ];
         },
 
         "hsla": function (args) {
             var rgb = colorFunctions["hsl"](args);
-            var opacity = args[3][0];
+            var opacity = round(args[3][0], 1);
             var hsla = rgb.concat(opacity);
             return hsla;
         },
 
         "rgba": function (args) {
             var rgb = colorFunctions["rgb"](args);
-            var opacity = args[3][0];
+            var opacity = round(args[3][0], 1);
             var rgba = rgb.concat(opacity);
             return rgba;
         }
