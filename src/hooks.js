@@ -7,7 +7,7 @@
             return colorsAliases[ propertyValue ];
         } else if (propertyValue.indexOf("#") !== -1) {
             // HEX
-            var hex = parseInt(propertyValue, 16);
+            var hex = parseInt(propertyValue.slice(1), 16);
             red = hex >> 16 & 0xFF;
             green = hex >> 8 & 0xFF;
             blue = hex & 0xFF;
