@@ -13,6 +13,7 @@
     }));
 
     goog.exportProperty(melAnim, 'now', now);
+    goog.exportProperty(melAnim, 'vendorize', getVendorPropName);
 
     goog.exportProperty(melAnim, 'Ticker', Ticker);
 
