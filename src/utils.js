@@ -343,13 +343,15 @@
      */
     function toStringValue (elem, propertyName, numericValue, vendorizedPropName) {
 
+        //TODO заменить reg_test на заполнение hooks
         if ( COLOR_REG.test(vendorizedPropName) ) {
             return toStringValueHooks['color'](elem, propertyName, numericValue, vendorizedPropName);
         } else if (propertyName in toStringValueHooks) {
             return toStringValueHooks[propertyName](elem, propertyName, numericValue, vendorizedPropName);
+        } else {
+            return numericValue + ( propertyName in toStringValueNoPX ? '' : 'px' );
         }
 
-        return numericValue + ( propertyName in toStringValueNoPX ? '' : 'px' );
     }
 
     /** @type {Object.<CSSStyleDeclaration, function (!Element, string, !Array.<number>, string): string>} */
