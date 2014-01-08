@@ -1,40 +1,32 @@
     /** @const */
     var Ticker = {
         /**
-         * @type {Array.<{id: number, clb: !Function}>}
+         * @type {Array.<!Function>}
          */
         listeners: [],
         /**
-         * @type {Array.<{id: number, clb: !Function}>}
+         * @type {Array.<!Function>}
          */
         listenersBuffer: [],
         /**
          * @param {!Function} callback
-         * @return {number}
          * */
         on: function (callback) {
-            var id = uuid();
 
-            var listenerInfo = {
-                id: id,
-                clb: callback
-            };
-
-            this.listeners.push(listenerInfo);
+            this.listeners.push(callback);
 
             if (!this.isAwaken) {
                 this.awake();
             }
 
-            return id;
         },
         /**
-         * @param {number} id
+         * @param {!Function} callback
          */
-        off: function (id) {
-            var infoIndex = linearSearch(this.listeners, function (listenerInfo) {
+        off: function (callback) {
+            var infoIndex = linearSearch(this.listeners, function (clb) {
                 "use strict";
-                return listenerInfo.id === id;
+                return clb === callback;
             });
             if (infoIndex !== NOT_FOUND) {
                 this.listeners.splice(infoIndex, 1);
@@ -80,11 +72,11 @@
                 Ticker.listenersBuffer = Ticker.listeners;
                 Ticker.listeners = swap;
 
-                var listenerInfo;
+                var callback;
 
-                while ( (listenerInfo = Ticker.listenersBuffer.pop()) ) {
-                    Ticker.listeners.push(listenerInfo);
-                    listenerInfo.clb(Ticker.delta);
+                while ( (callback = Ticker.listenersBuffer.pop()) ) {
+                    Ticker.listeners.push(callback);
+                    callback(Ticker.delta);
                 }
 
                 Ticker.lastReflow = Ticker.currentTimeStamp;

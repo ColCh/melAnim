@@ -10,7 +10,6 @@ asyncTest('Ticker', function () {
     expect(1);
 
     var startTime = +new Date();
-    var id;
     var delay = 50;
 
     var testCallbackDeltaTime = function (delta) {
@@ -21,7 +20,7 @@ asyncTest('Ticker', function () {
         ok(equalsPart(elapsed, deltaWithDelay, 0.2), 'passed delta time check (with inaccuracy and delay ' + delay + 'ms): ' + elapsed + ' vs ' + deltaWithDelay);
 
         Ticker.setFPS(100);
-        Ticker.off(id);
+        Ticker.off(testCallbackDeltaTime);
         start();
     };
 

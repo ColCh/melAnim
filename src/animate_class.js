@@ -526,9 +526,6 @@
         return this.animId;
     };
 
-    /** @type {number} */
-    Animation.prototype.tickerId;
-
     /** @type {CSSKeyframesRule} */
     Animation.prototype.keyframesRule;
 
@@ -684,7 +681,7 @@
         if (this.usesCSS3) {
             this.rewriteParameter(ANIMATION_PLAY_STATE, ANIMATION_PLAY_STATE_RUNNING);
         } else {
-            this.tickerId = Ticker.on(this.selfTick);
+            Ticker.on(this.selfTick);
         }
     };
 
@@ -694,7 +691,7 @@
      * Приостанавливает анимацию
      * */
     Animation.prototype.pause = function () {
-        Ticker.off(this.tickerId);
+        Ticker.off(this.selfTick);
     };
 
     goog.exportProperty(Animation.prototype, 'pause', Animation.prototype.pause);
