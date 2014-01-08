@@ -167,10 +167,10 @@
 
     /**
      * Вернёт текущее значение
-     * @return {null|Array.<number>}
+     * @return {!Array.<number>}
      */
     Keyframe.prototype.getValue = function () {
-        return this.propVal.length ? this.propVal : null;
+        return this.propVal;
     };
 
     /**

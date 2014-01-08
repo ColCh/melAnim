@@ -494,7 +494,7 @@
                 // значение смягчения всегда равно прогрессу
                 // Вычислять значение смягчения, промежуточное значение свойства и переводить его в строку не требуется.
                 alternativeKeyframe = (relativeFractionalTime === MINIMAL_PROGRESS) ? leftKeyframe : rightKeyframe;
-                if (alternativeKeyframe.alternativeValue.length) {
+                if (goog.isString(alternativeKeyframe.alternativeValue)) {
                     this.render(propertyDescriptor.propName, alternativeKeyframe.alternativeValue, propertyDescriptor.vendorizedPropName);
                 } // else Альтернативное значение не задано. Будет происходить вычисление промежуточного и перевод его в строку.
             } else if (relativeFractionalTime === this.fractionalTime) {
@@ -677,7 +677,7 @@
             for (var i = 0; i < this.animatedProperties.length; i++) {
                 var propertyDescriptor = this.animatedProperties.item(i);
                 var startingValue = propertyDescriptor.startingValue;
-                if (startingValue.alternativeValue.length) {
+                if (goog.isString(startingValue.alternativeValue)) {
                     this.render(propertyDescriptor.propName, startingValue.alternativeValue, propertyDescriptor.vendorizedPropName);
                 } else {
                     this.render(propertyDescriptor.propName, startingValue.getValue(), propertyDescriptor.vendorizedPropName);
