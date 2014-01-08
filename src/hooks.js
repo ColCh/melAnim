@@ -115,7 +115,12 @@
 
 
     toStringValueHooks["color"] = function (elem, propertyName, numericValue, vendorizedPropName) {
-        return "rgb" + "(" + numericValue.toString() + ")";
+        var colorFunction = 'rgb';
+        if (numericValue.length === 4) {
+            // Последний элемент в массиве - альфа канал
+            colorFunction += 'a';
+        }
+        return colorFunction + "(" + numericValue.join(', ') + ")";
     };
 
     blendHooks["color"] = function (from, to, easing, current, round) {
