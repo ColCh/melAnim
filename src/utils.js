@@ -337,23 +337,18 @@
     /**
      * @param {!Element} elem
      * @param {string} propertyName
-     * @param {null|Array.<number>} numericValue
+     * @param {!Array.<number>} numericValue
      * @param {string} vendorizedPropName
      * @return {string}
      */
     function toStringValue (elem, propertyName, numericValue, vendorizedPropName) {
 
-        if (goog.isNull(numericValue)) {
-            return '';
-        }
-
         if ( COLOR_REG.test(vendorizedPropName) ) {
             return toStringValueHooks['color'](elem, propertyName, numericValue, vendorizedPropName);
-        }
-
-        if (propertyName in toStringValueHooks) {
+        } else if (propertyName in toStringValueHooks) {
             return toStringValueHooks[propertyName](elem, propertyName, numericValue, vendorizedPropName);
         }
+
         return numericValue + ( propertyName in toStringValueNoPX ? '' : 'px' );
     }
 

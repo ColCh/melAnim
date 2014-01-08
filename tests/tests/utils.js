@@ -185,50 +185,7 @@ test('toNumericValue', function () {
     elementWrapper.parentNode.removeChild(elementWrapper);
 });
 
-test('toStringValue', function () {
-    var element = document.createElement('div');
-
-    deepEqual(toStringValue(element, 'width', null, 'width'), '', 'convert null value to string');
-
-    element.style.width = 'auto';
-
-    deepEqual(toNumericValue(element, 'width', 'auto', 'width'), [ 0 ], 'convert initial "auto" value to pixels on detached element');
-
-    document.body.appendChild(element);
-    element.style.position = 'absolute';
-    element.style.paddingLeft = '5px';
-
-    deepEqual(toNumericValue(element, 'width', 'auto', 'width'), [ 5 ], 'convert initial "auto" value to pixels on attached element');
-
-    deepEqual(toNumericValue(element, 'width', 5, 'width'), [ 5 ], 'passing already numeric value');
-    deepEqual(toNumericValue(element, 'width', '5px', 'width'), [ 5 ], 'passing absolute value (px)');
-    deepEqual(toNumericValue(element, 'width', '-5px', 'width'), [ -5 ], 'passing negative absolute value (px)');
-    deepEqual(toNumericValue(element, 'width', '5', 'width'), [ 5 ], 'passing absolute value (unitless)');
-
-    var elementWrapper = document.createElement('div');
-    document.body.appendChild(elementWrapper);
-    elementWrapper.appendChild(element);
-
-    element.style.cssText = '';
-    elementWrapper.style.width = '100px';
-
-    deepEqual(toNumericValue(element, 'width', '1%', 'width'), [ 1 ], 'passing positive relative value (percent)');
-    deepEqual(toNumericValue(element, 'width', '-1%', 'width'), [ -1 ], 'passing negative relative value (percent)');
-
-    element.style.fontSize = '16px';
-
-    deepEqual(toNumericValue(element, 'width', '1em', 'width'), [ 16 ], 'passing positive relative value (em)');
-    deepEqual(toNumericValue(element, 'width', '-1em', 'width'), [ -16 ], 'passing negative relative value (em)');
-
-    elementWrapper.style.fontSize = '16px';
-    element.style.fontSize = '2em';
-
-    deepEqual(toNumericValue(element, 'font-size', '2em', 'fontSize'), [ 32 ], 'font-size (em)');
-    deepEqual(toNumericValue(element, 'font-size', '1em', 'fontSize'), [ 16 ], 'passing positive relative value to font-size (em)');
-    deepEqual(toNumericValue(element, 'font-size', '-1em', 'fontSize'), [ -16 ], 'passing negative relative value to font-size (em)');
-
-    elementWrapper.parentNode.removeChild(elementWrapper);
-});
+// toStringValue remains untested
 
 test('toDeg', function () {
     // W3C: ‘90deg’ or ‘100grad’ or ‘0.25turn’ or approximately ‘1.570796326794897rad’.
