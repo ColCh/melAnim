@@ -95,6 +95,20 @@
             blue = args[2][0];
 
             return [ red, green, blue ];
+        },
+
+        "hsla": function (args) {
+            var rgb = colorFunctions["hsl"](args);
+            var opacity = args[3][0];
+            var hsla = rgb.concat(opacity);
+            return hsla;
+        },
+
+        "rgba": function (args) {
+            var rgb = colorFunctions["rgb"](args);
+            var opacity = args[3][0];
+            var rgba = rgb.concat(opacity);
+            return rgba;
         }
 
     };
