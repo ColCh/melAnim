@@ -667,3 +667,17 @@
             }
         }
     };
+
+    if (CSSANIMATIONS_SUPPORTED) {
+        /**
+         * Workaround для Chrome
+         * Неверное имя метода
+         * @param {!CSSKeyframesRule} keyframesRule
+         * @param {number} key
+         */
+        var keyframesRule_appendRule = function (keyframesRule, key) {
+            var keyframesAppendRule = keyframesRule.appendRule || keyframesRule.insertRule;
+            keyframesAppendRule.call(keyframesRule, key + '%' + ' ' + '{' + ' ' + '}');
+        };
+
+    }
