@@ -53,7 +53,7 @@ asyncTest("now", function () {
         var endTimeStamp = now();
         var timeDiff = endTimeStamp - startTimeStamp;
         var difference = timeDiff / delay;
-        ok(difference > 1 && difference <= 1.5, 'time difference check with inaccuracy ( ' + timeDiff + ' vs ' + delay + ')');
+        ok(difference >= 1 && difference <= 1.5, 'time difference check with inaccuracy ( ' + timeDiff + ' vs ' + delay + ')');
         start();
     }, delay);
 });
