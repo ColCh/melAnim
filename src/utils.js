@@ -348,6 +348,8 @@
             return toStringValueHooks['color'](elem, propertyName, numericValue, vendorizedPropName);
         } else if (propertyName in toStringValueHooks) {
             return toStringValueHooks[propertyName](elem, propertyName, numericValue, vendorizedPropName);
+        } else if (numericValue.length === 0) {
+            return '';
         } else {
             return numericValue + ( propertyName in toStringValueNoPX ? '' : 'px' );
         }
