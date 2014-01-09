@@ -206,11 +206,11 @@
      * Функция отрисовки на цели
      * Для отрисовки используется CSS
      * @param {string} propName имя свойства
-     * @param {!Array.<number>|string|number|null} currentValue текущее значение свойства
+     * @param {!Array.<number>} currentValue текущее значение свойства
      * @param {string=} vendorizedPropName DOM-имя для CSS свойства
      */
     Animation.prototype.render = function (propName, currentValue, vendorizedPropName) {
-        var stringValue = goog.isString(currentValue) ?  currentValue : toStringValue(this.animationTarget, propName, currentValue, vendorizedPropName);
+        var stringValue = toStringValue(this.animationTarget, propName, currentValue, vendorizedPropName);
         setStyle(this.animationTarget, propName, stringValue, vendorizedPropName);
     };
 
