@@ -205,6 +205,12 @@
      * @const
      * @type {boolean}
      */
+    var CURRENTSTYLE_SUPPORTED = 'currentStyle' in rootElement;
+
+    /**
+     * @const
+     * @type {boolean}
+     */
     var CSSANIMATIONS_SUPPORTED = getVendorPropName('animation').length > 0;
 
     /**
@@ -221,8 +227,10 @@
         var style;
         if (USEDSTYLE_SUPPORTED) {
             style = goog.global.getComputedStyle(elem, null);
-            return style[propertyName];
+        } else if (CURRENTSTYLE_SUPPORTED) {
+            style = elem.currentStyle;
         }
+        return style[propertyName];
     }
 
     /**
