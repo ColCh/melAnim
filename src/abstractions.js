@@ -673,7 +673,7 @@
          * Workaround для Chrome
          * Неверное имя метода
          * @param {!CSSKeyframesRule} keyframesRule
-         * @param {number} key
+         * @param {string} key
          */
         var keyframesRule_appendRule = function (keyframesRule, key) {
             var keyframesAppendRule = keyframesRule.appendRule || keyframesRule.insertRule;
