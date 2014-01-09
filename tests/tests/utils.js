@@ -32,13 +32,13 @@ test("getVendorPropName", function() {
 
     window.gvpn = 'gvpntest';
     strictEqual(getVendorPropName('gvpn', true), 'gvpn', 'regular property lookup in global');
-    delete window.gvpn;
+    try { delete window.gvpn; } catch (e) { window.gvpn = null; }
 
     var dummyPropertyPrefix = 'unitTest';
     vendorPrefixes.push(dummyPropertyPrefix);
     window[dummyPropertyPrefix + 'Randomprop'] = 'customvalue';
     strictEqual(getVendorPropName(dummyPropertyPrefix + '-' + 'randomprop', true), dummyPropertyPrefix + 'Randomprop', 'regular property lookup in global with prefix check');
-    delete window[dummyPropertyPrefix + 'Randomprop'];
+    try { delete window[dummyPropertyPrefix + 'Randomprop']; } catch (e) { window[dummyPropertyPrefix + 'Randomprop'] = null; }
 
 });
 
