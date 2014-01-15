@@ -575,7 +575,7 @@
             if (!isAlreadyApplied) {
 
                 var singleAnimation = [
-                    this.animId,
+                    ANIMATION_NAME_NONE,
                     ANIMATION_PLAY_STATE_PAUSED,
                     this.duration() + 'ms',
                     this.getEasing().toString(),
@@ -588,6 +588,13 @@
                 var currentPropertyValue;
                 var newPropertyValue;
                 var currentAnimationIndex = appliedAnimationNames.split(ANIMATIONS_SEPARATOR).length;
+
+                // Т.к. параметры анимации и ключевые кадры отпечатываются в памяти после её старта, то
+                // применяем анимацию как пустую, ставим ей параметры; и только после всех действий ставим ей имя обратно
+
+                // Для просто применяем её как 'none' и поставим в конец имя анимации
+                singleAnimation.push(this.animId);
+                SINGLE_ANIMATION_PROPERTIES.push(ANIMATION_NAME);
 
                 for (var i = 0; i < singleAnimation.length; i++) {
                     currentPropertyValue = getStyle(this.animationTarget, SINGLE_ANIMATION_PROPERTIES[i], true).split(ANIMATIONS_SEPARATOR);
