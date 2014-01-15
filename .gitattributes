@@ -1,1 +1,3 @@
 dist/* -crlf -diff
+tests/qunit.css binary
+tests/qunit.js binary
