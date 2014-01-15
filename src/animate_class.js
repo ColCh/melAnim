@@ -679,7 +679,11 @@
      * Приостанавливает анимацию
      * */
     Animation.prototype.pause = function () {
-        Ticker.off(this.selfTick);
+        if (this.usesCSS3) {
+            this.rewriteParameter(ANIMATION_PLAY_STATE, ANIMATION_PLAY_STATE_PAUSED);
+        } else {
+            Ticker.off(this.selfTick);
+        }
     };
 
     goog.exportProperty(Animation.prototype, 'pause', Animation.prototype.pause);
