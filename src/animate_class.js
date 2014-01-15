@@ -592,15 +592,18 @@
                 // Т.к. параметры анимации и ключевые кадры отпечатываются в памяти после её старта, то
                 // применяем анимацию как пустую, ставим ей параметры; и только после всех действий ставим ей имя обратно
 
-                // Для просто применяем её как 'none' и поставим в конец имя анимации
-                singleAnimation.push(this.animId);
-                SINGLE_ANIMATION_PROPERTIES.push(ANIMATION_NAME);
+                // Для просто применяем её как 'none' и поставим имя анимации после установки параметров
 
                 for (var i = 0; i < singleAnimation.length; i++) {
                     currentPropertyValue = getStyle(this.animationTarget, SINGLE_ANIMATION_PROPERTIES[i], true).split(ANIMATIONS_SEPARATOR);
                     currentPropertyValue[ currentAnimationIndex ] = singleAnimation[i];
                     setStyle(this.animationTarget, SINGLE_ANIMATION_PROPERTIES[i], currentPropertyValue.join(ANIMATIONS_JOINER));
                 }
+
+                // Применение имени анимации
+                currentPropertyValue = getStyle(this.animationTarget, ANIMATION_NAME, true).split(ANIMATIONS_SEPARATOR);
+                currentPropertyValue[ currentAnimationIndex ] = this.animId;
+                setStyle(this.animationTarget, ANIMATION_NAME, currentPropertyValue.join(ANIMATIONS_JOINER));
 
             } // else уже применена. Что делаем?
 
