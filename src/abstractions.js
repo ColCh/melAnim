@@ -689,7 +689,7 @@
          * @type {boolean}
          * @const
          */
-        var KEY_EXPECTS_FRACTION = goog.isDef(keyframesRule.findRule("1"));
+        var KEY_EXPECTS_FRACTION = goog.isDefAndNotNull(keyframesRule.findRule("1"));
 
         /**
          * Workaround для следования спецификации
