@@ -569,46 +569,33 @@
             }
 
             // Формирование параметров текущей анимации
-            var currentAnimationName = this.animId;
-            var appliedAnimations = getStyle(this.animationTarget, ANIMATION, true);
-            var currentAnimationIndex = appliedAnimations.indexOf(currentAnimationName);
-            var isAlreadyApplied = currentAnimationIndex !== NOT_FOUND;
+            var appliedAnimationNames = getStyle(this.animationTarget, ANIMATION_NAME, true);
+            var isAlreadyApplied = appliedAnimationNames.indexOf( this.animId ) !== NOT_FOUND;
 
-            /**
-             * @const
-             * @type {string}
-             */
-            var singleAnimation = [
-                currentAnimationName,
-                ANIMATION_PLAY_STATE_PAUSED,
-                this.duration() + 'ms',
-                this.getEasing().toString(),
-                this.delay() + 'ms',
-                this.iterationCount().toString(),
-                this.direction(),
-                this.fillMode()
-            ].join(ANIMATION_PARAMETER_JOINER);
+            if (!isAlreadyApplied) {
 
-            if (isAlreadyApplied) {
+                var singleAnimation = [
+                    this.animId,
+                    ANIMATION_PLAY_STATE_PAUSED,
+                    this.duration() + 'ms',
+                    this.getEasing().toString(),
+                    this.delay() + 'ms',
+                    this.iterationCount().toString(),
+                    this.direction(),
+                    this.fillMode()
+                ];
 
-                var animationsBefore = appliedAnimations.slice(0, currentAnimationIndex - ANIMATIONS_JOINER.length);
-                var animationsAfter = animationsBefore.split(ANIMATIONS_SEPARATOR)[1] || ''; // 0 - this animation
+                var currentPropertyValue;
+                var newPropertyValue;
+                var currentAnimationIndex = appliedAnimationNames.split(ANIMATIONS_SEPARATOR).length;
 
-                var newAppliedAnimations = animationsBefore;
-
-                if (animationsAfter.length > 0) {
-                    newAppliedAnimations += ANIMATIONS_JOINER + animationsAfter;
+                for (var i = 0; i < singleAnimation.length; i++) {
+                    currentPropertyValue = getStyle(this.animationTarget, SINGLE_ANIMATION_PROPERTIES[i], true).split(ANIMATIONS_SEPARATOR);
+                    currentPropertyValue[ currentAnimationIndex ] = singleAnimation[i];
+                    setStyle(this.animationTarget, SINGLE_ANIMATION_PROPERTIES[i], currentPropertyValue.join(ANIMATIONS_JOINER));
                 }
 
-                newAppliedAnimations += ANIMATIONS_JOINER + singleAnimation;
-
-                setStyle(this.animationTarget, ANIMATION, newAppliedAnimations);
-
-            } else {
-
-                setStyle(this.animationTarget, ANIMATION, appliedAnimations + ANIMATIONS_JOINER + singleAnimation);
-
-            }
+            } // else уже применена. Что делаем?
 
         } else {
             this.elapsedTime = 0;
@@ -637,20 +624,20 @@
             KeyframesRulesRegistry.slay(this.keyframesRule);
             this.keyframesRule = null;
 
-            var currentAnimationName = this.animId;
-            var appliedAnimations = getStyle(this.animationTarget, ANIMATION, true);
-            var currentAnimationIndex = appliedAnimations.indexOf(currentAnimationName);
+            var appliedAnimationNames = getStyle(this.animationTarget, ANIMATION_NAME, true);
 
-            var animationsBefore = appliedAnimations.slice(0, currentAnimationIndex - ANIMATIONS_JOINER.length);
-            var animationsAfter = animationsBefore.split(ANIMATIONS_SEPARATOR)[1] || ''; // 0 - this animation
+            var currentPropertyValue;
+            var newPropertyValue;
+            var thisAnimationName = this.animId;
+            var currentAnimationIndex = linearSearch(appliedAnimationNames.split(ANIMATIONS_SEPARATOR), function (name) {
+                return name === thisAnimationName;
+            });
 
-            var newAppliedAnimations = animationsBefore;
-
-            if (animationsAfter.length > 0) {
-                newAppliedAnimations += ANIMATIONS_JOINER + animationsAfter;
+            for (var i = 0; i < SINGLE_ANIMATION_PROPERTIES.length; i++) {
+                currentPropertyValue = getStyle(this.animationTarget, SINGLE_ANIMATION_PROPERTIES[i], true).split(ANIMATIONS_SEPARATOR);
+                currentPropertyValue.splice(currentAnimationIndex, 1);
+                setStyle(this.animationTarget, SINGLE_ANIMATION_PROPERTIES[i], currentPropertyValue.join(ANIMATIONS_JOINER));
             }
-
-            setStyle(this.animationTarget, ANIMATION, newAppliedAnimations);
 
         }
         if (this.fillsForwards) {
