@@ -491,7 +491,9 @@
         }
 
         // вешаем обратно обычный обработчик на точно определённое имя события
-        rootElement.addEventListener(eventName, animationHandlerDelegator, ANIMATION_HANDLER_USES_CAPTURE);
+        setTimeout(function () {
+            rootElement.addEventListener(eventName, animationHandlerDelegator, ANIMATION_HANDLER_USES_CAPTURE);
+        }, 1);
 
         // вызываем тут же оригинальный обработчик
         animationHandlerDelegator(event);
