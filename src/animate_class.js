@@ -548,14 +548,16 @@
                 for (var j = 0; j < propertyKeyframes.length; j++) {
 
                     var propertyKeyframe = propertyKeyframes.item(j);
-                    var key = propertyKeyframe.numericKey * 1e2 + '';
 
-                    var cssKeyframe = this.keyframesRule.findRule(key);
+                    var key = propertyKeyframe.numericKey * 1e2;
+                    var domStringKey = key_toDOMString(key);
+
+                    var cssKeyframe = keyframesRule_findRule(this.keyframesRule, domStringKey);
 
                     if (!cssKeyframe) {
                         // у Chrome было неверное следование спецификации - неверное имя метода для добавления ключевых кадров.
                         keyframesRule_appendRule(this.keyframesRule, key);
-                        cssKeyframe = this.keyframesRule.findRule(key);
+                        cssKeyframe = keyframesRule_findRule(this.keyframesRule, domStringKey);
                     }
 
                     var stringValue;

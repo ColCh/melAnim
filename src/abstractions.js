@@ -655,6 +655,7 @@
             var key;
             while ( keyframes.length ) {
                 key = keyframes[0].keyText;
+                key = key_toDOMString(parseInt(key, 10));
                 keyframesRule.deleteRule(key);
             }
             this.rules.push(keyframesRule);
@@ -673,11 +674,57 @@
          * Workaround для Chrome
          * Неверное имя метода
          * @param {!CSSKeyframesRule} keyframesRule
-         * @param {string} key
+         * @param {number} key
          */
         var keyframesRule_appendRule = function (keyframesRule, key) {
             var keyframesAppendRule = keyframesRule.appendRule || keyframesRule.insertRule;
             keyframesAppendRule.call(keyframesRule, key + '%' + ' ' + '{' + ' ' + '}');
         };
+
+
+        var keyframesRule = KeyframesRulesRegistry.request();
+        keyframesRule_appendRule(keyframesRule, 100);
+
+        /**
+         * @type {boolean}
+         * @const
+         */
+        var KEY_EXPECTS_FRACTION = goog.isDef(keyframesRule.findRule("1"));
+
+        /**
+         * Workaround для следования спецификации
+         * http://www.w3.org/TR/css3-animations/#CSSKeyframesRule-findRule
+         * IE : принимает строковое число в долях ("0")
+         * Остальные: процентное число в строке + постфикс  '%' ("0%")
+         * @param {number} key
+         * @return {string}
+         */
+        var key_toDOMString = function (key) {
+            if (KEY_EXPECTS_FRACTION) {
+                // melAnim использует проценты
+                return key * 1e-2 + "";
+            } else {
+                return key + "%";
+            }
+        };
+
+        KeyframesRulesRegistry.slay(keyframesRule);
+        keyframesRule = null;
+
+        /**
+         * Workaround для IE
+         * Кидает ошибку при поиске в пустом правиле ключевых кадров
+         * Обёртка для того, чтобы не использовать try catch.
+         * @param {!CSSKeyframesRule} keyframesRule
+         * @param {string} key
+         * @return {CSSKeyframesRule}
+         */
+        var keyframesRule_findRule = function (keyframesRule, key) {
+            if (keyframesRule.cssRules.length === 0) {
+                return null;
+            } else {
+                return keyframesRule.findRule(key);
+            }
+        }
 
     }
