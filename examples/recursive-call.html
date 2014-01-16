@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CSS3 Recursive tween call | melAnim</title>
+    <style>
+        article, aside, figure, footer, header, hgroup, menu, nav, section {
+            display: block;
+        }
+
+        .css {
+        }
+
+        .anim {
+            border: 1px black solid;
+            position: absolute;
+            width: 10px;
+        }
+
+        body {
+            background-color: gray;
+            padding: 0px;
+            position: relative;
+            height: 450px;
+            border: 1px #ff0000 dashed;
+            margin-top: 50px;
+        }
+    </style>
+    <script type="text/javascript" src="../dist/mel-anim.compiled.js"></script>
+</head>
+<body>
+<div style="top: 10px; border: 2px blue solid;  width: 200px " class="anim css" id="css">Anim me ONE!</div>
+
+
+<script type="text/javascript">
+
+    var element = document.getElementById("css");
+
+    var anim = new melAnim.Animation();
+
+    anim.setTarget(element);
+    anim.setClassicMode(false);
+    anim.easing('ease-in-cubic');
+    anim.setDuration(800);
+    anim.propAt("width", 700, "100%");
+    anim.fillMode("none");
+
+    var i = 5;
+
+    anim.onComplete(function () {
+        console.log('Animation completed.');
+        document.body.style.backgroundColor = 'green';
+        this.getTarget().style.color = 'blue';
+        this.getTarget().innerHTML = 'completed';
+        if (--i>0) anim.start();
+    });
+
+    anim.onStart(function () {
+        console.log('Animation started');
+    });
+
+    anim.onStep(function () {
+        console.log('Animation STEP');
+    });
+
+    anim.onIteration(function () {
+        console.log('Animation iteration');
+    });
+
+    anim.start();
+
+    console.log('Animation afterstart');
+
+</script>
+</body>
+</html>
