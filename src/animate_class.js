@@ -27,13 +27,6 @@
             self._not_self_fireOnCompleteWithStop();
         };
 
-        // Обёртки над обработчиками событий CSS анимации
-        if (CSSANIMATIONS_SUPPORTED) {
-            delegatorCallbacks[ ANIMATION_START_EVENTTYPE ][ this.animId ] = this.fireOnStart;
-            delegatorCallbacks[ ANIMATION_ITERATION_EVENTTYPE ][ this.animId ] = this.fireOnIteration;
-            delegatorCallbacks[ ANIMATION_END_EVENTTYPE ][ this.animId ] = this.fireOnCompleteWithStop;
-        }
-
     }
 
     /** @type {string} */
@@ -536,6 +529,13 @@
 
         if (this.usesCSS3) {
 
+            // Обёртки над обработчиками событий CSS анимации
+            if (CSSANIMATIONS_SUPPORTED) {
+                delegatorCallbacks[ ANIMATION_START_EVENTTYPE ][ this.animId ] = this.fireOnStart;
+                delegatorCallbacks[ ANIMATION_ITERATION_EVENTTYPE ][ this.animId ] = this.fireOnIteration;
+                delegatorCallbacks[ ANIMATION_END_EVENTTYPE ][ this.animId ] = this.fireOnCompleteWithStop;
+            }
+
             this.keyframesRule = KeyframesRulesRegistry.request();
             this.keyframesRule.name = this.animId;
 
@@ -569,43 +569,47 @@
             }
 
             // Формирование параметров текущей анимации
-            var appliedAnimationNames = getStyle(this.animationTarget, ANIMATION_NAME, true);
-            var isAlreadyApplied = appliedAnimationNames.indexOf( this.animId ) !== NOT_FOUND;
+            var currentAnimationName = this.animId;
+            var appliedAnimations = getStyle(this.animationTarget, ANIMATION, true) || getStyle(this.animationTarget, ANIMATION, false);
+            var currentAnimationIndex = appliedAnimations.indexOf(currentAnimationName);
+            var isAlreadyApplied = currentAnimationIndex !== NOT_FOUND;
+            var newAppliedAnimations;
 
-            if (!isAlreadyApplied) {
+            /**
+             * @const
+             * @type {string}
+             */
+            var singleAnimation = [
+                currentAnimationName,
+                this.duration() + 'ms',
+                this.getEasing().toString(),
+                this.delay() + 'ms',
+                this.iterationCount().toString(),
+                this.direction(),
+                this.fillMode()
+            ].join(ANIMATION_PARAMETER_JOINER);
 
-                var singleAnimation = [
-                    ANIMATION_NAME_NONE,
-                    ANIMATION_PLAY_STATE_PAUSED,
-                    this.duration() + 'ms',
-                    this.getEasing().toString(),
-                    this.delay() + 'ms',
-                    this.iterationCount().toString(),
-                    this.direction(),
-                    this.fillMode()
-                ];
+            if (isAlreadyApplied) {
 
-                var currentPropertyValue;
-                var newPropertyValue;
-                var currentAnimationIndex = appliedAnimationNames.split(ANIMATIONS_SEPARATOR).length;
+                var animationsBefore = currentAnimationIndex === 0 ? '' : appliedAnimations.slice(0, currentAnimationIndex - ANIMATIONS_JOINER.length);
+                var animationsAfter = animationsBefore.split(ANIMATIONS_SEPARATOR)[1] || ''; // 0 this animation
 
-                // Т.к. параметры анимации и ключевые кадры отпечатываются в памяти после её старта, то
-                // применяем анимацию как пустую, ставим ей параметры; и только после всех действий ставим ей имя обратно
+                newAppliedAnimations = animationsBefore;
 
-                // Для просто применяем её как 'none' и поставим имя анимации после установки параметров
-
-                for (var i = 0; i < singleAnimation.length; i++) {
-                    currentPropertyValue = getStyle(this.animationTarget, SINGLE_ANIMATION_PROPERTIES[i], true).split(ANIMATIONS_SEPARATOR);
-                    currentPropertyValue[ currentAnimationIndex ] = singleAnimation[i];
-                    setStyle(this.animationTarget, SINGLE_ANIMATION_PROPERTIES[i], currentPropertyValue.join(ANIMATIONS_JOINER));
+                if (animationsAfter.length > 0) {
+                    newAppliedAnimations += ANIMATIONS_JOINER + animationsAfter;
                 }
 
-                // Применение имени анимации
-                currentPropertyValue = getStyle(this.animationTarget, ANIMATION_NAME, true).split(ANIMATIONS_SEPARATOR);
-                currentPropertyValue[ currentAnimationIndex ] = this.animId;
-                setStyle(this.animationTarget, ANIMATION_NAME, currentPropertyValue.join(ANIMATIONS_JOINER));
+                newAppliedAnimations += ANIMATIONS_JOINER + singleAnimation;
 
-            } // else уже применена. Что делаем?
+            } else {
+
+                newAppliedAnimations = appliedAnimations.length === 0 ? appliedAnimations : (appliedAnimations + ANIMATIONS_JOINER);
+                newAppliedAnimations += singleAnimation
+
+            }
+
+            setStyle(this.animationTarget, ANIMATION, newAppliedAnimations);
 
         } else {
             this.elapsedTime = 0;
@@ -618,9 +622,9 @@
                 this.fireOnStart();
             }
 
-        }
+            this.resume();
 
-        this.resume();
+        }
 
     };
 
@@ -631,23 +635,31 @@
      * */
     Animation.prototype.stop = function () {
         if (this.usesCSS3) {
+
+            // Обёртки над обработчиками событий CSS анимации
+            if (CSSANIMATIONS_SUPPORTED) {
+                delete delegatorCallbacks[ ANIMATION_START_EVENTTYPE ][ this.animId ];
+                delete delegatorCallbacks[ ANIMATION_ITERATION_EVENTTYPE ][ this.animId ];
+                delete delegatorCallbacks[ ANIMATION_END_EVENTTYPE ][ this.animId ];
+            }
+
             KeyframesRulesRegistry.slay(this.keyframesRule);
             this.keyframesRule = null;
 
-            var appliedAnimationNames = getStyle(this.animationTarget, ANIMATION_NAME, true);
+            var currentAnimationName = this.animId;
+            var appliedAnimations = getStyle(this.animationTarget, ANIMATION, true) || getStyle(this.animationTarget, ANIMATION, false);
+            var currentAnimationIndex = appliedAnimations.indexOf(currentAnimationName);
 
-            var currentPropertyValue;
-            var newPropertyValue;
-            var thisAnimationName = this.animId;
-            var currentAnimationIndex = linearSearch(appliedAnimationNames.split(ANIMATIONS_SEPARATOR), function (name) {
-                return name === thisAnimationName;
-            });
+            var animationsBefore = currentAnimationIndex === 0 ? '' : appliedAnimations.slice(0, currentAnimationIndex - ANIMATIONS_JOINER.length);
+            var animationsAfter = animationsBefore.split(ANIMATIONS_SEPARATOR)[1] || ''; // 0 - this animation
 
-            for (var i = 0; i < SINGLE_ANIMATION_PROPERTIES.length; i++) {
-                currentPropertyValue = getStyle(this.animationTarget, SINGLE_ANIMATION_PROPERTIES[i], true).split(ANIMATIONS_SEPARATOR);
-                currentPropertyValue.splice(currentAnimationIndex, 1);
-                setStyle(this.animationTarget, SINGLE_ANIMATION_PROPERTIES[i], currentPropertyValue.join(ANIMATIONS_JOINER));
+            var newAppliedAnimations = animationsBefore;
+
+            if (animationsAfter.length > 0) {
+                newAppliedAnimations += ANIMATIONS_JOINER + animationsAfter;
             }
+
+            setStyle(this.animationTarget, ANIMATION, newAppliedAnimations);
 
         }
         if (this.fillsForwards) {
@@ -662,7 +674,10 @@
                 this.render(propertyDescriptor.propName, startingValue.getValue(), propertyDescriptor.vendorizedPropName);
             }
         }
+
         this.pause();
+        this.animId = generateId();
+
     };
 
     goog.exportProperty(Animation.prototype, 'stop', Animation.prototype.stop);
@@ -689,11 +704,7 @@
      * Приостанавливает анимацию
      * */
     Animation.prototype.pause = function () {
-        if (this.usesCSS3) {
-            this.rewriteParameter(ANIMATION_PLAY_STATE, ANIMATION_PLAY_STATE_PAUSED);
-        } else {
-            Ticker.off(this.selfTick);
-        }
+        Ticker.off(this.selfTick);
     };
 
     goog.exportProperty(Animation.prototype, 'pause', Animation.prototype.pause);
