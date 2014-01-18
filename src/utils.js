@@ -89,15 +89,10 @@
      *  */
     var now = 'performance' in goog.global && 'now' in goog.global.performance ? function () { return goog.global.performance.timing.navigationStart + goog.global.performance.now(); } : 'now' in Date ? Date.now : function () { return +new Date(); };
 
-    var isRAFSupported = getVendorPropName('requestAnimationFrame', true) !== "";
+    var rAF = goog.global[ getVendorPropName(REQUEST_ANIMATION_FRAME, true) ];
+    var cancelRAF = goog.global[ getVendorPropName(CANCEL_REQUEST_ANIMATION_FRAME, true) ];
 
-    var rAF;
-    var cancelRAF;
-
-    if (isRAFSupported) {
-        rAF = goog.global[ getVendorPropName('requestAnimationFrame', true) ];
-        cancelRAF = goog.global[ getVendorPropName('cancelRequestAnimationFrame', true) ];
-    }
+    var RAF_SUPPORTED = goog.isFunction(rAF);
 
     /**
      * @param {!Array} array
@@ -367,6 +362,8 @@
     /** @type {Object.<CSSStyleDeclaration, function (!Element, string, !Array.<number>, string): string>} */
     var toStringValueHooks = {};
 
+    //TODO сжать список свойств, для которых не нужны пиксели. Google Closure Compiler этого не делает
+
     /** @type {Object.<CSSStyleDeclaration, boolean>} */
     var toStringValueNoPX = {
         "fill-opacity": true,
@@ -515,6 +512,8 @@
      * @type {Object.<string, Object.<string, Function>>}
      */
     var delegatorCallbacks = {};
+
+    //TODO сжать delegatorCallbacks. МБ вообще разбить на файлы - Google Closure Compiler инлайнит туда константы
 
     /**
      * Объект с обработчиками событий окончания анимаций

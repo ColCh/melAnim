@@ -194,7 +194,7 @@
 
         if (goog.isDef(iterations)) {
             if (iterations === ITERATIONCOUNT_INFINITE) {
-                numericIterations = Number.POSITIVE_INFINITY;
+                numericIterations = POSITIVE_INFINITY;
             } else {
                 numericIterations = iterations * 1;
             }

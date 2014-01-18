@@ -245,8 +245,8 @@
      * @param {number} iterations
      */
     Animation.prototype.setIterations = function (iterations) {
-        if (iterations === Number.POSITIVE_INFINITY) {
-            this.iterations = this.integralIterations = Number.POSITIVE_INFINITY;
+        if (iterations === POSITIVE_INFINITY) {
+            this.iterations = this.integralIterations = POSITIVE_INFINITY;
         } else {
             if (isFinite(iterations) && iterations >= 0) {
                 this.iterations = iterations;

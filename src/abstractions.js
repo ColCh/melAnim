@@ -33,7 +33,7 @@
             }
         },
 
-        useRAF: isRAFSupported,
+        useRAF: RAF_SUPPORTED,
         isAwaken: false,
         frequency: TICKER_BASE_INTERVAL,
 
@@ -103,7 +103,7 @@
          */
         ignoreReflow: function (ignoreRAF) {
             this.sleep();
-            this.useRAF = isRAFSupported && !Boolean(ignoreRAF);
+            this.useRAF = RAF_SUPPORTED && !Boolean(ignoreRAF);
             this.awake();
         }
     };
@@ -658,13 +658,13 @@
                 key = key_toDOMString(parseInt(key, 10));
                 keyframesRule.deleteRule(key);
             }
-            this.rules.push(keyframesRule);
+            KeyframesRulesRegistry.rules.push(keyframesRule);
         },
         request: function () {
-            if (this.rules.length === 0) {
+            if (KeyframesRulesRegistry.rules.length === 0) {
                 return addRule("@" + KEYFRAME_PREFIX + " " + ANIMATION_NAME_NONE);
             } else {
-                return this.rules.pop();
+                return KeyframesRulesRegistry.rules.pop();
             }
         }
     };

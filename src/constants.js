@@ -61,6 +61,12 @@
     var ANIMATION_NAME_NONE = 'none';
 
     /**
+     * @const
+     * @type {string}
+     */
+    var HYPHEN = '-';
+
+    /**
      * Имя CSS-свойства для назначения \ получения анимации (shorthand).
      * @type {string}
      * @const
@@ -72,62 +78,68 @@
      * @type {string}
      * @const
      */
-    var ANIMATION_NAME = "animation-name";
+    var ANIMATION_NAME = [ANIMATION, "name"].join(HYPHEN);
 
     /**
      * Имя CSS-свойства для назначения \ получения статуса проигрывания анимации.
      * @type {string}
      * @const
      */
-    var ANIMATION_PLAY_STATE = "animation-play-state";
+    var ANIMATION_PLAY_STATE = [ANIMATION, "play", "state"].join(HYPHEN);
 
     /**
      * Имя CSS-свойства для назначения \ получения продолжительности анимации.
      * @type {string}
      * @const
      */
-    var ANIMATION_DURATION = "animation-duration";
+    var ANIMATION_DURATION = [ANIMATION, "duration"].join(HYPHEN);
 
     /**
      * Имя CSS-свойства для назначения \ получения временной функции смягчения анимации \ ключевого кадра.
      * @type {string}
      * @const
      */
-    var ANIMATION_TIMING_FUNCTION = "animation-timing-function";
+    var ANIMATION_TIMING_FUNCTION = [ANIMATION, "timing", "function"].join(HYPHEN);
 
     /**
      * Имя CSS-свойства для назначения \ получения задержки старта анимации.
      * @type {string}
      * @const
      */
-    var ANIMATION_DELAY = "animation-delay";
+    var ANIMATION_DELAY = [ANIMATION, "delay"].join(HYPHEN);
 
     /**
      * Имя CSS-свойства для назначения \ получения количества проходов анимации.
      * @type {string}
      * @const
      */
-    var ANIMATION_ITERATION_COUNT = "animation-iteration-count";
+    var ANIMATION_ITERATION_COUNT = [ANIMATION, "iteration", "count"].join(HYPHEN);
 
     /**
      * Имя CSS-свойства для назначения \ получения направления прогрессирования анимации.
      * @type {string}
      * @const
      */
-    var ANIMATION_DIRECTION = "animation-direction";
+    var ANIMATION_DIRECTION = [ANIMATION, "direction"].join(HYPHEN);
 
     /**
      * Имя CSS-свойства для назначения \ получения режима заполнения анимации.
      * @type {string}
      * @const
      */
-    var ANIMATION_FILL_MODE = "animation-fill-mode";
+    var ANIMATION_FILL_MODE = [ANIMATION, "fill", "mode"].join(HYPHEN);
 
     /**
      * @type {boolean}
      * @const
      */
     var ANIMATION_HANDLER_USES_CAPTURE = true;
+
+    /**
+     * @const
+     * @type {number}
+     */
+    var POSITIVE_INFINITY = 1/0;
 
     /**
      * Все известные имена событий конца анимаций
@@ -207,3 +219,15 @@
         ANIMATION_DIRECTION,
         ANIMATION_FILL_MODE
     ];
+
+    /**
+     * @const
+     * @type {string}
+     */
+    var REQUEST_ANIMATION_FRAME = 'requestAnimationFrame';
+
+    /**
+     * @const
+     * @type {string}
+     */
+    var CANCEL_REQUEST_ANIMATION_FRAME = 'cancelRequestAnimationFrame';
