@@ -211,10 +211,6 @@
     KeyframesCollection.prototype.indexOfLeft = function (progress) {
         var leftKeyframe, rightKeyframe;
 
-        if (this.length < 2) {
-            return NOT_FOUND;
-        }
-
         leftKeyframe = this[ this.cachedIndex ];
         rightKeyframe = this[ this.cachedIndex + 1 ];
 
