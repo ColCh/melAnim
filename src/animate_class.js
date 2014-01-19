@@ -456,7 +456,6 @@
         var localEasing, relativeFractionalTime;
         var leftKeyframe, rightKeyframe;
         var alternativeKeyframe;
-        var blender = blend;
 
         var isPropertyValueChanged;
 
@@ -498,13 +497,7 @@
                 // Высчет промежуточного значения и перевод его в строку, а затем отрисовка полученного
                 // Худший случай
 
-                if ( COLOR_REG.test(propertyDescriptor.propName) ) {
-                    blender = blendHooks['color'];
-                } else if (propertyDescriptor.propName in blendHooks) {
-                    blender = blendHooks[propertyDescriptor.propName];
-                }
-
-                isPropertyValueChanged = blender(leftKeyframe.propVal, rightKeyframe.propVal, localEasing, propertyDescriptor.currentValue, BLEND_DIGITS);
+                isPropertyValueChanged = propertyDescriptor.blender(leftKeyframe.propVal, rightKeyframe.propVal, localEasing, propertyDescriptor.currentValue, BLEND_DIGITS);
 
                 if (isPropertyValueChanged) {
                     this.render(propertyDescriptor.propName, propertyDescriptor.currentValue, propertyDescriptor.vendorizedPropName);

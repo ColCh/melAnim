@@ -254,6 +254,11 @@
         this.currentValue = [];
         this.keyframes = new KeyframesCollection();
         this.startingValue = new Keyframe(null);
+        if ( COLOR_REG.test(propertyName) ) {
+            this.blender = blendHooks['color'];
+        } else if (propertyName in blendHooks) {
+            this.blender = blendHooks[propertyName];
+        }
     }
 
     /**
@@ -269,6 +274,12 @@
      * @type {string}
      */
     PropertyDescriptor.prototype.vendorizedPropName = '';
+
+    /**
+     * Функция-интерполятор для данного свойства
+     * @type {function(!Array.<number>, !Array.<number>, number, !Array.<number>, number): boolean}
+     */
+    PropertyDescriptor.prototype.blender = blend;
 
     /**
      * Текущее значение свойства на моменте анимации.
