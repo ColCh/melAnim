@@ -205,10 +205,26 @@
     KeyframesCollection.prototype.cachedIndex = MINIMAL_PROGRESS;
 
     /**
-     * Поиск индекса ЛЕВОГО ключевого кадра для определённого прогресса.
+     * Вернёт ЛЕВЫЙ ключевой кадр по текущему индексу
+     * @return {Keyframe}
+     */
+    KeyframesCollection.prototype.getLeft = function () {
+        return this[ this.cachedIndex ];
+    };
+
+    /**
+     * Вернёт ПРАВЫЙ ключевой кадр по текущему индексу
+     * @return {Keyframe}
+     */
+    KeyframesCollection.prototype.getRight = function () {
+        return this[ this.cachedIndex + 1 ];
+    };
+
+    /**
+     * Обновит индекс ЛЕВОГО ключевого кадра для определённого прогресса.
      * @param {number} progress
      */
-    KeyframesCollection.prototype.indexOfLeft = function (progress) {
+    KeyframesCollection.prototype.moveIndexTo = function (progress) {
         var leftKeyframe, rightKeyframe;
 
         leftKeyframe = this[ this.cachedIndex ];
@@ -228,7 +244,6 @@
             } while (leftKeyframe.numericKey > progress || rightKeyframe.numericKey < progress);
         }
 
-        return this.cachedIndex;
     };
 
     /**

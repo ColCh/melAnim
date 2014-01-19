@@ -455,10 +455,10 @@
             propertyDescriptor = this.animatedProperties.item(i);
             propertyKeyframes = propertyDescriptor.getKeyframes();
 
-            leftKeyframeIndex = propertyKeyframes.indexOfLeft(this.fractionalTime);
+            propertyKeyframes.moveIndexTo(this.fractionalTime);
 
-            leftKeyframe = propertyKeyframes.item(leftKeyframeIndex);
-            rightKeyframe = propertyKeyframes.item(leftKeyframeIndex + 1);
+            leftKeyframe = propertyKeyframes.getLeft();
+            rightKeyframe = propertyKeyframes.getRight();
 
             relativeFractionalTime = (this.fractionalTime - leftKeyframe.numericKey) / (rightKeyframe.numericKey - leftKeyframe.numericKey);
 
