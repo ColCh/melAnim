@@ -445,17 +445,9 @@
 
         var leftKeyframeIndex;
         var propertyKeyframes, propertyDescriptor;
-        /**
-         * Глобальное смягчение - значение временной функции рпи прогрессе АНИМАЦИИ.
-         * Лениво инициализируется и используется, если локальный прогресс ключевых кадров
-         * равен прогрессу анимации.
-         * Этим экономятся вызовы функции смягчения.
-         * @type {number|null}
-         */
         var globalEasing = null;
         var localEasing, relativeFractionalTime;
         var leftKeyframe, rightKeyframe;
-        var alternativeKeyframe;
 
         var isPropertyValueChanged;
 
@@ -492,18 +484,11 @@
                 localEasing = this.smoothing.compute(relativeFractionalTime);
             }
 
-            if (!alternativeKeyframe) {
-                // Нет высчитанного строкового значения
-                // Высчет промежуточного значения и перевод его в строку, а затем отрисовка полученного
-                // Худший случай
+            isPropertyValueChanged = propertyDescriptor.blender(leftKeyframe.propVal, rightKeyframe.propVal, localEasing, propertyDescriptor.currentValue, BLEND_DIGITS);
 
-                isPropertyValueChanged = propertyDescriptor.blender(leftKeyframe.propVal, rightKeyframe.propVal, localEasing, propertyDescriptor.currentValue, BLEND_DIGITS);
-
-                if (isPropertyValueChanged) {
-                    this.render(propertyDescriptor, propertyDescriptor.currentValue);
-                } // else Отрисованное значение эквивалентно текущему промежуточному. Пропуск отрисовки
-
-            }
+            if (isPropertyValueChanged) {
+                this.render(propertyDescriptor, propertyDescriptor.currentValue);
+            } // else Отрисованное значение эквивалентно текущему промежуточному. Пропуск отрисовки
 
         }
     };
