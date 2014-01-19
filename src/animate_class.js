@@ -445,7 +445,6 @@
 
         var leftKeyframeIndex;
         var propertyKeyframes, propertyDescriptor;
-        var globalEasing = null;
         var localEasing, relativeFractionalTime;
         var leftKeyframe, rightKeyframe;
 
@@ -461,28 +460,9 @@
             leftKeyframe = propertyKeyframes.item(leftKeyframeIndex);
             rightKeyframe = propertyKeyframes.item(leftKeyframeIndex + 1);
 
-            // Прогресс относительно двух найденных ключевых кадров
-            if (leftKeyframe.numericKey === MINIMAL_PROGRESS && rightKeyframe.numericKey === MAXIMAL_PROGRESS) {
-                // Упрощённое нижележащее выражение при подстановке "0.0" и "1.0"
-                relativeFractionalTime = this.fractionalTime;
-            } else {
-                relativeFractionalTime = (this.fractionalTime - leftKeyframe.numericKey) / (rightKeyframe.numericKey - leftKeyframe.numericKey);
-            }
+            relativeFractionalTime = (this.fractionalTime - leftKeyframe.numericKey) / (rightKeyframe.numericKey - leftKeyframe.numericKey);
 
-            if (relativeFractionalTime === MINIMAL_PROGRESS || relativeFractionalTime === MAXIMAL_PROGRESS) {
-                // В начале и в конце (прогресс 0.0 и 1.0) прогресса относительно ключевых кадров
-                // значение смягчения всегда равно прогрессу
-                localEasing = relativeFractionalTime;
-            } else if (relativeFractionalTime === this.fractionalTime) {
-                // Локальный прогресс ключевых кадров равен прогрессу анимации
-                // Экономия вызова значения временной функции смягчения
-                if (goog.isNull(globalEasing)) {
-                    globalEasing = this.smoothing.compute(relativeFractionalTime)
-                }
-                localEasing = globalEasing;
-            } else {
-                localEasing = this.smoothing.compute(relativeFractionalTime);
-            }
+            localEasing = this.smoothing.compute(relativeFractionalTime);
 
             isPropertyValueChanged = propertyDescriptor.blender(leftKeyframe.propVal, rightKeyframe.propVal, localEasing, propertyDescriptor.currentValue, BLEND_DIGITS);
 
