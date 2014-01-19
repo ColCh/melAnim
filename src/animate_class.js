@@ -3,7 +3,6 @@
      * @constructor
      */
     function Animation () {
-        this.animId = generateId();
         this.animatedProperties = new PropertyDescriptorCollection();
         var self = this;
         this.selfTick = function (delta) {
@@ -489,6 +488,8 @@
 
         if (this.usesCSS3) {
 
+            this.animId = generateId();
+
             // Обёртки над обработчиками событий CSS анимации
             if (CSSANIMATIONS_SUPPORTED) {
                 delegatorCallbacks[ ANIMATION_START_EVENTTYPE ][ this.animId ] = this.fireOnStart;
@@ -636,7 +637,6 @@
         }
 
         this.pause();
-        this.animId = generateId();
 
     };
 
