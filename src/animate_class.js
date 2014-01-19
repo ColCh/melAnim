@@ -198,13 +198,13 @@
     /**
      * Функция отрисовки на цели
      * Для отрисовки используется CSS
-     * @param {string} propName имя свойства
+     * @param {!PropertyDescriptor} propertyDescriptor дескриптор свойства
      * @param {!Array.<number>} currentValue текущее значение свойства
      * @param {string=} vendorizedPropName DOM-имя для CSS свойства
      */
-    Animation.prototype.render = function (propName, currentValue, vendorizedPropName) {
-        var stringValue = toStringValue(this.animationTarget, propName, currentValue, vendorizedPropName);
-        setStyle(this.animationTarget, propName, stringValue, vendorizedPropName);
+    Animation.prototype.render = function (propertyDescriptor, currentValue) {
+        var stringValue = toStringValue(this.animationTarget, propertyDescriptor.propName, currentValue, propertyDescriptor.vendorizedPropName);
+        setStyle(this.animationTarget,propertyDescriptor.propName, stringValue, propertyDescriptor.vendorizedPropName);
     };
 
     /** @type {number} */
@@ -500,7 +500,7 @@
                 isPropertyValueChanged = propertyDescriptor.blender(leftKeyframe.propVal, rightKeyframe.propVal, localEasing, propertyDescriptor.currentValue, BLEND_DIGITS);
 
                 if (isPropertyValueChanged) {
-                    this.render(propertyDescriptor.propName, propertyDescriptor.currentValue, propertyDescriptor.vendorizedPropName);
+                    this.render(propertyDescriptor, propertyDescriptor.currentValue);
                 } // else Отрисованное значение эквивалентно текущему промежуточному. Пропуск отрисовки
 
             }
@@ -664,7 +664,7 @@
             for (var i = 0; i < this.animatedProperties.length; i++) {
                 var propertyDescriptor = this.animatedProperties.item(i);
                 var startingValue = propertyDescriptor.startingValue;
-                this.render(propertyDescriptor.propName, startingValue.getValue(), propertyDescriptor.vendorizedPropName);
+                this.render(propertyDescriptor, startingValue.getValue());
             }
         }
 
