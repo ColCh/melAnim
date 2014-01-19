@@ -254,11 +254,19 @@
         this.currentValue = [];
         this.keyframes = new KeyframesCollection();
         this.startingValue = new Keyframe(null);
+
         if ( COLOR_REG.test(propertyName) ) {
             this.blender = blendHooks['color'];
-        } else if (propertyName in blendHooks) {
-            this.blender = blendHooks[propertyName];
+            this.toStringValue = toStringValueHooks['color'];
+        } else {
+            if (propertyName in blendHooks) {
+                this.blender = blendHooks[propertyName];
+            }
+            if (propertyName in toStringValueHooks) {
+                this.toStringValue = toStringValueHooks[propertyName];
+            }
         }
+
     }
 
     /**
@@ -280,6 +288,14 @@
      * @type {function(!Array.<number>, !Array.<number>, number, !Array.<number>, number): boolean}
      */
     PropertyDescriptor.prototype.blender = blend;
+
+    /**
+     * Функция для данного свойства, предназначенная для
+     * перевода значения такое, которое можно отрисовать
+     * (строка для CSS)
+     * @type {function(!Element, !Array.<number>): string}
+     */
+    PropertyDescriptor.prototype.toStringValue = toStringValue;
 
     /**
      * Текущее значение свойства на моменте анимации.

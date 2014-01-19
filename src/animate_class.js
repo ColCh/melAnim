@@ -203,7 +203,7 @@
      * @param {string=} vendorizedPropName DOM-имя для CSS свойства
      */
     Animation.prototype.render = function (propertyDescriptor, currentValue) {
-        var stringValue = toStringValue(this.animationTarget, propertyDescriptor.propName, currentValue, propertyDescriptor.vendorizedPropName);
+        var stringValue = propertyDescriptor.toStringValue(this.animationTarget, currentValue);
         setStyle(this.animationTarget,propertyDescriptor.propName, stringValue, propertyDescriptor.vendorizedPropName);
     };
 
@@ -555,7 +555,7 @@
 
                     var stringValue;
 
-                    stringValue = toStringValue(this.animationTarget, propertyDescriptor.propName, propertyKeyframe.getValue(), propertyDescriptor.vendorizedPropName);
+                    stringValue = propertyDescriptor.toStringValue(this.animationTarget, propertyKeyframe.getValue());
 
                     cssKeyframe.style[ propertyDescriptor.vendorizedPropName ] = stringValue;
                 }

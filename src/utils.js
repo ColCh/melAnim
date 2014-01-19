@@ -341,20 +341,15 @@
      * @param {!Element} elem
      * @param {string} propertyName
      * @param {!Array.<number>} numericValue
-     * @param {string} vendorizedPropName
+     * @this {PropertyDescriptor}
      * @return {string}
      */
-    function toStringValue (elem, propertyName, numericValue, vendorizedPropName) {
+    function toStringValue (elem, numericValue) {
 
-        //TODO заменить reg_test на заполнение hooks
-        if ( COLOR_REG.test(vendorizedPropName) ) {
-            return toStringValueHooks['color'](elem, propertyName, numericValue, vendorizedPropName);
-        } else if (propertyName in toStringValueHooks) {
-            return toStringValueHooks[propertyName](elem, propertyName, numericValue, vendorizedPropName);
-        } else if (numericValue.length === 0) {
+        if (numericValue.length === 0) {
             return '';
         } else {
-            return numericValue + ( propertyName in toStringValueNoPX ? '' : 'px' );
+            return numericValue + ( this.propName in toStringValueNoPX ? '' : 'px' );
         }
 
     }
