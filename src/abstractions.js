@@ -413,6 +413,8 @@
 
             if (index === NOT_FOUND) {
                 self.easings.push(timingFunction);
+            } else {
+                timingFunction = /** @type {!Easing} */ (self.easings[ index ]);
             }
 
             return /** @type {!Easing} */ (timingFunction);
