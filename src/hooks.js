@@ -114,7 +114,7 @@
     };
 
 
-    toStringValueHooks["color"] = function (elem, propertyName, numericValue, vendorizedPropName) {
+    toStringValueHooks["color"] = function (elem, numericValue) {
         var colorFunction = 'rgb';
         if (numericValue.length === 4) {
             // Последний элемент в массиве - альфа канал
@@ -289,7 +289,7 @@
         return transformData;
     };
 
-    toStringValueHooks["transform"] = function (elem, propertyName, numericValue, vendorizedPropName) {
+    toStringValueHooks["transform"] = function (elem, numericValue) {
         var currentTransforms = "";
 
         if ( numericValue[TRANSFORMDATA_ROTATE] % 360 !== 0 ) {
