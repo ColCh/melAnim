@@ -10,22 +10,24 @@
             self.tick(delta);
         };
 
-        // Закрепление контекста у функций, порождающих события
-        this.fireOnStart = function () {
-            self._not_self_fireOnStart();
-        };
-        this.fireOnStep = function () {
-            self._not_self_fireOnStep();
-        };
-        this.fireOnIteration = function () {
-            self._not_self_fireOnIteration();
-        };
-        this.fireOnComplete = function () {
-            self._not_self_fireOnComplete();
-        };
-        this.fireOnCompleteWithStop = function () {
-            self._not_self_fireOnCompleteWithStop();
-        };
+        if (CSSANIMATIONS_SUPPORTED) {
+            // Закрепление контекста у функций, порождающих события
+            this.fireOnStart = function () {
+                self._not_self_fireOnStart();
+            };
+            this.fireOnStep = function () {
+                self._not_self_fireOnStep();
+            };
+            this.fireOnIteration = function () {
+                self._not_self_fireOnIteration();
+            };
+            this.fireOnComplete = function () {
+                self._not_self_fireOnComplete();
+            };
+            this.fireOnCompleteWithStop = function () {
+                self._not_self_fireOnCompleteWithStop();
+            };
+        }
 
     }
 
