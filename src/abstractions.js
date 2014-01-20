@@ -424,12 +424,10 @@
          * @return {?Easing}
          */
         build: function (contain) {
-            var numericArgs, timingFunction;
+            var timingFunction = null;
             var stepsAmount, countFromStart;
             var camelCased, trimmed;
-            var matched, cssFunction, args;
-            var argsLength;
-
+            var matched, args = [];
             if (goog.isString(contain)) {
                 trimmed = trim(contain);
                 camelCased = camelCase(trimmed);
@@ -440,16 +438,13 @@
                     // Передана строка временной функции CSS
                     // строка аргументов к временной функции. разделены запятой
                     matched = trimmed.match(cssFunctionReg);
-                    cssFunction = matched[FUNCREG_FUNC];
                     args = removeSpaces(matched[FUNCREG_ARGS]).split(cssFuncArgsSeparator);
                 }
             } else if (goog.isArray(contain)) {
                 args = /** @type {!Array} */ (contain);
             }
 
-            argsLength = goog.isArray(args) ? args.length : 0;
-
-            if (argsLength == 4) {
+            if (args.length == 4) {
                 // заинлайненный цикл
                 args[0] = +args[0]; args[1] = +args[1]; args[2] = +args[2]; args[3] = +args[3];
                 // ограничение абсцисс точек по промежутку [0;1]
@@ -460,15 +455,17 @@
                         timingFunction.compute = cubicBezierApproximations[ camelCased ];
                     }
                 }
-            } else if (argsLength == 1 || argsLength == 2) {
+            } else if (args.length == 1 || args.length == 2) {
+
                 stepsAmount = parseInt(args[0], 10);
                 countFromStart = args[1] === 'start';
+
                 if (goog.isNumber(stepsAmount)) {
                     timingFunction = new Steps(stepsAmount, countFromStart);
                 }
             }
 
-            return goog.isDef(timingFunction) ? timingFunction : null;
+            return timingFunction;
         }
     };
 
