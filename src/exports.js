@@ -4,9 +4,9 @@
 
     goog.exportProperty(melAnim, 'Animation', AnimationWrap);
 
-    goog.exportProperty(melAnim, 'css', /**@type {function (!Element, string, string?): (string|undefined)} */(function (element, propertyName, propertyValue) {
+    goog.exportProperty(melAnim, 'css', /**@type {function (!HTMLElement, string, string?): (string|undefined)} */(function (element, propertyName, propertyValue) {
         if (goog.isString(propertyValue)) {
-            setStyle(element, propertyName, /** @type {string} */(propertyValue));
+            return setStyle(element, propertyName, /** @type {string} */(propertyValue));
         } else {
             return getStyle(element, propertyName, true);
         }

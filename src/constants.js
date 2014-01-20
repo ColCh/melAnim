@@ -24,8 +24,6 @@
      */
     var MAXIMAL_PROGRESS = 1.0;
 
-    var PROGRESS_START = 'start';
-
     /**
      * @const
      * @type {number}
@@ -41,12 +39,6 @@
 
     /** @const */
     var SORT_SMALLER = 1;
-
-    /**
-     * @const
-     * @type {number}
-     */
-    var BLEND_ROUND = Math.pow(10, BLEND_DIGITS);
 
     /**
      * @const
@@ -114,6 +106,13 @@
      * @const
      */
     var ANIMATION_ITERATION_COUNT = [ANIMATION, "iteration", "count"].join(HYPHEN);
+
+    /**
+     * Спец. значение для бесконечного числа повторов
+     * @type {string}
+     * @const
+     */
+    var ITERATIONCOUNT_INFINITE = 'infinite';
 
     /**
      * Имя CSS-свойства для назначения \ получения направления прогрессирования анимации.
@@ -204,6 +203,8 @@
      */
     var CUBIC_BEZIER_POINTS_DIGITS = 3;
 
+    // Эту константу оставим на всякий случай.
+    //noinspection JSUnusedGlobalSymbols
     /**
      * Массив, по которому строго следует определение одной CSS3 анимации
      * @const

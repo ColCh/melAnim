@@ -33,7 +33,7 @@
     /** @type {string} */
     Animation.prototype.animId = 'none';
 
-    /** @type {!Element} */
+    /** @type {!HTMLElement} */
     Animation.prototype.animationTarget;
 
     /**
@@ -42,7 +42,7 @@
      * - перевод строковых значений свойств в числовые
      * - перевод относительных значений свойств в абсолютные
      * - отрисовка значений свойств на каждом шаге
-     * @param {(Element|Object)} target
+     * @param {!HTMLElement} target
      */
     Animation.prototype.setTarget = function (target) {
         this.animationTarget = target;
@@ -52,7 +52,7 @@
 
     /**
      * Вернёт текущую цель анимации
-     * @return {(Element|Object)}
+     * @return {!HTMLElement}
      */
     Animation.prototype.getTarget = function () {
         return this.animationTarget;
@@ -63,7 +63,7 @@
     /**
      * @type {!PropertyDescriptorCollection}
      */
-    Animation.prototype.animatedProperties = null;
+    Animation.prototype.animatedProperties;
 
     /**
      * Установка значения свойства при прогрессе.
@@ -174,6 +174,7 @@
     /**
      * Получение стартового значения свойства
      * @param {string} propertyName
+     * @return {Array.<number>}
      */
     Animation.prototype.getStartingValue = function (propertyName) {
 
@@ -201,7 +202,6 @@
      * Для отрисовки используется CSS
      * @param {!PropertyDescriptor} propertyDescriptor дескриптор свойства
      * @param {!Array.<number>} currentValue текущее значение свойства
-     * @param {string=} vendorizedPropName DOM-имя для CSS свойства
      */
     Animation.prototype.render = function (propertyDescriptor, currentValue) {
         var stringValue = propertyDescriptor.toStringValue(this.animationTarget, currentValue);
@@ -372,9 +372,6 @@
     /** @type {number} */
     Animation.prototype.animationProgress = 0;
 
-    /** @type {boolean} */
-    Animation.prototype.isOnStartFired = false;
-
     /** @type {number} */
     Animation.prototype.fractionalTime = 0;
 
@@ -444,7 +441,6 @@
      */
     Animation.prototype.update = function () {
 
-        var leftKeyframeIndex;
         var propertyKeyframes, propertyDescriptor;
         var localEasing, relativeFractionalTime;
         var leftKeyframe, rightKeyframe;
@@ -604,7 +600,7 @@
                 delete delegatorCallbacks[ ANIMATION_END_EVENTTYPE ][ this.animId ];
             }
 
-            KeyframesRulesRegistry.slay(this.keyframesRule);
+            KeyframesRulesRegistry.slay(/** @type {!CSSKeyframesRule} */ (this.keyframesRule));
             this.keyframesRule = null;
 
             var currentAnimationName = this.animId;
@@ -809,23 +805,6 @@
     Animation.prototype._not_self_fireOnStep = function () {
         if (this.onstep !== goog.nullFunction) {
             this.onstep.call(this);
-        }
-    };
-
-    /**
-     * Обёртка над порождением события завершения прохода анимации
-     * с закреплённым контекстом
-     * @type {function ()}
-     */
-    Animation.prototype.fireOnIteration;
-
-    /**
-     * Обёртка над порождением события завершения прохода анимации
-     * без закреплённого контекста
-     */
-    Animation.prototype._not_self_fireOnIteration = function () {
-        if (this.oniteration !== goog.nullFunction) {
-            this.oniteration.call(this);
         }
     };
 

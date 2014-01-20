@@ -11,12 +11,12 @@
 
     /**
      * Установит или получит текущий элемент для анимирования
-     * @param {Object=} target
-     * @return {Object|!AnimationWrap}
+     * @param {!HTMLElement=} target
+     * @return {!HTMLElement|!AnimationWrap}
      */
     AnimationWrap.prototype.target = function (target) {
         if (goog.isObject(target)) {
-            this.setTarget(target);
+            this.setTarget( /** @type {!HTMLElement} */ (target) );
             return this;
         } else {
             return this.getTarget();
@@ -52,14 +52,16 @@
         var numericValue;
         var usedValue;
         var numericPosition = MAXIMAL_PROGRESS;
+        var stringPosition = '';
         if (goog.isDef(position)) {
             if (goog.isNumber(position)) {
-                numericPosition = position;
+                numericPosition = /** @type {number} */(position)
             } else if (goog.isString(position)) {
-                if (position in keyAliases) {
-                    numericPosition = keyAliases[position];
+                stringPosition = /** @type {string} */(position);
+                if (stringPosition in keyAliases) {
+                    numericPosition = keyAliases[stringPosition];
                 } else {
-                    var matched = /** @type {string} */(position).match(cssNumericValueReg);
+                    var matched = stringPosition.match(cssNumericValueReg);
                     if (goog.isArray(matched) && (!matched[VALREG_DIMENSION] || matched[VALREG_DIMENSION] === PERCENT)) {
                         numericPosition = +matched[VALREG_VALUE];
                     }
@@ -127,15 +129,16 @@
      * @return {number|!AnimationWrap} время в миллисекундах или текущий экземпляр
      */
     AnimationWrap.prototype.duration = function (duration) {
-        var numericDuration;
+        var numericDuration = 0, stringDuration = '';
         if (goog.isDef(duration)) {
             if (goog.isNumber(duration)) {
-                numericDuration = duration;
+                numericDuration = /** @type {number} */(duration);
             } else if (goog.isString(duration)) {
-                if (duration in durationAliases) {
-                    numericDuration = durationAliases[duration];
+                stringDuration = /** @type {string} */(duration);
+                if (stringDuration in durationAliases) {
+                    numericDuration = durationAliases[stringDuration];
                 } else {
-                    var matched = /** @type {string} */(duration).match(cssNumericValueReg);
+                    var matched = stringDuration.match(cssNumericValueReg);
                     numericDuration = matched[VALREG_VALUE] * (matched[VALREG_DIMENSION] === 's' ? 1e3:1);
                 }
             }
@@ -158,12 +161,13 @@
      * @return {number|!AnimationWrap}
      */
     AnimationWrap.prototype.delay = function (delay) {
-        var numericDelay;
+        var numericDelay = 0, stringDelay = '';
         if (goog.isDef(delay)) {
             if (goog.isNumber(delay)) {
-                numericDelay = delay | 0;
+                numericDelay = /** @type {number} */(delay);
             } else if (goog.isString(delay)) {
-                var matched = /** @type {string} */(delay).match(cssNumericValueReg);
+                stringDelay = /** @type {string} */(delay);
+                var matched = stringDelay.match(cssNumericValueReg);
                 numericDelay = matched[VALREG_VALUE] * (matched[VALREG_DIMENSION] === 's' ? 1e3:1);
             }
             if (isFinite(numericDelay)) {
@@ -176,8 +180,6 @@
     };
 
     goog.exportProperty(AnimationWrap.prototype, 'delay', AnimationWrap.prototype.delay);
-
-    var ITERATIONCOUNT_INFINITE = 'infinite';
 
     /**
      * Установка числа проходов цикла анимации.
@@ -196,7 +198,7 @@
             if (iterations === ITERATIONCOUNT_INFINITE) {
                 numericIterations = POSITIVE_INFINITY;
             } else {
-                numericIterations = iterations * 1;
+                numericIterations = parseFloat(iterations);
             }
             this.setIterations(numericIterations);
             return this;
@@ -241,6 +243,9 @@
         } else {
             binaryDirection = this.getDirection();
             for (var directionEnum in directions) {
+                // Only old browsers will iterate props like 'toString' and other. New browsers will not..
+                // Equation is safe so why we should slow up new browsers?
+                //noinspection JSUnfilteredForInLoop
                 if (directions[directionEnum] === binaryDirection) {
                     strDirection = directionEnum;
                     break;
@@ -287,6 +292,9 @@
         } else {
             binFillMode = this.getFillMode();
             for (var fillModeEnum in fillModes) {
+                // Only old browsers will iterate props like 'toString' and other. New browsers will not..
+                // Equation is safe so why we should slow up new browsers?
+                //noinspection JSUnfilteredForInLoop
                 if (fillModes[fillModeEnum] === binFillMode) {
                     strFillMode = fillModeEnum;
                     break;
@@ -310,7 +318,7 @@
         if (goog.isDef(easing)) {
             timingFunction = EasingRegistry.request(easing);
             if (!goog.isNull(timingFunction)) {
-                this.setEasing(timingFunction);
+                this.setEasing( /** @type {!(CubicBezier|Steps|Easing)} */(timingFunction) );
             }
             return this;
         } else {

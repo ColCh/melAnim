@@ -1,4 +1,6 @@
     /* ------------------   РАБОТА С ЦВЕТАМИ   --------------------- */
+    // first and last args are unused ... but we want keep 'em for documentation
+    //noinspection JSUnusedLocalSymbols
     toNumericValueHooks["color"] = function (elem, propertyName,  propertyValue, vendorizedPropName) {
         var red, green, blue;
 
@@ -17,10 +19,11 @@
             // RGB, RGBa, HSL, HSLa ...
             var matched = propertyValue.match(cssFunctionReg);
             var func = matched[1];
-            var args = removeSpaces(matched[2]).split(cssFuncArgsSeparator);
+            var colorFunctionArgs = removeSpaces(matched[2]).split(cssFuncArgsSeparator);
+            var args = [];
 
-            for (var i = 0; i < args.length; i++) {
-                matched = args[i].match(cssNumericValueReg);
+            for (var i = 0; i < colorFunctionArgs.length; i++) {
+                matched = colorFunctionArgs[i].match(cssNumericValueReg);
                 args[i] = [ parseFloat(matched[1]), matched[2] ];
             }
 
@@ -34,7 +37,12 @@
     };
 
 
-    /** @type {function(number, number, number): number} */
+    /**
+     * @param {number} m1
+     * @param {number} m2
+     * @param {number} hue
+     * @return {number}
+     */
     function hueToRGB (m1, m2, hue) {
         if (hue < 0) {
             hue = hue + 1;
@@ -100,15 +108,13 @@
         "hsla": function (args) {
             var rgb = colorFunctions["hsl"](args);
             var opacity = round(args[3][0], 1);
-            var hsla = rgb.concat(opacity);
-            return hsla;
+            return rgb.concat(opacity);
         },
 
         "rgba": function (args) {
             var rgb = colorFunctions["rgb"](args);
             var opacity = round(args[3][0], 1);
-            var rgba = rgb.concat(opacity);
-            return rgba;
+            return rgb.concat(opacity);
         }
 
     };
@@ -132,7 +138,9 @@
             easing = MAXIMAL_PROGRESS;
         }
 
-        return blend(from, to, easing, current, 1);
+        round = 1;
+
+        return blend(from, to, easing, current, round);
 
     };
 
@@ -182,14 +190,14 @@
         },
 
         "skewX": function (args, data) {
-            data[TRANSFORMDATA_SKEW_X] = parseInt(args[0]);
+            data[TRANSFORMDATA_SKEW_X] = parseInt(args[0], 10);
         },
         "skewY": function (args, data) {
-            data[TRANSFORMDATA_SKEW_Y] = parseInt(args[0]);
+            data[TRANSFORMDATA_SKEW_Y] = parseInt(args[0], 10);
         },
         "skew": function (args, data) {
-            data[TRANSFORMDATA_SKEW_X] = parseInt(args[0]);
-            data[TRANSFORMDATA_SKEW_Y] = parseInt(args[1]);
+            data[TRANSFORMDATA_SKEW_X] = parseInt(args[0], 10);
+            data[TRANSFORMDATA_SKEW_Y] = parseInt(args[1], 10);
         },
 
         "translateX": function (args, data) {
@@ -263,7 +271,7 @@
 
     };
 
-    toNumericValueHooks["transform"] = function (elem, propertyName,  propertyValue, vendorizedPropName) {
+    toNumericValueHooks["transform"] = function (elem, propertyName,  propertyValue) {
 
         // Декомпозированные данные трансформации
         var transformData = [ 0, 100, 100, 0, 0, 0, 0 ];
@@ -314,12 +322,39 @@
 
 
     /* ------------------   РАБОТА С SHADOW   --------------------- */
+    //noinspection JSUnusedGlobalSymbols
+    /**
+     * @const
+     * @type {number}
+     */
     var SHADOW_X = 0;
+    //noinspection JSUnusedGlobalSymbols
+    /**
+     * @const
+     * @type {number}
+     */
     var SHADOW_Y = 1;
+    //noinspection JSUnusedGlobalSymbols
+    /**
+     * @const
+     * @type {number}
+     */
     var SHADOW_BLUR = 2;
+    //noinspection JSUnusedGlobalSymbols
+    /**
+     * @const
+     * @type {number}
+     */
     var SHADOW_SPREAD = 3;
+    /**
+     * @const
+     * @type {number}
+     */
     var SHADOW_COLOR = 4;
 
+    /**
+     * @constructor
+     */
     function Shadow () {
         // Initial данные тени - нет смещений, размытия, длины и чёрный цвет
         this.data = [ 0, 0, 0, 0, [0, 0, 0]];
@@ -340,7 +375,7 @@
         // Цвет в любом формате
         var color = shadow.replace(props, "");
 
-        this.data[SHADOW_COLOR] = toNumericValueHooks["color"](null, "color", color, false);
+        this.data[SHADOW_COLOR] = toNumericValueHooks["color"](null, "color", color, '');
 
         // Х, У, размытие и длина тени, разделённые пробелом
         props = props.split(" ");
@@ -368,7 +403,7 @@
                 shadow += (this.data[i] / 10) + "px" + " ";
             }
         }
-        shadow += toNumericValueHooks["color"](null, "color", this.data[SHADOW_COLOR], true);
+        shadow += toNumericValueHooks["color"](null, "color", this.data[SHADOW_COLOR], '');
         return shadow;
     };
 
@@ -425,7 +460,7 @@
 
             // Интерполяция всех параметров. кроме цвета
             for (var i = 0; i < 4; i++) {
-                if (blend(fromShadow.data[i], toShadow.data[i], easing, shadow.data, '' + i) && changed === false) {
+                if (blend(fromShadow.data[i], toShadow.data[i], easing, shadow.data, i) && changed === false) {
                     changed = true;
                 }
             }
@@ -441,7 +476,14 @@
     };
 
     /* ------------------   РАБОТА С OPACITY   --------------------- */
+
+    /**
+     * @const
+     * @type {number}
+     */
     var BLEND_OPACITY_ROUND = 2;
+
     blendHooks["opacity"] = function (from, to, easing, current, round) {
-        return blend(from, to, easing, current, BLEND_OPACITY_ROUND);
+        round = BLEND_OPACITY_ROUND;
+        return blend(from, to, easing, current, round);
     };

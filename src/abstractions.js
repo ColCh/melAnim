@@ -1,11 +1,11 @@
     /** @const */
     var Ticker = {
         /**
-         * @type {Array.<!Function>}
+         * @type {!Array.<!Function>}
          */
         listeners: [],
         /**
-         * @type {Array.<!Function>}
+         * @type {!Array.<!Function>}
          */
         listenersBuffer: [],
         /**
@@ -13,10 +13,10 @@
          * */
         on: function (callback) {
 
-            this.listeners.push(callback);
+            Ticker.listeners.push(callback);
 
-            if (!this.isAwaken) {
-                this.awake();
+            if (!Ticker.isAwaken) {
+                Ticker.awake();
             }
 
         },
@@ -24,12 +24,12 @@
          * @param {!Function} callback
          */
         off: function (callback) {
-            var infoIndex = linearSearch(this.listeners, function (clb) {
+            var infoIndex = linearSearch(Ticker.listeners, function (clb) {
                 "use strict";
                 return clb === callback;
             });
             if (infoIndex !== NOT_FOUND) {
-                this.listeners.splice(infoIndex, 1);
+                Ticker.listeners.splice(infoIndex, 1);
             }
         },
 
@@ -38,14 +38,14 @@
         frequency: TICKER_BASE_INTERVAL,
 
         awake: function () {
-            this.lastReflow = this.currentTimeStamp = now();
-            this.isAwaken = true;
-            this.intervalId = this.useRAF ? rAF(this.tick, rootElement) : setTimeout(this.tick, this.frequency);
+            Ticker.lastReflow = Ticker.currentTimeStamp = now();
+            Ticker.isAwaken = true;
+            Ticker.intervalId = Ticker.useRAF ? rAF(Ticker.tick, rootElement) : setTimeout(Ticker.tick, Ticker.frequency);
         },
         sleep: function () {
-            this.isAwaken = false;
-            this.lastReflow = this.currentTimeStamp = this.delta = 0;
-            (this.useRAF ? cancelRAF : clearTimeout)(this.intervalId);
+            Ticker.isAwaken = false;
+            Ticker.lastReflow = Ticker.currentTimeStamp = Ticker.delta = 0;
+            (Ticker.useRAF ? cancelRAF : clearTimeout)(Ticker.intervalId);
         },
 
         /** @type {number} */
@@ -94,23 +94,23 @@
          * @param {number} fps
          */
         setFPS: function (fps) {
-            this.fps = fps;
-            this.frequency = 1e3 / fps;
+            Ticker.fps = fps;
+            Ticker.frequency = 1e3 / fps;
         },
 
         /**
          * @param {boolean} ignoreRAF
          */
         ignoreReflow: function (ignoreRAF) {
-            this.sleep();
-            this.useRAF = RAF_SUPPORTED && !Boolean(ignoreRAF);
-            this.awake();
+            Ticker.sleep();
+            Ticker.useRAF = RAF_SUPPORTED && !Boolean(ignoreRAF);
+            Ticker.awake();
         }
     };
 
     /**
      * Конструктор ключевого кадра
-     * @param {number} progress
+     * @param {number|null} progress
      * @constructor
      */
     function Keyframe (progress) {
@@ -119,13 +119,13 @@
     }
 
     /**
-     * @type {number}
+     * @type {number|null}
      */
-    Keyframe.prototype.numericKey = MAXIMAL_PROGRESS;
+    Keyframe.prototype.numericKey = null;
 
     /**
      * Численное значение свойства. Всегда абсолютно.
-     * @type {Array.<number>}
+     * @type {!Array.<number>}
      */
     Keyframe.prototype.propVal;
 
@@ -164,7 +164,7 @@
      * @override
      */
     KeyframesCollection.prototype.indexOf = function (progress) {
-        return linearSearch(this, function (keyframe, i, keyframes) {
+        return linearSearch(this, function (keyframe) {
             return keyframe.numericKey === progress;
         });
     };
@@ -173,11 +173,9 @@
      * @const
      * @param {!Keyframe} first
      * @param {!Keyframe} second
-     * @param {number} index
-     * @param {!KeyframesCollection} keyframes
-     * @returns {*}
+     * @return {number}
      */
-    var compare_keyframes = function (first, second, index, keyframes) {
+    var compare_keyframes = function (first, second) {
         if (first.numericKey === second.numericKey) {
             return SORT_EQUALS;
         }
@@ -304,13 +302,23 @@
      * Функция для данного свойства, предназначенная для
      * перевода значения такое, которое можно отрисовать
      * (строка для CSS)
-     * @type {function(!Element, !Array.<number>): string}
+     * @param {!HTMLElement} elem
+     * @param {!Array.<number>} numericValue
+     * @return {string}
      */
-    PropertyDescriptor.prototype.toStringValue = toStringValue;
+    PropertyDescriptor.prototype.toStringValue = function (elem, numericValue) {
+
+        if (numericValue.length === 0) {
+            return '';
+        } else {
+            return numericValue + ( this.propName in toStringValueNoPX ? '' : 'px' );
+        }
+
+    };
 
     /**
      * Текущее значение свойства на моменте анимации.
-     * @type {Array.<number>}
+     * @type {!Array.<number>}
      */
     PropertyDescriptor.prototype.currentValue;
 
@@ -350,7 +358,7 @@
      * @override
      */
     PropertyDescriptorCollection.prototype.indexOf = function (propertyName) {
-        return linearSearch(this, function (propertyDescriptor, i, data) {
+        return linearSearch(this, function (propertyDescriptor) {
             return propertyDescriptor.propName === propertyName;
         });
     };
@@ -388,6 +396,8 @@
         request: function (req) {
             var timingFunction;
 
+            // Help for Google Closure Compiler
+            //noinspection UnnecessaryLocalVariableJS
             var self = EasingRegistry;
 
             if (req instanceof Easing) {
@@ -407,7 +417,7 @@
                 return null;
             }
 
-            var index = linearSearch(self.easings, function (easing, i, easingsArray) {
+            var index = linearSearch(self.easings, function (easing) {
                 return easing.equals(timingFunction);
             });
 
@@ -604,7 +614,7 @@
     };
 
     /**
-     * @param {!(CubicBezier|Easing)} easing
+     * @param {CubicBezier|Easing} easing
      * @return {boolean}
      * @override
      */
@@ -655,7 +665,7 @@
     };
 
     /**
-     * @param {!(Steps|Easing)} easing
+     * @param {Steps|Easing} easing
      * @return {boolean}
      * @override
      */
@@ -752,9 +762,9 @@
          * Workaround для IE
          * Кидает ошибку при поиске в пустом правиле ключевых кадров
          * Обёртка для того, чтобы не использовать try catch.
-         * @param {!CSSKeyframesRule} keyframesRule
+         * @param {CSSKeyframesRule} keyframesRule
          * @param {string} key
-         * @return {CSSKeyframesRule}
+         * @return {CSSKeyframeRule}
          */
         var keyframesRule_findRule = function (keyframesRule, key) {
             if (keyframesRule.cssRules.length === 0) {

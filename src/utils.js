@@ -29,7 +29,7 @@
 
     /**
      * @const
-     * @type {!CSSStyleDeclaration}
+     * @type {CSSStyleDeclaration}
      */
     var dummy = rootElement.style;
 
@@ -96,7 +96,7 @@
 
     /**
      * @param {!Array} array
-     * @param {!function (*, *, number, !Array): number} compare_callback
+     * @param {!function (?, ?): number|undefined} compare_callback
      */
     function sortArray (array, compare_callback) {
         // Кажется, внутри браузера сортировка идёт с помощью Quick Sort.
@@ -209,7 +209,7 @@
     var CSSANIMATIONS_SUPPORTED = getVendorPropName('animation').length > 0;
 
     /**
-     * @param {!Element} elem
+     * @param {!HTMLElement} elem
      * @param {string} propName
      * @param {boolean} usedValue вернуть ли значение из вычисленного стиля
      * @return {string}
@@ -229,7 +229,7 @@
     }
 
     /**
-     * @param {!Element} elem
+     * @param {!HTMLElement} elem
      * @param {string} propName
      * @param {string} propValue
      * @param {string=} vendorizedPropName
@@ -258,7 +258,7 @@
     var COLOR_REG = new RegExp("color", "i");
 
     /**
-     * @param {!Element} elem
+     * @param {!HTMLElement} elem
      * @param {string} propertyName
      * @param {string} propertyValue
      * @param {string} vendorizedPropName
@@ -271,11 +271,11 @@
         }
 
         if (propertyName in toNumericValueHooks) {
-            return toNumericValueHooks[propertyName](elem, propertyName,  propertyValue, vendorizedPropName);
+            return /** @type !Array.<number> */ (toNumericValueHooks[propertyName](elem, propertyName,  propertyValue, vendorizedPropName));
         }
 
         if ( COLOR_REG.test(vendorizedPropName) ) {
-            return toNumericValueHooks['color'](elem, propertyName,  propertyValue, vendorizedPropName);
+            return /** @type !Array.<number> */ (toNumericValueHooks['color'](elem, propertyName,  propertyValue, vendorizedPropName));
         }
 
         var isHoriz = horizAxisReg.test(vendorizedPropName);
@@ -334,27 +334,10 @@
         return [ normalized ];
     }
 
-    /** @type {Object.<CSSStyleDeclaration, function (!Element, string, string, string): !Array.<number>>} */
+    /** @type {Object.<string, function (Object, string, string, string): !Array.<number>>} */
     var toNumericValueHooks = {};
 
-    /**
-     * @param {!Element} elem
-     * @param {string} propertyName
-     * @param {!Array.<number>} numericValue
-     * @this {PropertyDescriptor}
-     * @return {string}
-     */
-    function toStringValue (elem, numericValue) {
-
-        if (numericValue.length === 0) {
-            return '';
-        } else {
-            return numericValue + ( this.propName in toStringValueNoPX ? '' : 'px' );
-        }
-
-    }
-
-    /** @type {Object.<CSSStyleDeclaration, function (!Element, string, !Array.<number>, string): string>} */
+    /** @type {Object.<string, function(Object, !Array.<number>): string>} */
     var toStringValueHooks = {};
 
     //TODO сжать список свойств, для которых не нужны пиксели. Google Closure Compiler этого не делает
@@ -434,9 +417,7 @@
      */
     function addRule(selector) {
 
-        var style;
-
-        if (!stylesheet) {
+        if (!STYLESHEET) {
             var style = document.getElementsByTagName("head")[0].parentNode.appendChild(document.createElement("style"));
             STYLESHEET = style.sheet || style.styleSheet;
         }
@@ -533,7 +514,7 @@
      * @param {(AnimationEvent|Event)} event
      */
     var animationHandlerDelegator = function (event) {
-        var animationName = event.animationName, eventType, handlersList;
+        var animationName = event.animationName, eventType = '', handlersList;
         var eventName = event.type;
         var lowerCased = eventName.toLowerCase();
 

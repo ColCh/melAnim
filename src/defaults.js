@@ -75,9 +75,3 @@
      * @type {number}
      */
     var FILLS_BACKWARDS = 1; // bin: 01
-
-    /**
-     * @const
-     * @type {string}
-     */
-    var TIMING_FUNCTION = 'timing-function';
