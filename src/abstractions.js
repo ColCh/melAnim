@@ -300,11 +300,11 @@
      */
     PropertyDescriptor.prototype.toStringValue = function (elem, numericValue) {
 
-        if (numericValue.length === 0) {
+        if (numericValue.length === 1) {
+            return numericValue[0] + ( this.propName in toStringValueNoPX ? '' : 'px' );
+        } else if (numericValue.length === 0) {
             return '';
-        } else {
-            return numericValue + ( this.propName in toStringValueNoPX ? '' : 'px' );
-        }
+        } // else ?
 
     };
 
