@@ -245,14 +245,6 @@
     };
 
     /**
-     * Вернёт ключевой кадр по индексу
-     * @param {number} index
-     */
-    KeyframesCollection.prototype.item = function (index) {
-        return this[index];
-    };
-
-    /**
      * Объект с описанием анимируемого свойства
      * @param {string} propertyName
      * @constructor
@@ -372,15 +364,6 @@
         var propertyDescriptor = new PropertyDescriptor(propertyName);
         this.push(propertyDescriptor);
         return propertyDescriptor;
-    };
-
-    /**
-     * Вернёт дескриптор свойства по определённому индексу
-     * @param {number} index
-     * @return {!PropertyDescriptor}
-     */
-    PropertyDescriptorCollection.prototype.item = function (index) {
-        return this[ index ];
     };
 
     /** @const */

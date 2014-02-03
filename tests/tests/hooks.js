@@ -33,8 +33,8 @@ test('toStringValueHooks["color"]', function () {
         propertyName = 'color',
         vendorizedPropName = 'color';
 
-    strictEqual(toStringValueHooks['color'](dummyElement, propertyName, [255, 255, 0], vendorizedPropName), 'rgb(255, 255, 0)', 'rgb color conversion (yellow)');
-    strictEqual(toStringValueHooks['color'](dummyElement, propertyName, [255, 255, 0, 0.5], vendorizedPropName), 'rgba(255, 255, 0, 0.5)', 'rgb with alpha channel color conversion (yellow, opacity 50%)');
+    strictEqual(toStringValueHooks['color'](dummyElement, [255, 255, 0]), 'rgb(255, 255, 0)', 'rgb color conversion (yellow)');
+    strictEqual(toStringValueHooks['color'](dummyElement, [255, 255, 0, 0.5]), 'rgba(255, 255, 0, 0.5)', 'rgb with alpha channel color conversion (yellow, opacity 50%)');
 });
 
 // Transform

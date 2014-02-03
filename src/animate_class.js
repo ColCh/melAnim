@@ -81,7 +81,7 @@
         if (propertyDescriptorIndex === NOT_FOUND) {
             propertyDescriptor = this.animatedProperties.add(propertyName);
         } else {
-            propertyDescriptor = this.animatedProperties.item(propertyDescriptorIndex);
+            propertyDescriptor = this.animatedProperties[ propertyDescriptorIndex ];
         }
 
         /** @type {!KeyframesCollection} */
@@ -95,7 +95,7 @@
         var keyframe;
 
         if (keyframeIndex !== NOT_FOUND) {
-            keyframe = propertyKeyframes.item(keyframeIndex);
+            keyframe = propertyKeyframes[ keyframeIndex ];
         } else {
             keyframe = propertyKeyframes.add(progress);
         }
@@ -120,7 +120,7 @@
         var propertyDescriptorIndex = this.animatedProperties.indexOf(propertyName);
 
         if (propertyDescriptorIndex !== NOT_FOUND) {
-            propertyDescriptor = this.animatedProperties.item(propertyDescriptorIndex);
+            propertyDescriptor = this.animatedProperties[ propertyDescriptorIndex ];
 
             /** @type {!KeyframesCollection} */
             var propertyKeyframes = propertyDescriptor.getKeyframes();
@@ -130,7 +130,7 @@
             var keyframe;
 
             if (keyframeIndex !== NOT_FOUND) {
-                keyframe = propertyKeyframes.item(keyframeIndex);
+                keyframe = propertyKeyframes[ keyframeIndex ];
 
                 return keyframe.getValue();
             }
@@ -159,7 +159,7 @@
         if (propertyDescriptorIndex === NOT_FOUND) {
             propertyDescriptor = this.animatedProperties.add(propertyName);
         } else {
-            propertyDescriptor = this.animatedProperties.item(propertyDescriptorIndex);
+            propertyDescriptor = this.animatedProperties[ propertyDescriptorIndex ];
         }
 
         /** @type {!Keyframe} */
@@ -184,7 +184,7 @@
         var propertyDescriptorIndex = this.animatedProperties.indexOf(propertyName);
 
         if (propertyDescriptorIndex !== NOT_FOUND) {
-            propertyDescriptor = this.animatedProperties.item(propertyDescriptorIndex);
+            propertyDescriptor = this.animatedProperties[ propertyDescriptorIndex ];
 
             /** @type {!Keyframe} */
             var startingValue = propertyDescriptor.startingValue;
@@ -449,7 +449,7 @@
 
         for (var i = 0; i < this.animatedProperties.length; i++) {
 
-            propertyDescriptor = this.animatedProperties.item(i);
+            propertyDescriptor = this.animatedProperties[ i ];
             propertyKeyframes = propertyDescriptor.getKeyframes();
 
             propertyKeyframes.moveIndexTo(this.fractionalTime);
@@ -499,12 +499,12 @@
             // Формирование тела правила "@keyframes"
             for (var i = 0; i < this.animatedProperties.length; i++) {
 
-                var propertyDescriptor = this.animatedProperties.item(i);
+                var propertyDescriptor = this.animatedProperties[ i ];
                 var propertyKeyframes = propertyDescriptor.getKeyframes();
 
                 for (var j = 0; j < propertyKeyframes.length; j++) {
 
-                    var propertyKeyframe = propertyKeyframes.item(j);
+                    var propertyKeyframe = propertyKeyframes[ j ];
 
                     var key = propertyKeyframe.numericKey * 1e2;
                     var domStringKey = key_toDOMString(key);
@@ -626,7 +626,7 @@
         } else {
             // Возвращение анимированных свойств в доанимированное состояние
             for (var i = 0; i < this.animatedProperties.length; i++) {
-                var propertyDescriptor = this.animatedProperties.item(i);
+                var propertyDescriptor = this.animatedProperties[ i ];
                 var startingValue = propertyDescriptor.startingValue;
                 this.render(propertyDescriptor, startingValue.getValue());
             }

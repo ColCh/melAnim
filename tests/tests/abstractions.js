@@ -53,16 +53,18 @@ test('KeyframesCollection', function () {
     var every = false;
     var i = numberOfKeyframes;
     while ( i-->1 ) {
-        every = dummyCollection.item(i).numericKey > dummyCollection.item(i - 1).numericKey;
+        every = dummyCollection[i].numericKey > dummyCollection[i - 1].numericKey;
         if (!every) break;
     }
 
     ok(every, 'keyframes are sorted by unique numeric key value');
 
-    strictEqual(dummyCollection.item(dummyCollection.indexOf(randomProgress)).numericKey, randomProgress, 'test indexOf with known progress');
+    strictEqual(dummyCollection[ dummyCollection.indexOf(randomProgress) ].numericKey, randomProgress, 'test indexOf with known progress');
     deepEqual(dummyCollection.indexOf(+new Date), -1, 'test indexOf with unknown progress. Must return unknown value');
 
-    ok(dummyCollection.item(dummyCollection.indexOfLeft(randomProgress)).numericKey <= randomProgress, 'indexOfLeft must return index of left keyframe (key <= progress)');
+    dummyCollection.moveIndexTo(randomProgress);
+
+    ok(dummyCollection.getLeft().numericKey <= randomProgress, 'indexOfLeft must return index of left keyframe (key <= progress)');
 
 });
 
