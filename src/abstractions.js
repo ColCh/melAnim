@@ -223,23 +223,18 @@
      * @param {number} progress
      */
     KeyframesCollection.prototype.moveIndexTo = function (progress) {
-        var leftKeyframe, rightKeyframe;
 
-        leftKeyframe = this[ this.cachedIndex ];
-        rightKeyframe = this[ this.cachedIndex + 1 ];
-
-        if (leftKeyframe.numericKey > progress || progress >= rightKeyframe.numericKey) {
+        if (this[ this.cachedIndex ].numericKey > progress || progress >= this[ this.cachedIndex + 1 ].numericKey) {
             do {
 
-                if (!rightKeyframe || leftKeyframe.numericKey > progress) {
+                if (!this[ this.cachedIndex + 1 ] || this[ this.cachedIndex ].numericKey > progress) {
                     this.cachedIndex--;
                 }
-                if (rightKeyframe.numericKey < progress) {
+                if (this[ this.cachedIndex + 1 ].numericKey < progress) {
                     this.cachedIndex++;
                 }
-                leftKeyframe = this[ this.cachedIndex ];
-                rightKeyframe = this[ this.cachedIndex + 1 ];
-            } while (leftKeyframe.numericKey > progress || rightKeyframe.numericKey < progress);
+
+            } while (this[ this.cachedIndex ].numericKey > progress || this[ this.cachedIndex + 1 ].numericKey < progress);
         }
 
     };
@@ -302,9 +297,9 @@
 
         if (numericValue.length === 1) {
             return numericValue[0] + ( this.propName in toStringValueNoPX ? '' : 'px' );
-        } else if (numericValue.length === 0) {
+        } else {
             return '';
-        } // else ?
+        }
 
     };
 

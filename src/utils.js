@@ -130,8 +130,9 @@
     function blend (from, to, progress, currentValue, roundDigits) {
 
         var valueIsChanged = false;
+        var i = from.length;
 
-        for (var i = 0, m = from.length; i < m; i++) {
+        while ( i-->0 ) {
             valueIsChanged = currentValue[i] !== (currentValue[i] = round( (to[i] - from[i]) * progress + from[i] , roundDigits)) || valueIsChanged;
         }
 
