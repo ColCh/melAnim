@@ -25,7 +25,6 @@
          */
         off: function (callback) {
             var infoIndex = linearSearch(Ticker.listeners, function (clb) {
-                "use strict";
                 return clb === callback;
             });
             if (infoIndex !== NOT_FOUND) {
@@ -115,7 +114,7 @@
      */
     function Keyframe (progress) {
         this.numericKey = progress;
-        this.propVal = [];
+        this.propVal = [ 0.0 ];
     }
 
     /**
@@ -320,13 +319,6 @@
      * @type {!KeyframesCollection}
      */
     PropertyDescriptor.prototype.keyframes;
-
-    /**
-     * @return {!KeyframesCollection}
-     */
-    PropertyDescriptor.prototype.getKeyframes = function () {
-        return this.keyframes;
-    };
 
     /**
      * Коллекция анимируемых свойств

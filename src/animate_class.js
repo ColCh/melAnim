@@ -85,7 +85,7 @@
         }
 
         /** @type {!KeyframesCollection} */
-        var propertyKeyframes = propertyDescriptor.getKeyframes();
+        var propertyKeyframes = propertyDescriptor.keyframes;
 
         var keyframeIndex = propertyKeyframes.indexOf(progress);
 
@@ -123,7 +123,7 @@
             propertyDescriptor = this.animatedProperties[ propertyDescriptorIndex ];
 
             /** @type {!KeyframesCollection} */
-            var propertyKeyframes = propertyDescriptor.getKeyframes();
+            var propertyKeyframes = propertyDescriptor.keyframes;
 
             var keyframeIndex = propertyKeyframes.indexOf(progress);
 
@@ -447,10 +447,10 @@
 
         var isPropertyValueChanged;
 
-        for (var i = 0; i < this.animatedProperties.length; i++) {
+        for (var i = this.animatedProperties.length; i--; ) {
 
             propertyDescriptor = this.animatedProperties[ i ];
-            propertyKeyframes = propertyDescriptor.getKeyframes();
+            propertyKeyframes = propertyDescriptor.keyframes;
 
             propertyKeyframes.moveIndexTo(this.fractionalTime);
 
@@ -500,7 +500,7 @@
             for (var i = 0; i < this.animatedProperties.length; i++) {
 
                 var propertyDescriptor = this.animatedProperties[ i ];
-                var propertyKeyframes = propertyDescriptor.getKeyframes();
+                var propertyKeyframes = propertyDescriptor.keyframes;
 
                 for (var j = 0; j < propertyKeyframes.length; j++) {
 
@@ -625,7 +625,7 @@
             this.update();
         } else {
             // Возвращение анимированных свойств в доанимированное состояние
-            for (var i = 0; i < this.animatedProperties.length; i++) {
+            for (var i = this.animatedProperties.length; i--; ) {
                 var propertyDescriptor = this.animatedProperties[ i ];
                 var startingValue = propertyDescriptor.startingValue;
                 this.render(propertyDescriptor, startingValue.getValue());
