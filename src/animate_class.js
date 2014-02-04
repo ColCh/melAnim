@@ -409,10 +409,6 @@
             iterationProgress = this.animationProgress;
         }
 
-        if (iterationProgress > MAXIMAL_PROGRESS) {
-            iterationProgress = MAXIMAL_PROGRESS;
-        }
-
         if (this.needsReverse()) {
             iterationProgress = MAXIMAL_PROGRESS - iterationProgress;
         }
@@ -621,7 +617,7 @@
         }
         if (this.fillsForwards) {
             // Установка конечных значений для свойств.
-            this.fractionalTime = 1;
+            this.fractionalTime = 1.0;
             this.update();
         } else {
             // Возвращение анимированных свойств в доанимированное состояние
