@@ -214,7 +214,7 @@
         'normal': 0,
         'reverse': DIRECTION_REVERSE,
         'alternate':  DIRECTION_ALTERNATE,
-        'alternate-reverse':  DIRECTION_ALTERNATE & DIRECTION_REVERSE
+        'alternate-reverse':  DIRECTION_ALTERNATE | DIRECTION_REVERSE
     };
 
     /**
@@ -262,7 +262,7 @@
         'none': 0,
         'forwards': FILLS_FORWARDS,
         'backwards':  FILLS_BACKWARDS,
-        'both':  FILLS_FORWARDS & FILLS_BACKWARDS
+        'both':  FILLS_FORWARDS | FILLS_BACKWARDS
     };
 
     /**
