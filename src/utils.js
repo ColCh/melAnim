@@ -117,9 +117,10 @@
      */
     function round (number, digits) {
         if (digits === 0) {
-            return Math.round(number);
+            return number | 0;
         } else {
-            return parseFloat( number.toFixed(digits) );
+            var factor = Math.pow(10, digits);
+            return (number * factor | 0) / factor;
         }
     }
 
