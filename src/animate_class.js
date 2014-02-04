@@ -397,7 +397,17 @@
 
         var elapsedTime, currentIteration, iterationProgress;
         this.elapsedTime += deltaTime;
-        elapsedTime = Math.max(this.elapsedTime - this.delayTime, MINIMAL_PROGRESS);
+
+        elapsedTime = this.elapsedTime - this.delayTime;
+
+        if (elapsedTime < 0) {
+            if (this.fillsBackwards) {
+                elapsedTime = 0;
+            } else {
+                return;
+            }
+        }
+
         this.animationProgress = elapsedTime / this.cycleDuration;
         currentIteration = Math.floor(this.animationProgress);
 
