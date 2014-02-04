@@ -429,13 +429,14 @@
 
             this.update();
 
-            if (this.delayTime > 0 && elapsedTime <= deltaTime && this.elapsedTime >= this.delayTime) {
+            if (elapsedTime <= deltaTime && this.elapsedTime >= this.delayTime) {
                 this.fireOnStart();
             } else if (this.previousIteration !== this.currentIteration) {
                 this.fireOnIteration();
-            } if (this.fractionalTime !== 0) {
+            } else {
                 this.fireOnStep();
             }
+
         } else {
             this.stop();
             this.fireOnComplete();
