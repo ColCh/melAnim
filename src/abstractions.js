@@ -670,7 +670,6 @@
         rules: [],
         /** @param {!CSSKeyframesRule} keyframesRule */
         slay: function (keyframesRule) {
-            keyframesRule.name = ANIMATION_NAME_NONE;
             var keyframes = keyframesRule.cssRules;
             var key;
             while ( keyframes.length ) {
