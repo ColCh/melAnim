@@ -85,9 +85,16 @@
 
     /**
      * @type {function (): number}
-     * @const
      *  */
-    var now = 'performance' in goog.global && 'now' in goog.global.performance ? function () { return goog.global.performance.timing.navigationStart + goog.global.performance.now(); } : 'now' in Date ? Date.now : function () { return +new Date(); };
+    var now = 'now' in Date ? Date.now : function () { return +new Date(); };
+
+    if ('performance' in goog.global && 'now' in goog.global.performance) {
+        var performance = goog.global.performance;
+        var navigStart = performance.timing.navigationStart;
+        now = function () {
+            return navigStart + performance.now();
+        };
+    }
 
     var rAF = goog.global[ getVendorPropName(REQUEST_ANIMATION_FRAME, true) ];
     var cancelRAF = goog.global[ getVendorPropName(CANCEL_REQUEST_ANIMATION_FRAME, true) ];
