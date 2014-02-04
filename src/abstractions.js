@@ -353,7 +353,7 @@
      * @return {!PropertyDescriptor}
      */
     PropertyDescriptorCollection.prototype.add = function (propertyName) {
-        return this[ this.length ] = new PropertyDescriptor(propertyName);
+        return this[ this.length++ ] = new PropertyDescriptor(propertyName);
     };
 
     /** @const */
