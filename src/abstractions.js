@@ -224,6 +224,11 @@
     KeyframesCollection.prototype.moveIndexTo = function (progress) {
 
         if (this[ this.cachedIndex ].numericKey > progress || progress >= this[ this.cachedIndex + 1 ].numericKey) {
+            if (progress === MINIMAL_PROGRESS) {
+                this.cachedIndex = 0;
+            } else if (progress === MAXIMAL_PROGRESS) {
+                this.cachedIndex = this.length - 1;
+            }
             do {
 
                 if (!this[ this.cachedIndex + 1 ] || this[ this.cachedIndex ].numericKey > progress) {
