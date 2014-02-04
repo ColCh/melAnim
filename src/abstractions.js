@@ -496,10 +496,10 @@
      * @extends Easing
      */
     function CubicBezier (p1x, p1y, p2x, p2y) {
-        this.p1x = round(p1x, CUBIC_BEZIER_POINTS_DIGITS);
-        this.p1y = round(p1y, CUBIC_BEZIER_POINTS_DIGITS);
-        this.p2x = round(p2x, CUBIC_BEZIER_POINTS_DIGITS);
-        this.p2y = round(p2y, CUBIC_BEZIER_POINTS_DIGITS);
+        this.p1x = floor(p1x, CUBIC_BEZIER_POINTS_DIGITS);
+        this.p1y = floor(p1y, CUBIC_BEZIER_POINTS_DIGITS);
+        this.p2x = floor(p2x, CUBIC_BEZIER_POINTS_DIGITS);
+        this.p2y = floor(p2y, CUBIC_BEZIER_POINTS_DIGITS);
     }
 
     goog.inherits(CubicBezier, Easing);

@@ -79,10 +79,10 @@ test('sortArray', function () {
 
 });
 
-test('round', function () {
-    strictEqual(round(4, 0), 4, 'integer rounding');
-    strictEqual(round(4.5, 0), 5, 'float rounding');
-    strictEqual(round(4.123456, 5), 4.12346, 'precision rounding');
+test('floor', function () {
+    strictEqual(floor(4, 0), 4, 'integer rounding');
+    strictEqual(floor(4.5, 0), 4, 'float rounding');
+    strictEqual(floor(4.123456, 5), 4.12345, 'precision rounding');
 });
 
 test('blend', function () {
@@ -96,9 +96,9 @@ test('blend', function () {
     ok(!blend(from, to, progress, current, roundDigits), 'valueIsChanged (is not changed)');
     strictEqual(current[0], 0.5, 'check result value');
     blend(from, to, 0.5555, current, 2);
-    strictEqual(current[0], 0.56, 'check rounding (precision)');
+    strictEqual(current[0], 0.55, 'check rounding (precision)');
     blend(from, to, 0.5555, current, 0);
-    strictEqual(current[0], 1, 'check rounding (to integer)');
+    strictEqual(current[0], 0, 'check rounding (to integer)');
 });
 
 test('trim', function () {

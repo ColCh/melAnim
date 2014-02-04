@@ -115,7 +115,7 @@
      * @param {number} number
      * @param {number} digits
      */
-    function round (number, digits) {
+    function floor (number, digits) {
         if (digits === 0) {
             return number | 0;
         } else {
@@ -140,7 +140,7 @@
         var valueIsChanged = false;
 
         for (var i = from.length; i--; ) {
-            valueIsChanged = currentValue[i] !== (currentValue[i] = round( (to[i] - from[i]) * progress + from[i] , roundDigits)) || valueIsChanged;
+            valueIsChanged = currentValue[i] !== (currentValue[i] = floor( (to[i] - from[i]) * progress + from[i] , roundDigits)) || valueIsChanged;
         }
 
         return valueIsChanged;
